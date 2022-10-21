@@ -11,12 +11,13 @@ struct SongCardView: View {
     var spotifySong: Spotify.Track?
     var song: Song?
     
-    @ObservedObject var imageVM: ImageViewModel
-    @StateObject var songCardVM = SongCardViewModel()
+    let minFrameWidthForText: CGFloat = 120
     
-    init(spotifySong: Spotify.Track) {
+    @ObservedObject var imageVM: ImageViewModel
+    
+    init(spotifySong: Spotify.Track?) {
         self.spotifySong = spotifySong
-        self.imageVM = ImageViewModel(imageUrl: spotifySong.album.images[0].url)
+        self.imageVM = ImageViewModel(imageUrl: spotifySong?.album.images[0].url)
     }
     
     init(song: Song?) {
@@ -27,13 +28,53 @@ struct SongCardView: View {
     var body: some View {
         let title = song?.name ?? spotifySong?.name ?? "Song"
         let album = song?.album ?? spotifySong?.album.name ?? "Album"
+        let padding: CGFloat = 8
+        ZStack(alignment: .top) {
+            Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
+            ZStack {
+                GeometryReader { geo in
+                    HStack {
+                        if geo.frame(in: .local).width > minFrameWidthForText {
+                            VStack(alignment: .leading) {    // Title and subtitle
+                                StrokeText(text: title, width: 0.25, color: .black).font(.title3)
+                                StrokeText(text: album, width: 0.25, color: .black).font(.body)
+                            }
+                            
+                            Spacer()
+                        }
+                        ImageView(image: $imageVM.image)
+                            .frame(height: geo.frame(in: .local).height - (padding * 2))
+                    }.padding([.all], padding)
+                }
+            }
+        }
+    }
+}
+
+struct UserLibSongCardView: View {
+    var song: Song?
+    
+    @ObservedObject var imageVM: ImageViewModel
+    
+    @EnvironmentObject var userLibVM: UserLibraryViewModel
+    
+    init(song: Song?) {
+        self.song = song
+        self.imageVM = ImageViewModel(imageUrl: song?.img_url)
+    }
+    
+    var body: some View {
+        let title = song?.name ?? "Song"
+        let album = song?.album ?? "Album"
+        let songId = song?.id ?? ""
+        
         ZStack {
             Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
             ZStack(alignment: .bottom) {
                 HStack {
                     VStack(alignment: .leading) {    // Title and subtitle
-                        StrokeText(text: title, width: 0.25, color: .black).font(.title2)
-                        StrokeText(text: album, width: 0.25, color: .black).font(.body)
+                        StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
+                        StrokeText(text: album, width: 0.25, color: .black).font(.caption)
                     }
                     
                     Spacer()
@@ -41,15 +82,17 @@ struct SongCardView: View {
                     ImageView(image: $imageVM.image)
                     
                 }.padding([.all], 8)
-
-                if songCardVM.downloadProgress < 100 {
-                    ProgressView(value: CGFloat(songCardVM.downloadProgress), total: CGFloat(SongCardViewModel.TOTAL_PROGRESS))
-                        .scaleEffect(x: 1, y: 2, anchor: .bottom)
+                
+                if let progress = userLibVM.downloadProgress[songId] {
+                    if progress < UserLibraryViewModel.TOTAL_PROGRESS {
+                        ProgressView(value: CGFloat(progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS))
+                    }
                 }
             }
         }
     }
 }
+
 
 // Reference: https://stackoverflow.com/questions/57334125/how-to-make-text-stroke-in-swiftui
 struct StrokeText: View {
@@ -75,6 +118,6 @@ struct StrokeText: View {
 
 struct SongCardView_Previews: PreviewProvider {
     static var previews: some View {
-        SongCardView(song: nil).frame(width: 300, height: 150)
+        UserLibSongCardView(song: nil).frame(width: 300, height: 300)
     }
 }

@@ -8,8 +8,8 @@
 import Foundation
 
 enum Lane: String, CaseIterable {
-    case Vocals
-    case Other
-    case Bass
-    case Drums
+    case Vocals = "0"
+    case Other = "1"
+    case Bass = "2"
+    case Drums = "3"
 }

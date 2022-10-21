@@ -25,3 +25,10 @@ struct TaskStatus: Codable {
     let task_id: String
     let task_result: Status
 }
+
+enum RequestStatus: String {
+    case Success = "SUCCESS"
+    case Progress = "PROGRESS"
+    case Pending = "PENDING"
+    case Failure = "FAILURE"
+}

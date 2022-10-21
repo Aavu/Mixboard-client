@@ -8,75 +8,102 @@
 import SwiftUI
 
 struct MashupView: View {
-    private let userLibView = UserLibraryView(numSongs: 4)
     @StateObject var libViewModel = LibraryViewModel()
     @StateObject var userLibVM = UserLibraryViewModel()
-    
+    @StateObject var spotifyVM = SpotifyViewModel(numTracks: 20)
     @StateObject var mashupVM = MashupViewModel()
     @StateObject var audioManager = AudioManager()
     
+    @StateObject var historyVM = HistoryViewModel()
+    
     @State var audioProgress:CGFloat = 0
     @State var playHeadProgress: CGFloat = 0
+    @State var presentHistoryView = false
     
-    @StateObject var vocalLaneVM = LaneViewModel(lane: .Vocals)
-    @StateObject var otherLaneVM = LaneViewModel(lane: .Other)
-    @StateObject var bassLaneVM = LaneViewModel(lane: .Bass)
-    @StateObject var drumLaneVM = LaneViewModel(lane: .Drums)
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     var body: some View {
-        ZStack {
-            Color.BgColor.ignoresSafeArea()
+        GeometryReader() { geo in
+            let userLibWidth = geo.size.width * 0.20
+            let historyWidth:CGFloat = 250
+            ZStack {
+                Color.BgColor.ignoresSafeArea()
+                
+                HStack(alignment: .center) {
+                    UserLibraryView(numSongs: 4, presentHistoryView: $presentHistoryView, cardWidth: userLibWidth)
+                        .zIndex(2)
+                        .blur(radius: presentHistoryView ? 2:0)
 
-            HStack(alignment: .center, spacing: 0) {
-                userLibView.padding(.trailing, 4).zIndex(2)
-                ZStack {
-                    VStack(spacing: 0) {
-                        Spacer()
-                        //                    Text("Mashup").multilineTextAlignment(.center).padding([.top, .bottom], 12.0).foregroundColor(.LavenderBlush).font(.title2).shadow(radius: 4)
-                        TracksView(vocalLaneVM: vocalLaneVM, otherLaneVM: otherLaneVM, bassLaneVM: bassLaneVM, drumLaneVM: drumLaneVM, audioProgress: $audioProgress, playHeadProgress: $playHeadProgress)
-                            .cornerRadius(8)
-                            .padding(.trailing, 52)
-                        
-                        ToolbarView(audioManager: audioManager)
-                            .frame(height: 48)
-                        
-                        Spacer()
-                    }.blur(radius: mashupVM.isFocuingSongs ? 4:0)
-                        .onTapGesture {
-                            if mashupVM.isFocuingSongs {
+                    ZStack {
+                        VStack {
+                            Spacer()
+                            TracksView(audioProgress: $audioProgress, playHeadProgress: $playHeadProgress)
+                                .cornerRadius(8)
+                            Spacer(minLength: 16)
+                            ToolbarView(audioManager: audioManager, presentHistoryView: $presentHistoryView)
+                                .frame(height: horizontalSizeClass == .compact ? 32: 64)
+                            
+                        }.blur(radius: mashupVM.isFocuingSongs ? 4:0)
+                            .onTapGesture {
+                                if mashupVM.isFocuingSongs {
+                                    withAnimation {
+                                        mashupVM.isFocuingSongs = false
+                                    }
+                                }
+                                
                                 withAnimation {
-                                    mashupVM.isFocuingSongs = false
+                                    presentHistoryView = false
                                 }
                             }
-                        }
-//                    if mashupVM.isFocuingSongs {
-//                        Rectangle().foregroundColor(.black).opacity(0.5).blur(radius: 4)
-//                            .border(.black, width: 5)
-//                            .onTapGesture {
-//                                print("tap tap")
-//                            }
-//                    }
+                    }.blur(radius: presentHistoryView ? 2:0)
+                        .padding([.horizontal], 4)
+                    
+                    
+                    if presentHistoryView {
+                        HistoryView(presentHistoryView: $presentHistoryView)
+                            .frame(width: historyWidth)
+                            .transition(.move(edge: .trailing))
+                            .onDisappear {
+                                audioManager.stop()
+                                playHeadProgress = 0
+                            }
+                    }
                 }
-                
-            }.ignoresSafeArea()
+                .offset(x: (presentHistoryView && horizontalSizeClass == .compact) ? -150 : 0)
                 .disabled(mashupVM.isGenerating)
                 .blur(radius: mashupVM.isGenerating ? 8: 0)
                 .overlay(mashupVM.isGenerating ? .black.opacity(0.5) : .clear)
                 .environmentObject(libViewModel)
                 .environmentObject(userLibVM)
                 .environmentObject(mashupVM)
-            if mashupVM.isGenerating {
-                ProgressView("Generating Mashup", value: CGFloat(mashupVM.generationProgress), total: 100)
+                .environmentObject(spotifyVM)
+                .environmentObject(historyVM)
+                
+                if mashupVM.isGenerating {
+                    ProgressView("Generating Mashup", value: CGFloat(mashupVM.generationProgress), total: 100).padding()
+                        .foregroundColor(.white)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .white))
+                }
             }
+            .onChange(of: audioManager.progress) { progress in
+                audioProgress = progress
+            }
+            .onChange(of: playHeadProgress) { progress in
+                audioManager.setProgress(progress: progress)
+            }
+            .alert(isPresented: $mashupVM.showError, error: mashupVM.appError, actions: {
+                Button("Ok") {
+                    mashupVM.appError = nil
+                }
+            })
+            .alert(isPresented: $userLibVM.showError, error: userLibVM.appError, actions: {
+                Button("Ok") {
+                    userLibVM.appError = nil
+                }
+            })
         }
-        .onChange(of: audioManager.progress) { progress in
-            audioProgress = progress
-        }
-        .onChange(of: playHeadProgress) { progress in
-            audioManager.setProgress(progress: progress)
-        }
-        
     }
+    
 }
 
 struct MashupView_Previews: PreviewProvider {

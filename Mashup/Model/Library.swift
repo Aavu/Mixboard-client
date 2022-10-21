@@ -32,5 +32,5 @@ struct Song: Codable, Hashable {
 struct Library: Decodable, Hashable {
     let version: String
     let statusCode: Int
-    let items: Dictionary<String, Song>
+    var items: Dictionary<String, Song>
 }

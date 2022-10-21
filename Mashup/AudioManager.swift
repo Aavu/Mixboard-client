@@ -13,27 +13,43 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var player: AVAudioPlayer?
     @Published var progress: Double = 0
     @Published var isPlaying = false
+    @Published var currentAudioFile: URL?
+    
+    @Published var appError: AppError?
 
     private var displayLink: CADisplayLink?
     
     func play(audioFile: URL) {
         if let player {
-            player.play()
-            isPlaying = player.isPlaying
-        } else {
-            do {
-                player = try AVAudioPlayer(contentsOf: audioFile)
-                guard let player = player else { return }
-                player.delegate = self
+            if currentAudioFile == audioFile {
                 player.play()
                 isPlaying = player.isPlaying
-            } catch let err {
-                print(err)
+            } else {
+                playNewAudio(audioFile: audioFile)
             }
+        } else {
+            playNewAudio(audioFile: audioFile)
         }
         
         displayLink = CADisplayLink(target: self, selector: #selector(self.updateProgress))
         displayLink?.add(to: .current, forMode: .common)
+    }
+    
+    private func playNewAudio(audioFile: URL) {
+        do {
+            player?.stop()
+            
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            
+            player = try AVAudioPlayer(contentsOf: audioFile)
+            guard let player = player else { return }
+            player.delegate = self
+            player.play()
+            currentAudioFile = audioFile
+            isPlaying = player.isPlaying
+        } catch let err {
+            print(err)
+        }
     }
     
     func stop() {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Region: Hashable, Codable {
+struct Region: Hashable, Codable, Identifiable {
     struct Item: Hashable, Codable {
         let id: String
         var name: String? = nil
@@ -45,6 +45,7 @@ struct Region: Hashable, Codable {
     var Class: [String]? = nil
     var item: Item
     var moved: Bool? = nil
+    let id = UUID()
     
     private enum CodingKeys: String, CodingKey {
         case x       = "x"
@@ -56,6 +57,7 @@ struct Region: Hashable, Codable {
         case Class   = "class"
         case item    = "item"
         case moved   = "moved"
+        case id      = "id"
     }
 }
 
@@ -68,15 +70,5 @@ struct Layout: Hashable, Codable {
         var layout = [Region]()
     }
     
-    var vocals: Track
-    var other: Track
-    var bass: Track
-    var drums: Track
-    
-    private enum CodingKeys: String, CodingKey {
-        case vocals = "0"
-        case other = "1"
-        case bass = "2"
-        case drums = "3"
-    }
+    var lane = Dictionary<String, Track>()
 }

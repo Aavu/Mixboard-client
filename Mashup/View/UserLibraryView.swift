@@ -8,56 +8,86 @@
 import SwiftUI
 
 struct UserLibraryView: View {
-    private let numSongs: Int
+    let numSongs: Int
     
     @State var isPresented = false
+    @Binding var presentHistoryView: Bool
     
     @EnvironmentObject var mashup: MashupViewModel
     @EnvironmentObject var library: LibraryViewModel
+    @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var userLib: UserLibraryViewModel
     
-    private let cardWidth: CGFloat = 144
-    private let ExpandedCardWidth: CGFloat = 264
+    let cardWidth: CGFloat
     
-    init(numSongs: Int, isPresented: Bool = false) {
-        self.numSongs = numSongs
-        self.isPresented = isPresented
-    }
+    @State var dragOffset = Dictionary<String, CGSize>()
     
     var body: some View {
+        let ExpandedCardWidth: CGFloat = cardWidth + 120
         ZStack {
-            RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16).frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
+            RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
+                .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
+                .ignoresSafeArea(edges: [.vertical])
             VStack {
-                ForEach(userLib.songs, id: \.self) { song in
-                    SongCardView(song: song)
-                        .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
-                        .frame(maxHeight: 150)
-                        .contextMenu {
-                        Button {
-                            userLib.removeSong(songId: song.id)
-                        } label: {
-                            Text("Remove")
+                ZStack {
+                    VStack {
+                        ForEach(userLib.songs, id: \.self) { song in
+                            UserLibSongCardView(song: song)
+                                .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
+                                .frame(maxHeight: 150)
+                                .offset(dragOffset[song.id] ?? .zero)
+                                .environmentObject(userLib)
+                                .gesture(DragGesture(coordinateSpace: .global)
+                                    .onChanged({ value in
+                                        withAnimation {
+                                            dragOffset[song.id]?.width = min(0, value.translation.width)
+                                        }
+                                        
+                                    })
+                                         
+                                    .onEnded({ value in
+                                        if value.predictedEndLocation.x < 0 {
+                                            userLib.removeSong(songId: song.id)
+                                            mashup.deleteRegionsFor(songId: song.id)
+                                            withAnimation {
+                                                dragOffset[song.id] = value.predictedEndTranslation
+                                            }
+                                            
+                                        } else {
+                                            withAnimation {
+                                                dragOffset[song.id] = .zero
+                                            }
+                                        }
+                                    })
+                                )
+                                .onDrag {
+                                    withAnimation {
+                                        mashup.isFocuingSongs = false
+                                    }
+                                    return .init(contentsOf: URL(string: song.id))!
+                                } preview: {
+                                    SongCardView(song: song).frame(width: 72, height: 60).environmentObject(userLib)
+                                }
+                                .onTapGesture {
+                                    withAnimation {
+                                        mashup.isFocuingSongs.toggle()
+                                    }
+                                }
+                                .onAppear {
+                                    dragOffset[song.id] = .zero
+                                }
                         }
                     }
-                    .onDrag {
-                        withAnimation {
-                            mashup.isFocuingSongs = false
-                        }
-                        return .init(contentsOf: URL(string: song.id))!
-                    } preview: {
-                        SongCardView(song: song).frame(width: 72, height: 60)
-                    }
-                    .onTapGesture {
-                        withAnimation {
-                            mashup.isFocuingSongs.toggle()
-                        }
-                    }
-
                 }
                 
+                
                 if mashup.canDisplayLibrary {
-                    if userLib.songs.count < 4 {
+                    if userLib.songs.count < numSongs {
                         Button {
+                            withAnimation {
+                                presentHistoryView = false
+                            }
+                            
                             isPresented.toggle()
                         } label: {
                             VStack {
@@ -72,19 +102,21 @@ struct UserLibraryView: View {
                     }
                 }
             }
+            .padding([.top, .bottom], 16)
         }.sheet(isPresented: $isPresented) {
-            LibraryView(isPresented: $isPresented) { results in
+            LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
                 userLib.addSongs(songs: results)
             }
         }
         .onAppear {
-            userLib.attachLibrary(library: library)
+            userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
         }
+        
     }
 }
 
 struct UserLibraryView_Previews: PreviewProvider {
     static var previews: some View {
-        UserLibraryView(numSongs: 4)
+        UserLibraryView(numSongs: 4, presentHistoryView: .constant(false), cardWidth: 144)
     }
 }

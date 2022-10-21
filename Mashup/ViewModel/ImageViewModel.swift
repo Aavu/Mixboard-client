@@ -19,7 +19,7 @@ class ImageViewModel: ObservableObject {
     init(image: UIImage? = nil, imageUrl: String?) {
         self.image = image
         self.imageUrl = imageUrl
-        self.averageColor = .blue
+        self.averageColor = .clear
         loadImg()
     }
     

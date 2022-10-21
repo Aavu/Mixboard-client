@@ -76,7 +76,6 @@ class SpotifyViewModel: ObservableObject {
     }
     
     func getRecommendations(numTracks: Int) {
-        print("In getRecommendations")
         getCredentials { credentials in
             guard let cred = credentials else {
                 print("credentials is nil")
@@ -144,5 +143,15 @@ class SpotifyViewModel: ObservableObject {
                 print("error getting Spotify access token")
             }
         }.resume()
+    }
+    
+    func getSong(songId: String) -> Spotify.Track? {
+        for song in songs {
+            if song.id == songId {
+                return song
+            }
+        }
+        
+        return nil
     }
 }

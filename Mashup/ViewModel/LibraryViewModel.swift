@@ -11,6 +11,7 @@ import Combine
 class LibraryViewModel: ObservableObject {
     @Published var library: Library?
     private var unfilteredSongs = [Song]()
+    private var userLibSongs = [Song]()
     @Published var songs = [Song]()
     
     @Published var searchText = ""
@@ -43,6 +44,19 @@ class LibraryViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
+    func isSongInList(list: [Song], song: Song) -> Bool {
+        if list.isEmpty {
+            return false
+        }
+        
+        for s in list {
+            if s.id == song.id {
+                return true
+            }
+        }
+        return false
+    }
+    
     func loadExampleData() -> Bool {
         guard let url = Bundle.main.url(forResource: "libraryExample", withExtension: "json")
         else {
@@ -60,6 +74,18 @@ class LibraryViewModel: ObservableObject {
         
 //        print(self.library?.items["5Wsj5AFp99VB4XaOg1Druw"]?.name)
         return true
+    }
+    
+    func filterUserLibSongs(songs: [Song]) {
+        self.userLibSongs = songs
+        if self.userLibSongs.isEmpty {
+            return
+        }
+        self.songs = {
+            return self.unfilteredSongs.filter { song in
+                return !isSongInList(list: self.userLibSongs, song: song)
+            }
+        }()
     }
     
     func update(didUpdate: (() -> ())? = nil) {
@@ -82,7 +108,7 @@ class LibraryViewModel: ObservableObject {
                 let lib = try JSONDecoder().decode(Library.self, from: data)
                 DispatchQueue.main.async {
                     self.library = lib
-                    self.getSongs()
+                    self.updateSongList()
                     guard let didUpdate = didUpdate else { return }
                     didUpdate()
                 }
@@ -94,7 +120,7 @@ class LibraryViewModel: ObservableObject {
         }.resume()
     }
     
-    private func getSongs() {
+    private func updateSongList() {
         guard let library = self.library else { return }
         for (_, v) in library.items {
             self.songs.append(v)
@@ -102,9 +128,34 @@ class LibraryViewModel: ObservableObject {
         }
     }
     
-    func getSong(songId: String) -> Song {
+    func getSong(songId: String) -> Song? {
         guard let library = self.library else { return Song(id: songId) }
-        return library.items[songId] ?? Song(id: songId)
+        return library.items[songId]
     }
     
+    func addSong(song: Song) -> Bool {
+        guard let library = self.library else { return false }
+        if (library.items[song.id] == nil) {
+            self.library!.items[song.id] = song
+            updateSongList()
+            return true
+        } else {
+            print("Warning: Song already in library...")
+        }
+        
+        return false
+    }
+    
+    func addSong(spotifySong: Spotify.Track) -> Bool {
+        var song = Song(id: spotifySong.id)
+        song.album = spotifySong.album.name
+        song.artist = spotifySong.artists[0].name
+        song.external_url = spotifySong.external_urls.spotify
+        song.img_url = spotifySong.album.images[0].url
+        song.name = spotifySong.name
+        song.preview_url = spotifySong.preview_url
+        song.release_date = spotifySong.album.release_date
+        
+        return addSong(song: song)
+    }
 }
