@@ -12,6 +12,7 @@ class UserLibraryViewModel: ObservableObject {
     @Published var songs = [Song]()
     @Published var downloadProgress = Dictionary<String, Int>()
     @Published var isSelected = Dictionary<String, Bool>()
+    @Published var silenceOverlayText = Dictionary<String, String>()
     
     static let TOTAL_PROGRESS = 100
     
@@ -45,8 +46,8 @@ class UserLibraryViewModel: ObservableObject {
         return lib?.getSong(songId: songId) != nil
     }
     
-    func addSongs(songs: Dictionary<String, SongSource>) {
-        for (id, _) in songs {
+    func addSongs(songIds: [String]) {
+        for id in songIds {
             addSong(songId: id)
         }
     }
@@ -85,7 +86,7 @@ class UserLibraryViewModel: ObservableObject {
                         if success {
                             self.addSongFromLib(songId: songId)
                         } else {
-                            print("Error adding \(song.name) to library")
+                            self.appError = AppError(description: "Error adding \(song.name) to library")
                         }
                     }
                 }
@@ -96,13 +97,12 @@ class UserLibraryViewModel: ObservableObject {
                 guard let taskId = resp["task_id"] else { return }
                 self.updateStatus(taskId: taskId, songId: songId)
             } catch let err {
-                print(err)
+                self.appError = AppError(description: err.localizedDescription)
             }
             
             lib.update(didUpdate: {
                 if let song = lib.getSong(songId: songId) {
                     self.replaceDummy(song: song)
-                    print("library updated")
                 }
             })
             
@@ -140,6 +140,39 @@ class UserLibraryViewModel: ObservableObject {
         }
     }
     
+    func hasNonSilentBoundsFor(song: Song, lane: Lane) -> Bool {
+        let beats = [4, 8, 16, 32]
+        
+        switch lane {
+        case .Vocals:
+            for beat in beats {
+                if !(song.non_silent_bounds?.vocals["\(beat)"]?.isEmpty ?? false) {
+                    return true
+                }
+            }
+        case .Other:
+            for beat in beats {
+                if !(song.non_silent_bounds?.other["\(beat)"]?.isEmpty ?? false) {
+                    return true
+                }
+            }
+        case .Bass:
+            for beat in beats {
+                if !(song.non_silent_bounds?.bass["\(beat)"]?.isEmpty ?? false) {
+                    return true
+                }
+            }
+        case .Drums:
+            for beat in beats {
+                if !(song.non_silent_bounds?.drums["\(beat)"]?.isEmpty ?? false) {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
     func removeSong(songId: String) {
         guard let lib = self.lib else { return }
         
@@ -157,6 +190,7 @@ class UserLibraryViewModel: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let _ = data, err == nil else {
+                self.appError = AppError(description: err?.localizedDescription)
                 return
             }
             
@@ -196,33 +230,30 @@ class UserLibraryViewModel: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
+                self.appError = AppError(description: err?.localizedDescription)
                 return
             }
             
             do {
                 let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, Any>
-                print(resp)
                 if let stat = RequestStatus(rawValue: resp["requestStatus"] as! String) {
                     switch stat {
                     case .Progress:
                         let result = try JSONDecoder().decode(TaskStatus.self, from: data)
                         DispatchQueue.main.async {
                             self.downloadProgress[songId] = result.task_result.progress
-                            print("\(songId) download progress: \(String(describing: self.downloadProgress[songId]))")
                             self.updateStatus(taskId: taskId, songId: songId)  //  Recursive call
                         }
                         
                     case .Success:
                         DispatchQueue.main.async {
                             self.downloadProgress[songId] = 100
-                            print("\(songId) downloaded!")
                         }
                         
                         if let lib = self.lib {
                             lib.update(didUpdate: {
                                 if let song = lib.getSong(songId: songId) {
                                     self.replaceDummy(song: song)
-                                    print("library updated")
                                 }
                             })
                         }
@@ -237,6 +268,8 @@ class UserLibraryViewModel: ObservableObject {
                 print("trying again...")
                 if tryNum < 3 {
                     self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)  //  Recursive call
+                } else {
+                    self.appError = AppError(description: err.localizedDescription)
                 }
             }
             

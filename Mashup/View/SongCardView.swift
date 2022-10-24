@@ -60,9 +60,12 @@ struct UserLibSongCardView: View {
     
     @EnvironmentObject var userLibVM: UserLibraryViewModel
     
-    init(song: Song?) {
+    private let canShowOverlay: Bool
+    
+    init(song: Song?, canShowOverlay: Bool = true) {
         self.song = song
         self.imageVM = ImageViewModel(imageUrl: song?.img_url)
+        self.canShowOverlay = canShowOverlay
     }
     
     var body: some View {
@@ -93,6 +96,17 @@ struct UserLibSongCardView: View {
                 }
             }
         }
+        .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) && canShowOverlay ? 4 : 0)
+        .overlay(content: {
+            if canShowOverlay {
+                if let txt = userLibVM.silenceOverlayText[songId] {
+                    ZStack {
+                        Color.red.opacity(0.5)
+                        Text(txt)
+                    }
+                }
+            }
+        })
         .frame(maxHeight: 150)
     }
 }

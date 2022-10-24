@@ -27,8 +27,6 @@ struct TracksView: View {
     @Binding var playHeadProgress: CGFloat
     
     @State var isControllingPlayHead = false
-    
-    let lanes = ["Vocals", "Other", "Bass", "Drums"]
 
     @State var startX = Dictionary<UUID, CGFloat>()
     @State var endX = Dictionary<UUID, CGFloat>()
@@ -60,7 +58,7 @@ struct TracksView: View {
                             VStack(spacing: 0.0) {
                                 ForEach(Lane.allCases, id: \.self) { lane in
                                     ZStack {
-                                        LaneView(lane: lane, label: lanes[Int(lane.rawValue)!]).cornerRadius(2)
+                                        LaneView(label: lane.getName()).cornerRadius(2)
                                         
                                         if let lanes = mashup.layoutInfo.lane[lane.rawValue] {
                                             ForEach(lanes.layout) { region in
@@ -149,15 +147,10 @@ struct TracksView: View {
 }
 
 struct LaneView: View {
-    
-    let lane: Lane
+
     let label: String
     
-    @EnvironmentObject var library: LibraryViewModel
-    @EnvironmentObject var mashup: MashupViewModel
-    
-    init(lane: Lane, label: String) {
-        self.lane = lane
+    init(label: String) {
         self.label = label
     }
     
@@ -195,9 +188,7 @@ struct RegionView: View {
     
     @State var lastStartX: CGFloat = 0
     @State var lastEndX: CGFloat = 0
-    @State var scale: CGFloat = 1
-    
-    let maxWidthinBeats:CGFloat = 32
+
     let pad:CGFloat = 1
     
     @Binding var dragType: DragType
@@ -270,7 +261,6 @@ struct RegionView: View {
                 ZStack {
                     let handleWidth:CGFloat = 32
                     Rectangle()
-//                        .fill(Color.black)
                         .fill(LinearGradient(colors: [.black.opacity(0.2), .clear], startPoint: .leading, endPoint: .trailing))
                         .opacity(0.25)
                         .frame(width: handleWidth)
@@ -295,7 +285,6 @@ struct RegionView: View {
                                 })
                         )
                     Rectangle()
-//                        .fill(Color.black)
                         .fill(LinearGradient(colors: [.clear, .black.opacity(0.2)], startPoint: .leading, endPoint: .trailing))
                         .opacity(0.25)
                         .frame(width: handleWidth)
@@ -355,7 +344,6 @@ struct RegionView: View {
         dragType = .None
         let tempx = Int(round(startX[uuid]! / conversion))
         let length = Int(round((endX[uuid]! - startX[uuid]!) / conversion))
-//        print(tempx, min(Int(MashupViewModel.TOTAL_BEATS) - tempx, length), endX[uuid]!, startX[uuid]!, conversion)
         mashup.updateRegion(id: uuid, x: tempx, length: min(Int(MashupViewModel.TOTAL_BEATS) - tempx, length))
         startX[uuid] = CGFloat(tempx) * conversion
         endX[uuid] = CGFloat(length + tempx) * conversion

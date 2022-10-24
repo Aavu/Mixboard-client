@@ -23,27 +23,47 @@ struct UserLibraryView: View {
     @State var dragOffset = Dictionary<String, CGSize>()
     @State var dragLocation = Dictionary<String, CGPoint>()
     
+    @State var isDragging = Dictionary<String, Bool>()
+    
     var body: some View {
         let ExpandedCardWidth: CGFloat = cardWidth + 120
             ZStack {
                 RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
                     .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
                     .ignoresSafeArea(edges: [.vertical])
+                
                 VStack {
                     ForEach(userLib.songs, id: \.self) { song in
                         ZStack {
                             if dragOffset[song.id]?.width ?? 0 > 0 {
-                                UserLibSongCardView(song: song)
+                                UserLibSongCardView(song: song, canShowOverlay: false)
                                     .frame(width: cardWidth)
                             }
                             
                             UserLibSongCardView(song: song)
-                                .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
+                                .frame(width: (isDragging[song.id] ?? false) ? (8 * (mashup.tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)) : mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
+                                .frame(maxHeight: (isDragging[song.id] ?? false) ? mashup.tracksViewSize.height / 4 : nil)
                                 .offset(dragOffset[song.id] ?? .zero)
+                            
                                 .environmentObject(userLib)
                                 .gesture(DragGesture(coordinateSpace: .global)
                                     .onChanged({ value in
                                         dragLocation[song.id] = value.location
+                                        isDragging[song.id] = true
+                                        let lane = mashup.getLaneForLocation(location: dragLocation[song.id]!)
+                                        if let lane = lane {
+                                            if !userLib.hasNonSilentBoundsFor(song: song, lane: lane) {
+                                                withAnimation {
+                                                    userLib.silenceOverlayText[song.id] = "No \(lane.getName()) in song"
+                                                }
+                                            } else {
+                                                withAnimation {
+                                                    userLib.silenceOverlayText[song.id] = nil
+                                                }
+                                            }
+                                            
+                                            
+                                        }
                                         withAnimation {
                                             dragOffset[song.id] = value.translation
                                         }
@@ -51,6 +71,7 @@ struct UserLibraryView: View {
                                     })
                                          
                                     .onEnded({ value in
+                                        isDragging[song.id] = false
                                         if value.predictedEndLocation.x < 0 {
                                             userLib.removeSong(songId: song.id)
                                             mashup.deleteRegionsFor(songId: song.id)
@@ -58,17 +79,25 @@ struct UserLibraryView: View {
                                                 dragOffset[song.id] = value.predictedEndTranslation
                                             }
                                         } else {
-                                            
-                                            let success = mashup.handleDropRegion(songId: song.id, dropLocation: dragLocation[song.id]!)
-                                            dragLocation[song.id]? = .zero
-                                            if success {
-                                                dragOffset[song.id] = .zero
-                                            } else  {
-                                                withAnimation {
-                                                    dragOffset[song.id] = .zero
+                                            var success = false
+                                            let lane = mashup.getLaneForLocation(location: dragLocation[song.id]!)
+                                            if let lane = lane {
+                                                if userLib.hasNonSilentBoundsFor(song: song, lane: lane) {
+                                                    success = mashup.handleDropRegion(songId: song.id, dropLocation: dragLocation[song.id]!)
+                                                    dragLocation[song.id]? = .zero
+                                                    if success {
+                                                        dragOffset[song.id] = .zero
+                                                    }
                                                 }
                                             }
                                             
+                                            if !success {
+                                                withAnimation {
+                                                    userLib.silenceOverlayText[song.id] = nil
+                                                    dragOffset[song.id] = .zero
+                                                }
+                                                HapticManager.shared.notify(type: .error)
+                                            }
                                         }
                                     })
                                 )
@@ -81,39 +110,39 @@ struct UserLibraryView: View {
                                     dragOffset[song.id] = .zero
                                 }
                         }
-                    }
-                    
-                    
-                    if mashup.canDisplayLibrary {
-                        if userLib.songs.count < numSongs {
-                            Button {
-                                withAnimation {
-                                    presentHistoryView = false
-                                }
-                                
-                                isPresented.toggle()
-                            } label: {
-                                VStack {
-                                    Image(systemName: "plus.circle").foregroundColor(.AccentColor).padding(.all, 4).font(.title)
-                                    Text("Add Songs").foregroundColor(.AccentColor).font(.subheadline)
-                                }
+                }
+                
+                
+                if mashup.canDisplayLibrary {
+                    if userLib.songs.count < numSongs {
+                        Button {
+                            withAnimation {
+                                presentHistoryView = false
+                            }
+                            
+                            isPresented.toggle()
+                        } label: {
+                            VStack {
+                                Image(systemName: "plus.circle").foregroundColor(.AccentColor).padding(.all, 4).font(.title)
+                                Text("Add Songs").foregroundColor(.AccentColor).font(.subheadline)
                             }
                         }
-                    } else {
-                        ProgressView {
-                            Text("Preparing App")
-                        }
+                    }
+                } else {
+                    ProgressView {
+                        Text("Preparing App")
                     }
                 }
-                .padding([.top, .bottom], 16)
-            }.sheet(isPresented: $isPresented) {
-                LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
-                    userLib.addSongs(songs: results)
-                }
             }
-            .onAppear {
-                userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
+            .padding([.top, .bottom], 16)
+        }.sheet(isPresented: $isPresented) {
+            LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
+                userLib.addSongs(songIds: results)
             }
+        }
+        .onAppear {
+            userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
+        }
         
     }
 }

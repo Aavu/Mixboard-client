@@ -25,11 +25,11 @@ struct LibraryView: View {
     
     @State var draggingOffsetWidth: CGFloat = 0
     
-    var didSelectSongs: (Dictionary<String, SongSource>) -> ()
+    var didSelectSongs: ([String]) -> ()
     
     let gridItem = [GridItem(.adaptive(minimum: 250))]
     
-    init(isPresented: Binding<Bool>,userLibSongs: Binding<[Song]>, didSelectSongs: @escaping (Dictionary<String, SongSource>) -> ()) {
+    init(isPresented: Binding<Bool>,userLibSongs: Binding<[Song]>, didSelectSongs: @escaping ([String]) -> ()) {
         UITabBar.appearance().barTintColor = UIColor(.SecondaryAccentColor)
         UITabBar.appearance().backgroundColor = UIColor(.SecondaryBgColor)
         self._isPresented = isPresented
@@ -151,7 +151,14 @@ struct LibraryView: View {
     }
     
     func handleDoneBtn() {
-        didSelectSongs(selectedSongId)
+        var choices = Array(selectedSongId.keys)
+        if selectedSongId.isEmpty {    // Choose randomly
+            let songs = libraryVM.songs.choose(max(0, 4 - (selectedSongId.count + userLibSongs.count)))
+            for song in songs {
+                choices.append(song.id)
+            }
+        }
+        didSelectSongs(choices)
         isPresented = false
     }
 }
@@ -213,18 +220,17 @@ struct TabBarView<T: View>: View {
                             Image(systemName: "xmark.square").padding(8).font(.largeTitle).foregroundColor(.AccentColor)
                         }
                         Spacer()
-                        if selectedSongId.count > 0 {
-                            Button {
-                                if let handleDoneBtn = handleDoneBtn {
-                                    handleDoneBtn()
-                                }
-                            } label: {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8).foregroundColor(.NeutralColor)
-                                    Text("Add \(selectedSongId.count) song\(selectedSongId.count == 1 ? "": "s")").foregroundColor(.AccentColor)
-                                }.frame(width: 120, height: 36).shadow(radius: 2)
-                            }.padding(8)
-                        }
+
+                        Button {
+                            if let handleDoneBtn = handleDoneBtn {
+                                handleDoneBtn()
+                            }
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8).foregroundColor(.NeutralColor)
+                                Text(selectedSongId.count > 0 ? ("Add \(selectedSongId.count) song\(selectedSongId.count == 1 ? "": "s")") : "Choose for Me!").foregroundColor(.AccentColor)
+                            }.frame(width: 128, height: 36).shadow(radius: 2)
+                        }.padding(8)
                     }
                 }
                 SearchBarView(searchText: $searchText).padding([.horizontal], 8).padding(.bottom, 20)

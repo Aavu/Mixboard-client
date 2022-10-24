@@ -231,8 +231,8 @@ class MashupViewModel: ObservableObject {
     
     func handleDropRegion(songId: String, dropLocation: CGPoint) -> Bool {
         if let lane = getLaneForLocation(location: dropLocation) {
-            let conversion = tracksViewSize.width / CGFloat(MashupViewModel.TOTAL_BEATS)
-            let x = round((dropLocation.x - tracksViewLocation.x) / conversion)
+            let conversion = (tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)
+            let x = max(0, round((dropLocation.x - tracksViewLocation.x) / conversion) - 4)
             addRegion(region: Region(x: Int(x), w: 8, item: Region.Item(id: songId)), lane: lane)
         }
         

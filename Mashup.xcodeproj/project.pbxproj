@@ -26,6 +26,7 @@
 		7A3291792901B946007AF70F /* LuckyMeTemplates.json in Resources */ = {isa = PBXBuildFile; fileRef = 7A3291782901B946007AF70F /* LuckyMeTemplates.json */; };
 		7A32917B2901C769007AF70F /* LuckyMeTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */; };
 		7A32917D2901CBB7007AF70F /* LuckyMeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */; };
+		7A8AD5442906F059001AE70F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8AD5432906F059001AE70F /* HapticManager.swift */; };
 		7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED711E28F99D1300336B56 /* LibraryViewModel.swift */; };
 		7AED712128F9CF4A00336B56 /* songExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED712028F9CF4A00336B56 /* songExample.json */; };
 		7AED712528F9D3D100336B56 /* libraryExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED712428F9D3D100336B56 /* libraryExample.json */; };
@@ -70,6 +71,7 @@
 		7A3291782901B946007AF70F /* LuckyMeTemplates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LuckyMeTemplates.json; sourceTree = "<group>"; };
 		7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyMeTemplates.swift; sourceTree = "<group>"; };
 		7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyMeManager.swift; sourceTree = "<group>"; };
+		7A8AD5432906F059001AE70F /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		7AED711E28F99D1300336B56 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		7AED712028F9CF4A00336B56 /* songExample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = songExample.json; sourceTree = "<group>"; };
 		7AED712428F9D3D100336B56 /* libraryExample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = libraryExample.json; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 		7A25ECDE28F83F6700B2396A /* Mashup */ = {
 			isa = PBXGroup;
 			children = (
+				7A8AD5422906F03F001AE70F /* Manager */,
 				7A221D0F29009B2E00DC949F /* Info.plist */,
 				7A25ECF528F8408C00B2396A /* View */,
 				7A25ECF628F84DD900B2396A /* Model */,
@@ -131,10 +134,7 @@
 				7A25ECE528F83F6800B2396A /* Preview Content */,
 				7A25ED0628F8A41F00B2396A /* Extensions.swift */,
 				7AED712F28FA21CC00336B56 /* Config.swift */,
-				7AED713F28FD04E300336B56 /* MashupFileManager.swift */,
-				7AED714528FDC68900336B56 /* AudioManager.swift */,
 				7A3291782901B946007AF70F /* LuckyMeTemplates.json */,
-				7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */,
 			);
 			path = Mashup;
 			sourceTree = "<group>";
@@ -196,6 +196,17 @@
 				7AED714F28FF4B2C00336B56 /* HistoryViewModel.swift */,
 			);
 			path = ViewModel;
+			sourceTree = "<group>";
+		};
+		7A8AD5422906F03F001AE70F /* Manager */ = {
+			isa = PBXGroup;
+			children = (
+				7AED713F28FD04E300336B56 /* MashupFileManager.swift */,
+				7AED714528FDC68900336B56 /* AudioManager.swift */,
+				7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */,
+				7A8AD5432906F059001AE70F /* HapticManager.swift */,
+			);
+			path = Manager;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -293,6 +304,7 @@
 				7A25ECF828F84DE600B2396A /* Spotify.swift in Sources */,
 				7A25ECE228F83F6700B2396A /* MashupView.swift in Sources */,
 				7A221D0E2900726200DC949F /* AppError.swift in Sources */,
+				7A8AD5442906F059001AE70F /* HapticManager.swift in Sources */,
 				7AED713A28FC6FD900336B56 /* MashupViewModel.swift in Sources */,
 				7AED715028FF4B2C00336B56 /* HistoryViewModel.swift in Sources */,
 				7AED713028FA21CD00336B56 /* Config.swift in Sources */,

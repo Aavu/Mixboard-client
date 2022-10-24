@@ -77,3 +77,8 @@ extension UIApplication {
         sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
+
+// Refer: https://stackoverflow.com/questions/27259332/get-random-elements-from-array-in-swift
+extension Collection {
+    func choose(_ n: Int) -> ArraySlice<Element> { shuffled().prefix(n) }
+}
