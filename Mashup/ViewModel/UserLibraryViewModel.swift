@@ -80,7 +80,7 @@ class UserLibraryViewModel: ObservableObject {
             
             
             DispatchQueue.main.async {
-                if let song = self.spotifyVM?.getSong(songId: songId) {
+                if let song = self.spotifyVM?.getSpotifySong(songId: songId) {
                     if let success = self.lib?.addSong(spotifySong: song) {
                         if success {
                             self.addSongFromLib(songId: songId)

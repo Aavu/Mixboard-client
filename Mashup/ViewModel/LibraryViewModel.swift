@@ -146,6 +146,7 @@ class LibraryViewModel: ObservableObject {
         return false
     }
     
+    //TODO: Content repeats with SpotifyVM getSong function. DRY!!!
     func addSong(spotifySong: Spotify.Track) -> Bool {
         var song = Song(id: spotifySong.id)
         song.album = spotifySong.album.name

@@ -19,6 +19,7 @@ struct TracksView: View {
     
     @EnvironmentObject var mashup: MashupViewModel
     @EnvironmentObject var library: LibraryViewModel
+    @EnvironmentObject var spotify: SpotifyViewModel
     
     let labelWidth: CGFloat = 86
     
@@ -64,7 +65,7 @@ struct TracksView: View {
                                         if let lanes = mashup.layoutInfo.lane[lane.rawValue] {
                                             ForEach(lanes.layout) { region in
                                                 GeometryReader { regionGeo in
-                                                    let song = library.getSong(songId: region.item.id)
+                                                    let song = library.getSong(songId: region.item.id) ?? spotify.getSong(songId: region.item.id)
                                                     RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
                                                         .frame(width: geo.size.width - 86)
                                                         .offset(x: 86, y: yPos[region.id] ?? 0)

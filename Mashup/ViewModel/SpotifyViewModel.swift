@@ -145,13 +145,22 @@ class SpotifyViewModel: ObservableObject {
         }.resume()
     }
     
-    func getSong(songId: String) -> Spotify.Track? {
+    func getSpotifySong(songId: String) -> Spotify.Track? {
         for song in songs {
             if song.id == songId {
                 return song
             }
         }
         
+        return nil
+    }
+    
+    func getSong(songId: String) -> Song? {
+        for song in songs {
+            if song.id == songId {
+                return Song(album: song.album.name, artist: song.artists[0].name, id: songId, img_url: song.album.images[0].url, name: song.name, release_date: song.album.release_date)
+            }
+        }
         return nil
     }
 }
