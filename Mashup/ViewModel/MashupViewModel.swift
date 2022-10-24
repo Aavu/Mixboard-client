@@ -14,13 +14,16 @@ class MashupViewModel: ObservableObject {
     @Published var layoutInfo = Layout()
     @Published var isGenerating = false
     @Published var isEmpty = true
+    @Published var isSelected = Dictionary<UUID, Bool>()
     
     @Published var readyToPlay = false
     
     @Published var isFocuingSongs = false
     
+    @Published var tracksViewLocation: CGPoint = .zero
+    @Published var tracksViewSize: CGSize = .zero
     
-    @Published var dragLocation = Dictionary<String, CGPoint>()
+    @Published var userLibCardWidth: CGFloat = 0
     
     static let TOTAL_BEATS = 32
     
@@ -67,6 +70,9 @@ class MashupViewModel: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let _ = data, err == nil else {
+                DispatchQueue.main.async {
+                    self.appError = AppError(description: err?.localizedDescription)
+                }
                 return
             }
             
@@ -123,7 +129,15 @@ class MashupViewModel: ObservableObject {
         layoutInfo.lane[lane.rawValue]?.layout.append(region)
         isEmpty = false
         updateLastBeat()
-//        setSelected(uuid: region.id, isSelected: false)
+        setSelected(uuid: region.id, isSelected: false)
+    }
+    
+    func setSelected(uuid: UUID, isSelected: Bool) {
+        self.isSelected[uuid] = isSelected
+    }
+    
+    func unselectAllRegions() {
+        isSelected.keys.forEach{ isSelected[$0] = false }
     }
     
     func getRegion(lane: Lane, id: UUID) -> Region? {
@@ -151,13 +165,30 @@ class MashupViewModel: ObservableObject {
         }
     }
     
-    func updateRegion(lane: Lane, id: UUID, x: Int, length: Int) {
-        if let lanes = layoutInfo.lane[lane.rawValue] {
+    func updateRegion(id: UUID, x: Int, length: Int) {
+        for lane in Lane.allCases {
+            if let lanes = layoutInfo.lane[lane.rawValue] {
+                for (idx, region) in lanes.layout.enumerated() {
+                    if region.id == id {
+                        layoutInfo.lane[lane.rawValue]!.layout[idx].x = x
+                        layoutInfo.lane[lane.rawValue]!.layout[idx].w = length
+                        updateLastBeat()
+                        return
+                    }
+                }
+            }
+        }
+    }
+    
+    func changeLane(regionId: UUID, currentLane: Lane, newLane: Lane) {
+        if let lanes = layoutInfo.lane[currentLane.rawValue] {
             for (idx, region) in lanes.layout.enumerated() {
-                if region.id == id {
-                    layoutInfo.lane[lane.rawValue]!.layout[idx].x = x
-                    layoutInfo.lane[lane.rawValue]!.layout[idx].w = length
+                if region.id == regionId {
+                    layoutInfo.lane[currentLane.rawValue]!.layout.remove(at: idx)
+                    layoutInfo.lane[newLane.rawValue]?.layout.append(region)
                     updateLastBeat()
+                    isEmpty = false
+                    setSelected(uuid: region.id, isSelected: false)
                     return
                 }
             }
@@ -167,17 +198,45 @@ class MashupViewModel: ObservableObject {
     func deleteRegionsFor(songId: String) {
         for lane in Lane.allCases {
             if let regions = layoutInfo.lane[lane.rawValue]?.layout {
-                for (idx, region) in regions.enumerated() {
+                for region in regions {
                     if region.item.id == songId {
-//                        print(idx, layoutInfo.lane[lane.rawValue]!.layout.count)
-//                        layoutInfo.lane[lane.rawValue]!.layout.remove(at: idx)
                         removeRegion(lane: lane, id: region.id)
                     }
                 }
             }
         }
-        isEmpty = isCanvasEmpty()
-        updateLastBeat()
+    }
+    
+    func getLaneForLocation(location: CGPoint) -> Lane? {
+        if location.x < tracksViewLocation.x  || location.x  > tracksViewLocation.x + tracksViewSize.width {
+            return nil
+        }
+        
+        if location.y < tracksViewLocation.y || location.y > tracksViewLocation.y + tracksViewSize.height {
+            return nil
+        }
+        
+        let laneHeight = tracksViewSize.height / 4
+        
+        if location.y < laneHeight + tracksViewLocation.y {
+            return .Vocals
+        } else if location.y < 2*laneHeight + tracksViewLocation.y {
+            return .Other
+        } else if location.y < 3*laneHeight + tracksViewLocation.y {
+            return .Bass
+        }
+        
+        return .Drums
+    }
+    
+    func handleDropRegion(songId: String, dropLocation: CGPoint) -> Bool {
+        if let lane = getLaneForLocation(location: dropLocation) {
+            let conversion = tracksViewSize.width / CGFloat(MashupViewModel.TOTAL_BEATS)
+            let x = round((dropLocation.x - tracksViewLocation.x) / conversion)
+            addRegion(region: Region(x: Int(x), w: 8, item: Region.Item(id: songId)), lane: lane)
+        }
+        
+        return true
     }
     
     func restoreFromHistory(history: History) {

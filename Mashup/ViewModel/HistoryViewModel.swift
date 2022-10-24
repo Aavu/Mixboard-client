@@ -19,6 +19,11 @@ class HistoryViewModel: ObservableObject {
     }
     
     func add(history: History) {
+        for h in histories {
+            if h.id == history.id {
+                return
+            }
+        }
         self.histories.append(history)
         print("History for '\(history.id)' saved!")
     }

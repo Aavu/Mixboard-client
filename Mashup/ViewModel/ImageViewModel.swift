@@ -77,6 +77,16 @@ class ImageViewModel: ObservableObject {
         
     }
     
+    func getSecondaryAvgColor(color: Color) -> Color {
+        if color == .clear { return .clear }
+        let uiColor = UIColor(color)
+        var h : CGFloat = 0
+        var s : CGFloat = 0
+        var b : CGFloat = 0
+        uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: nil)
+        return Color(UIColor(hue: h, saturation: s, brightness: b - 0.05, alpha: 1))
+    }
+    
 }
 
 class ImageCache {

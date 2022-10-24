@@ -89,23 +89,6 @@ struct ToolbarView: View {
                 
                 Spacer()
                 
-//                Button {
-//                    handleLuckyMeBtn()
-//                } label: {
-//                    ZStack {
-//                        RoundedRectangle(cornerRadius: 4).frame(width: 150, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : .Thistle).shadow(radius:  4)
-//                        if !mashupVM.isEmpty {
-//                            HStack {
-//                                Image(systemName: "shuffle").font(.headline).foregroundColor(.RaisinBlack)
-//                                Text("Surprise Me").foregroundColor(.RaisinBlack)
-//                                if mashupVM.isGenerating {
-//                                    ProgressView()
-//                                }
-//                            }
-//                        }
-//                    }
-//                }.disabled(mashupVM.isGenerating || mashupVM.isEmpty)
-                
                 // MARK: Generate Button
                 Button {
                     let uuid = UUID()

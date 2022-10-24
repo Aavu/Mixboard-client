@@ -21,26 +21,31 @@ struct UserLibraryView: View {
     let cardWidth: CGFloat
     
     @State var dragOffset = Dictionary<String, CGSize>()
+    @State var dragLocation = Dictionary<String, CGPoint>()
     
     var body: some View {
         let ExpandedCardWidth: CGFloat = cardWidth + 120
-        ZStack {
-            RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
-                .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
-                .ignoresSafeArea(edges: [.vertical])
-            VStack {
-                ZStack {
-                    VStack {
-                        ForEach(userLib.songs, id: \.self) { song in
+            ZStack {
+                RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
+                    .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
+                    .ignoresSafeArea(edges: [.vertical])
+                VStack {
+                    ForEach(userLib.songs, id: \.self) { song in
+                        ZStack {
+                            if dragOffset[song.id]?.width ?? 0 > 0 {
+                                UserLibSongCardView(song: song)
+                                    .frame(width: cardWidth)
+                            }
+                            
                             UserLibSongCardView(song: song)
                                 .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
-                                .frame(maxHeight: 150)
                                 .offset(dragOffset[song.id] ?? .zero)
                                 .environmentObject(userLib)
                                 .gesture(DragGesture(coordinateSpace: .global)
                                     .onChanged({ value in
+                                        dragLocation[song.id] = value.location
                                         withAnimation {
-                                            dragOffset[song.id]?.width = min(0, value.translation.width)
+                                            dragOffset[song.id] = value.translation
                                         }
                                         
                                     })
@@ -52,22 +57,21 @@ struct UserLibraryView: View {
                                             withAnimation {
                                                 dragOffset[song.id] = value.predictedEndTranslation
                                             }
-                                            
                                         } else {
-                                            withAnimation {
+                                            
+                                            let success = mashup.handleDropRegion(songId: song.id, dropLocation: dragLocation[song.id]!)
+                                            dragLocation[song.id]? = .zero
+                                            if success {
                                                 dragOffset[song.id] = .zero
+                                            } else  {
+                                                withAnimation {
+                                                    dragOffset[song.id] = .zero
+                                                }
                                             }
+                                            
                                         }
                                     })
                                 )
-                                .onDrag {
-                                    withAnimation {
-                                        mashup.isFocuingSongs = false
-                                    }
-                                    return .init(contentsOf: URL(string: song.id))!
-                                } preview: {
-                                    SongCardView(song: song).frame(width: 72, height: 60).environmentObject(userLib)
-                                }
                                 .onTapGesture {
                                     withAnimation {
                                         mashup.isFocuingSongs.toggle()
@@ -78,39 +82,38 @@ struct UserLibraryView: View {
                                 }
                         }
                     }
-                }
-                
-                
-                if mashup.canDisplayLibrary {
-                    if userLib.songs.count < numSongs {
-                        Button {
-                            withAnimation {
-                                presentHistoryView = false
-                            }
-                            
-                            isPresented.toggle()
-                        } label: {
-                            VStack {
-                                Image(systemName: "plus.circle").foregroundColor(.AccentColor).padding(.all, 4).font(.title)
-                                Text("Add Songs").foregroundColor(.AccentColor).font(.subheadline)
+                    
+                    
+                    if mashup.canDisplayLibrary {
+                        if userLib.songs.count < numSongs {
+                            Button {
+                                withAnimation {
+                                    presentHistoryView = false
+                                }
+                                
+                                isPresented.toggle()
+                            } label: {
+                                VStack {
+                                    Image(systemName: "plus.circle").foregroundColor(.AccentColor).padding(.all, 4).font(.title)
+                                    Text("Add Songs").foregroundColor(.AccentColor).font(.subheadline)
+                                }
                             }
                         }
-                    }
-                } else {
-                    ProgressView {
-                        Text("Preparing App")
+                    } else {
+                        ProgressView {
+                            Text("Preparing App")
+                        }
                     }
                 }
+                .padding([.top, .bottom], 16)
+            }.sheet(isPresented: $isPresented) {
+                LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
+                    userLib.addSongs(songs: results)
+                }
             }
-            .padding([.top, .bottom], 16)
-        }.sheet(isPresented: $isPresented) {
-            LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
-                userLib.addSongs(songs: results)
+            .onAppear {
+                userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
             }
-        }
-        .onAppear {
-            userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
-        }
         
     }
 }

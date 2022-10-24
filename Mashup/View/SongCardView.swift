@@ -30,7 +30,9 @@ struct SongCardView: View {
         let album = song?.album ?? spotifySong?.album.name ?? "Album"
         let padding: CGFloat = 8
         ZStack(alignment: .top) {
-            Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
+            Rectangle()
+                .fill(imageVM.averageColor)
+                .shadow(radius: 4)
             ZStack {
                 GeometryReader { geo in
                     HStack {
@@ -43,7 +45,7 @@ struct SongCardView: View {
                             Spacer()
                         }
                         ImageView(image: $imageVM.image)
-                            .frame(height: geo.frame(in: .local).height - (padding * 2))
+                            .frame(height: max(0, geo.frame(in: .local).height - (padding * 2)))
                     }.padding([.all], padding)
                 }
             }
@@ -83,6 +85,7 @@ struct UserLibSongCardView: View {
                     
                 }.padding([.all], 8)
                 
+                
                 if let progress = userLibVM.downloadProgress[songId] {
                     if progress < UserLibraryViewModel.TOTAL_PROGRESS {
                         ProgressView(value: CGFloat(progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS))
@@ -90,6 +93,7 @@ struct UserLibSongCardView: View {
                 }
             }
         }
+        .frame(maxHeight: 150)
     }
 }
 

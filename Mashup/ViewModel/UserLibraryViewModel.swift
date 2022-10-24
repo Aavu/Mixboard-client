@@ -41,6 +41,10 @@ class UserLibraryViewModel: ObservableObject {
         return isSelected[songId] ?? false
     }
     
+    func isSongInLibrary(songId: String) -> Bool {
+        return lib?.getSong(songId: songId) != nil
+    }
+    
     func addSongs(songs: Dictionary<String, SongSource>) {
         for (id, _) in songs {
             addSong(songId: id)
@@ -183,6 +187,12 @@ class UserLibraryViewModel: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
+        
+        DispatchQueue.main.async {
+            if self.downloadProgress[songId] == nil {
+                self.downloadProgress[songId] = 10
+            }
+        }
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {

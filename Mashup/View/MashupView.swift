@@ -24,13 +24,12 @@ struct MashupView: View {
     
     var body: some View {
         GeometryReader() { geo in
-            let userLibWidth = geo.size.width * 0.20
             let historyWidth:CGFloat = 250
             ZStack {
                 Color.BgColor.ignoresSafeArea()
                 
                 HStack(alignment: .center) {
-                    UserLibraryView(numSongs: 4, presentHistoryView: $presentHistoryView, cardWidth: userLibWidth)
+                    UserLibraryView(numSongs: 4, presentHistoryView: $presentHistoryView, cardWidth: mashupVM.userLibCardWidth)
                         .zIndex(2)
                         .blur(radius: presentHistoryView ? 2:0)
 
@@ -85,6 +84,9 @@ struct MashupView: View {
                         .progressViewStyle(LinearProgressViewStyle(tint: .white))
                 }
             }
+            .onTapGesture {
+                mashupVM.unselectAllRegions()
+            }
             .onChange(of: audioManager.progress) { progress in
                 audioProgress = progress
             }
@@ -101,6 +103,12 @@ struct MashupView: View {
                     userLibVM.appError = nil
                 }
             })
+            .onAppear {
+                mashupVM.userLibCardWidth = geo.size.width * 0.20
+            }
+            .onChange(of: geo.size) { newValue in
+                mashupVM.userLibCardWidth = geo.size.width * 0.20
+            }
         }
     }
     

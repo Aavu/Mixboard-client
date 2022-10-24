@@ -117,13 +117,6 @@ struct LibraryView: View {
                 }
                 .offset(x: (selectedTab == 0 ? 0: -geo.frame(in: .global).width) + draggingOffsetWidth)
                 .gesture(DragGesture()
-//                    .onChanged({ value in
-//                        withAnimation(.spring()) {
-//                            draggingOffsetWidth = value.translation.width
-//                        }
-//
-//                    })
-                         
                     .onEnded({ value in
                         withAnimation(.spring()) {
                             if value.predictedEndTranslation.width < 0 {
@@ -151,7 +144,7 @@ struct LibraryView: View {
             }
         }
         
-        withAnimation(.default) {
+        withAnimation {
             freezeSelection = (selectedSongId.count + userLibSongs.count) >= 4
             inSelectionMode = !selectedSongId.isEmpty
         }
