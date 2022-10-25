@@ -122,6 +122,8 @@ class LibraryViewModel: ObservableObject {
     
     private func updateSongList() {
         guard let library = self.library else { return }
+        self.songs = []
+        self.unfilteredSongs = []
         for (_, v) in library.items {
             self.songs.append(v)
             self.unfilteredSongs.append(v)
