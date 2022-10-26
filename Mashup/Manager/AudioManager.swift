@@ -19,6 +19,8 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private var displayLink: CADisplayLink?
     
+    static let shared = AudioManager()
+    
     func play(audioFile: URL) {
         if let player {
             if currentAudioFile == audioFile {

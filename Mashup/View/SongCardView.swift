@@ -59,6 +59,7 @@ struct UserLibSongCardView: View {
     @ObservedObject var imageVM: ImageViewModel
     
     @EnvironmentObject var userLibVM: UserLibraryViewModel
+    @EnvironmentObject var mashupVM: MashupViewModel
     
     private let canShowOverlay: Bool
     
@@ -73,7 +74,7 @@ struct UserLibSongCardView: View {
         let album = song?.album ?? "Album"
         let songId = song?.id ?? ""
         
-        ZStack {
+        ZStack(alignment: .topLeading) {
             Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
             ZStack(alignment: .bottom) {
                 HStack {
@@ -95,6 +96,26 @@ struct UserLibSongCardView: View {
                     }
                 }
             }
+            
+            if userLibVM.isSelected[songId] ?? false {
+                Button {
+                    withAnimation {
+                        if let songId = song?.id {
+                            userLibVM.removeSong(songId: songId) { err in
+                                userLibVM.dragOffset[songId] = nil
+                                guard err != nil else { return }
+                                mashupVM.deleteRegionsFor(songId: songId)
+                            }
+                        }
+                    }
+                } label: {
+                    ZStack {
+                        Color.BgColor.shadow(radius: 4).cornerRadius(4)
+                        Text("Remove").foregroundColor(.AccentColor)
+                    }
+                }
+                .frame(height: 32)
+            }
         }
         .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) && canShowOverlay ? 4 : 0)
         .overlay(content: {
@@ -108,6 +129,18 @@ struct UserLibSongCardView: View {
             }
         })
         .frame(maxHeight: 150)
+        .simultaneousGesture(TapGesture()
+            .onEnded({
+                withAnimation {
+                    if userLibVM.isSelected[songId] == nil {
+                        userLibVM.isSelected[songId] = true
+                    } else {
+                        userLibVM.isSelected[songId] = !userLibVM.isSelected[songId]!
+                    }
+                    
+                }
+            })
+        )
     }
 }
 

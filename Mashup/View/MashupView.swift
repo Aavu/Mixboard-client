@@ -12,7 +12,7 @@ struct MashupView: View {
     @StateObject var userLibVM = UserLibraryViewModel()
     @StateObject var spotifyVM = SpotifyViewModel(numTracks: 20)
     @StateObject var mashupVM = MashupViewModel()
-    @StateObject var audioManager = AudioManager()
+    @StateObject var audioManager = AudioManager.shared
     
     @StateObject var historyVM = HistoryViewModel()
     
@@ -39,7 +39,7 @@ struct MashupView: View {
                             TracksView(audioProgress: $audioProgress, playHeadProgress: $playHeadProgress)
                                 .cornerRadius(8)
                             Spacer(minLength: 16)
-                            ToolbarView(audioManager: audioManager, presentHistoryView: $presentHistoryView)
+                            ToolbarView(presentHistoryView: $presentHistoryView)
                                 .frame(height: horizontalSizeClass == .compact ? 32: 64)
                             
                         }.blur(radius: mashupVM.isFocuingSongs ? 4:0)
@@ -59,13 +59,19 @@ struct MashupView: View {
                     
                     
                     if presentHistoryView {
-                        HistoryView(presentHistoryView: $presentHistoryView)
-                            .frame(width: historyWidth)
-                            .transition(.move(edge: .trailing))
-                            .onDisappear {
+                        HistoryView() { (success) in
+                            if success {
                                 audioManager.stop()
                                 playHeadProgress = 0
+                                
+                                withAnimation {
+                                    presentHistoryView = false
+                                }
                             }
+                            
+                        }
+                        .frame(width: historyWidth)
+                        .transition(.move(edge: .trailing))
                     }
                 }
                 .offset(x: (presentHistoryView && horizontalSizeClass == .compact) ? -150 : 0)
@@ -84,9 +90,16 @@ struct MashupView: View {
                         .progressViewStyle(LinearProgressViewStyle(tint: .white))
                 }
             }
-            .onTapGesture {
-                mashupVM.unselectAllRegions()
-            }
+            .simultaneousGesture(TapGesture()
+                .onEnded({
+                    withAnimation {
+                        mashupVM.unselectAllRegions()
+                        mashupVM.isFocuingSongs = false
+                        userLibVM.isSelected.removeAll()
+                        presentHistoryView = false
+                    }
+                })
+            )
             .onChange(of: audioManager.progress) { progress in
                 audioProgress = progress
             }

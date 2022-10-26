@@ -13,7 +13,7 @@ struct HistoryView: View {
     @EnvironmentObject var mashupVM: MashupViewModel
     @EnvironmentObject var userLibVM: UserLibraryViewModel
     
-    @Binding var presentHistoryView: Bool
+    var onCompletion: ((Bool) -> ())?
     
     var body: some View {
         ZStack {
@@ -36,8 +36,8 @@ struct HistoryView: View {
                                     userLibVM.restoreFromHistory(history: history)
                                     historyVM.current = history
                                     
-                                    withAnimation {
-                                        presentHistoryView = false
+                                    if let onCompletion = onCompletion {
+                                        onCompletion(true)
                                     }
                                 }
                         }
@@ -50,6 +50,6 @@ struct HistoryView: View {
 
 struct HistoryView_Previews: PreviewProvider {
     static var previews: some View {
-        HistoryView(presentHistoryView: .constant(true))
+        HistoryView()
     }
 }

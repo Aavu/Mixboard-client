@@ -13,6 +13,7 @@ class UserLibraryViewModel: ObservableObject {
     @Published var downloadProgress = Dictionary<String, Int>()
     @Published var isSelected = Dictionary<String, Bool>()
     @Published var silenceOverlayText = Dictionary<String, String>()
+    @Published var dragOffset = Dictionary<String, CGSize>()
     
     static let TOTAL_PROGRESS = 100
     
@@ -76,6 +77,7 @@ class UserLibraryViewModel: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
+                self.appError = AppError(description: err?.localizedDescription)
                 return
             }
             
@@ -173,13 +175,10 @@ class UserLibraryViewModel: ObservableObject {
         return false
     }
     
-    func removeSong(songId: String) {
+    func removeSong(songId: String, completion: ((Error?) -> ())?) {
         guard let lib = self.lib else { return }
         
-        guard let url = URL(string: Config.SERVER + HttpRequests.REMOVE_SONG) else {
-            print("Error: Url invalid")
-            return
-        }
+        let url = URL(string: Config.SERVER + HttpRequests.REMOVE_SONG)!
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -191,12 +190,19 @@ class UserLibraryViewModel: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let _ = data, err == nil else {
                 self.appError = AppError(description: err?.localizedDescription)
+                if let completion = completion {
+                    completion(err)
+                }
                 return
             }
             
             lib.update(didUpdate: {
                 self.songs.removeAll { song in
                     song.id == songId
+                }
+                
+                if let completion = completion {
+                    completion(nil)
                 }
             })
             
@@ -213,10 +219,7 @@ class UserLibraryViewModel: ObservableObject {
     func updateStatus(taskId: String, songId: String, tryNum: Int = 0) {
         if self.downloadProgress[songId] == 100 { return }
         
-        guard let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId) else {
-            print("Error: Url invalid")
-            return
-        }
+        let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId)!
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -231,6 +234,7 @@ class UserLibraryViewModel: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 self.appError = AppError(description: err?.localizedDescription)
+                self.downloadProgress[songId] = nil
                 return
             }
             
@@ -270,6 +274,7 @@ class UserLibraryViewModel: ObservableObject {
                     self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)  //  Recursive call
                 } else {
                     self.appError = AppError(description: err.localizedDescription)
+                    self.downloadProgress[songId] = nil
                 }
             }
             

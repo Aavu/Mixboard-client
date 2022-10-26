@@ -20,7 +20,7 @@ struct UserLibraryView: View {
     
     let cardWidth: CGFloat
     
-    @State var dragOffset = Dictionary<String, CGSize>()
+//    @State var dragOffset = Dictionary<String, CGSize>()
     @State var dragLocation = Dictionary<String, CGPoint>()
     
     @State var isDragging = Dictionary<String, Bool>()
@@ -35,7 +35,7 @@ struct UserLibraryView: View {
                 VStack {
                     ForEach(userLib.songs, id: \.self) { song in
                         ZStack {
-                            if dragOffset[song.id]?.width ?? 0 > 0 {
+                            if userLib.dragOffset[song.id]?.width ?? 0 > 0 {
                                 UserLibSongCardView(song: song, canShowOverlay: false)
                                     .frame(width: cardWidth)
                             }
@@ -43,7 +43,7 @@ struct UserLibraryView: View {
                             UserLibSongCardView(song: song)
                                 .frame(width: (isDragging[song.id] ?? false) ? (8 * (mashup.tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)) : mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
                                 .frame(maxHeight: (isDragging[song.id] ?? false) ? mashup.tracksViewSize.height / 4 : nil)
-                                .offset(dragOffset[song.id] ?? .zero)
+                                .offset(userLib.dragOffset[song.id] ?? .zero)
                             
                                 .environmentObject(userLib)
                                 .gesture(DragGesture(coordinateSpace: .global)
@@ -65,7 +65,7 @@ struct UserLibraryView: View {
                                             
                                         }
                                         withAnimation {
-                                            dragOffset[song.id] = value.translation
+                                            userLib.dragOffset[song.id] = value.translation
                                         }
                                         
                                     })
@@ -73,11 +73,18 @@ struct UserLibraryView: View {
                                     .onEnded({ value in
                                         isDragging[song.id] = false
                                         if value.predictedEndLocation.x < 0 {
-                                            userLib.removeSong(songId: song.id)
-                                            mashup.deleteRegionsFor(songId: song.id)
-                                            withAnimation {
-                                                dragOffset[song.id] = value.predictedEndTranslation
+                                            withAnimation(.linear(duration: 0.25)) {
+                                                userLib.dragOffset[song.id] = value.predictedEndTranslation
                                             }
+                                            
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                                userLib.removeSong(songId: song.id) { err in
+                                                    userLib.dragOffset[song.id] = nil
+                                                    guard err != nil else { return }
+                                                    mashup.deleteRegionsFor(songId: song.id)
+                                                }
+                                            }
+                                            
                                         } else {
                                             var success = false
                                             let lane = mashup.getLaneForLocation(location: dragLocation[song.id]!)
@@ -86,7 +93,7 @@ struct UserLibraryView: View {
                                                     success = mashup.handleDropRegion(songId: song.id, dropLocation: dragLocation[song.id]!)
                                                     dragLocation[song.id]? = .zero
                                                     if success {
-                                                        dragOffset[song.id] = .zero
+                                                        userLib.dragOffset[song.id] = .zero
                                                     }
                                                 }
                                             }
@@ -94,26 +101,29 @@ struct UserLibraryView: View {
                                             if !success {
                                                 withAnimation {
                                                     userLib.silenceOverlayText[song.id] = nil
-                                                    dragOffset[song.id] = .zero
+                                                    userLib.dragOffset[song.id] = .zero
                                                 }
                                                 HapticManager.shared.notify(type: .error)
                                             }
                                         }
                                     })
                                 )
-                                .onTapGesture {
-                                    withAnimation {
-                                        mashup.isFocuingSongs.toggle()
-                                    }
-                                }
+                                .simultaneousGesture(TapGesture()
+                                    .onEnded({ value in
+                                        withAnimation {
+                                            mashup.isFocuingSongs.toggle()
+                                        }
+                                    })
+                                )
                                 .onAppear {
-                                    dragOffset[song.id] = .zero
+                                    userLib.dragOffset[song.id] = .zero
                                 }
                         }
                 }
                 
                 
                 if mashup.canDisplayLibrary {
+                    Spacer()
                     if userLib.songs.count < numSongs {
                         Button {
                             withAnimation {
@@ -142,6 +152,12 @@ struct UserLibraryView: View {
         }
         .onAppear {
             userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
+        }
+        .onTapGesture {
+            withAnimation {
+                mashup.isFocuingSongs = false
+                userLib.isSelected.removeAll()
+            }
         }
         
     }
