@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct History: Identifiable, Hashable {
+struct History: Identifiable, Hashable, Equatable {
     let id: UUID
     let audio: Audio
     let date: Date

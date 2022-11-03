@@ -57,6 +57,7 @@ struct UserLibSongCardView: View {
     var song: Song?
     
     @ObservedObject var imageVM: ImageViewModel
+    @ObservedObject var audioManager = AudioManager.shared
     
     @EnvironmentObject var userLibVM: UserLibraryViewModel
     @EnvironmentObject var mashupVM: MashupViewModel
@@ -78,17 +79,20 @@ struct UserLibSongCardView: View {
             Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
             ZStack(alignment: .bottom) {
                 VStack {
-                    HStack {
-                        VStack(alignment: .leading) {    // Title and subtitle
-                            StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
-                            StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
-                        }
-                        
-                        Spacer()
-                        
-                        ImageView(image: $imageVM.image)
-                        
-                    }.padding([.all], 8)
+                    GeometryReader { geo in
+                        HStack {
+                            VStack(alignment: .leading) {    // Title and subtitle
+                                StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
+                                StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
+                            }
+                            
+                            Spacer()
+                            
+                            ImageView(image: $imageVM.image).frame(width: geo.size.width / 2).shadow(radius: 4)
+                            
+                        }.padding([.all], 8)
+                    }
+                    
                     
                     if let status = userLibVM.downloadProgress[songId] {
                         if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
@@ -143,6 +147,7 @@ struct UserLibSongCardView: View {
         .frame(maxHeight: 150)
         .simultaneousGesture(TapGesture()
             .onEnded({
+                if audioManager.isPlaying { return }
                 withAnimation {
                     if userLibVM.isSelected[songId] == nil {
                         userLibVM.isSelected[songId] = true

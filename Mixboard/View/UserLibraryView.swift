@@ -18,6 +18,8 @@ struct UserLibraryView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var userLib: UserLibraryViewModel
     
+    @ObservedObject var audioManager = AudioManager.shared
+    
     let cardWidth: CGFloat
     
 //    @State var dragOffset = Dictionary<String, CGSize>()
@@ -48,6 +50,7 @@ struct UserLibraryView: View {
                                 .environmentObject(userLib)
                                 .gesture(DragGesture(coordinateSpace: .global)
                                     .onChanged({ value in
+                                        if audioManager.isPlaying { return }
                                         dragLocation[song.id] = value.location
                                         isDragging[song.id] = true
                                         let lane = mashup.getLaneForLocation(location: dragLocation[song.id]!)
@@ -71,6 +74,7 @@ struct UserLibraryView: View {
                                     })
                                          
                                     .onEnded({ value in
+                                        if audioManager.isPlaying { return }
                                         isDragging[song.id] = false
                                         
                                         if value.predictedEndLocation.x < 0 {
@@ -120,6 +124,7 @@ struct UserLibraryView: View {
                                 )
                                 .simultaneousGesture(TapGesture()
                                     .onEnded({ value in
+                                        if audioManager.isPlaying { return }
                                         withAnimation {
                                             mashup.isFocuingSongs.toggle()
                                         }
@@ -164,6 +169,7 @@ struct UserLibraryView: View {
             userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
         }
         .onTapGesture {
+            if audioManager.isPlaying { return }
             withAnimation {
                 mashup.isFocuingSongs = false
                 userLib.isSelected.removeAll()

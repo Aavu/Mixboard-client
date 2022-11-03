@@ -26,6 +26,7 @@
 		7A3291792901B946007AF70F /* LuckyMeTemplates.json in Resources */ = {isa = PBXBuildFile; fileRef = 7A3291782901B946007AF70F /* LuckyMeTemplates.json */; };
 		7A32917B2901C769007AF70F /* LuckyMeTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */; };
 		7A32917D2901CBB7007AF70F /* LuckyMeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */; };
+		7A4D7F992910DA3D00651CCF /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4D7F982910DA3D00651CCF /* NetworkManager.swift */; };
 		7A75C323290D87A000AB2134 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A75C322290D87A000AB2134 /* Audio.swift */; };
 		7A8AD5442906F059001AE70F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8AD5432906F059001AE70F /* HapticManager.swift */; };
 		7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED711E28F99D1300336B56 /* LibraryViewModel.swift */; };
@@ -71,6 +72,7 @@
 		7A3291782901B946007AF70F /* LuckyMeTemplates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LuckyMeTemplates.json; sourceTree = "<group>"; };
 		7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyMeTemplates.swift; sourceTree = "<group>"; };
 		7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyMeManager.swift; sourceTree = "<group>"; };
+		7A4D7F982910DA3D00651CCF /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		7A5658E8291034600065000C /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mixboard/Info.plist; sourceTree = SOURCE_ROOT; };
 		7A75C322290D87A000AB2134 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
 		7A8AD5432906F059001AE70F /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
@@ -208,6 +210,7 @@
 				7AED714528FDC68900336B56 /* AudioManager.swift */,
 				7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */,
 				7A8AD5432906F059001AE70F /* HapticManager.swift */,
+				7A4D7F982910DA3D00651CCF /* NetworkManager.swift */,
 			);
 			path = Manager;
 			sourceTree = "<group>";
@@ -290,6 +293,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A4D7F992910DA3D00651CCF /* NetworkManager.swift in Sources */,
 				7A25ED0B28F8E65600B2396A /* ImageViewModel.swift in Sources */,
 				7A25ECF028F83FA800B2396A /* LibraryView.swift in Sources */,
 				7A32917B2901C769007AF70F /* LuckyMeTemplates.swift in Sources */,

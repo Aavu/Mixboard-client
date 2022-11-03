@@ -90,6 +90,7 @@ class MashupViewModel: ObservableObject {
                 layoutInfo.lane[lane.rawValue]!.layout = [Region]()
             }
         }
+        AudioManager.shared.reset()
         isEmpty = true
     }
     
@@ -346,10 +347,7 @@ class MashupViewModel: ObservableObject {
     func updateStatus(taskId: String, tryNum: Int = 0) {
         if self.generationProgress?.progress == 100 { return }
         
-        guard let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId) else {
-            self.appError = AppError(description: "Url invalid")
-            return
-        }
+        let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId)!
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -400,13 +398,10 @@ class MashupViewModel: ObservableObject {
         }.resume()
     }
     
-    func fetchMashup(uuid: UUID, onCompletion: ((Audio) -> ())?) {
+    func fetchMashup(uuid: UUID, tryNum: Int = 0, onCompletion: ((Audio) -> ())? = nil) {
         guard let taskId = self.generationTaskId else { return }
         
-        guard let url = URL(string: Config.SERVER + HttpRequests.RESULT + "/" + taskId) else {
-            self.appError = AppError(description: "Url invalid")
-            return
-        }
+        let url = URL(string: Config.SERVER + HttpRequests.RESULT + "/" + taskId)!
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -442,8 +437,14 @@ class MashupViewModel: ObservableObject {
                     self.appError = AppError(description: "Failed to save audio")
                 }
             } catch let e {
-                self.appError = AppError(description: e.localizedDescription)
-                print(e)
+                DispatchQueue.main.async {
+                    if tryNum < 3 {
+                        self.fetchMashup(uuid: uuid, tryNum: tryNum + 1, onCompletion: onCompletion)  //  Recursive call
+                    } else {
+                        self.appError = AppError(description: e.localizedDescription)
+                        print("line 451:", e)
+                    }
+                }
             }
             
         }.resume()

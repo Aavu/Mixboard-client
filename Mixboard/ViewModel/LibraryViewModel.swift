@@ -94,30 +94,17 @@ class LibraryViewModel: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let data = data, err == nil else {
-                return
-            }
-            
-            do {
-//                let resp = try JSONSerialization.jsonObject(with: data)
-//                print(resp)
-                let lib = try JSONDecoder().decode(Library.self, from: data)
-                DispatchQueue.main.async {
-                    self.library = lib
-                    self.updateSongList()
-                    guard let didUpdate = didUpdate else { return }
+        var subscription: AnyCancellable?
+        subscription = NetworkManager.request(url: url, type: .POST)
+            .decode(type: Library.self, decoder: JSONDecoder())
+            .sink(receiveCompletion: NetworkManager.handleCompletion) {[weak self] (lib) in
+                self?.library = lib
+                self?.updateSongList()
+                if let didUpdate = didUpdate {
                     didUpdate()
                 }
-            } catch let e{
-                print("error fetching library")
-                print(e)
+                subscription?.cancel()
             }
-            
-        }.resume()
     }
     
     private func updateSongList() {

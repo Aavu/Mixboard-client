@@ -66,51 +66,22 @@ class UserLibraryViewModel: ObservableObject {
         
         let url = URL(string: Config.SERVER + HttpRequests.ADD_SONG)!
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-        
-        let data = ["url" : songId]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: data)
-        
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let data = data, err == nil else {
-                DispatchQueue.main.async {
-                    self.appError = AppError(description: err?.localizedDescription)
-                }
-                return
-            }
-            
-            
-            DispatchQueue.main.async {
-                if let song = self.spotifyVM?.getSpotifySong(songId: songId) {
-                    if let success = self.lib?.addSong(spotifySong: song) {
-                        if success {
-                            self.addSongFromLib(songId: songId)
-                        } else {
-                            self.appError = AppError(description: "Error adding \(song.name) to library")
-                        }
+        var subscription: AnyCancellable?
+        subscription = NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId]))
+            .decode(type: Dictionary<String, String>.self, decoder: JSONDecoder())
+            .sink(receiveCompletion: NetworkManager.handleCompletion) {[weak self] (response) in
+                if let song = self?.spotifyVM?.getSpotifySong(songId: songId) {
+                    if lib.addSong(spotifySong: song) {
+                        self?.addSongFromLib(songId: songId)
+                    } else {
+                        self?.appError = AppError(description: "Error adding \(song.name) to library")
                     }
                 }
+                
+                guard let taskId = response["task_id"] else { return }
+                self?.updateStatus(taskId: taskId, songId: songId)
+                subscription?.cancel()
             }
-            
-            do {
-                let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, String>
-                guard let taskId = resp["task_id"] else { return }
-                self.updateStatus(taskId: taskId, songId: songId)
-            } catch let err {
-                DispatchQueue.main.async {
-                    self.appError = AppError(description: err.localizedDescription)
-                }
-            }
-            
-            lib.update(didUpdate: {
-                if let song = lib.getSong(songId: songId) {
-                    self.replaceDummy(song: song)
-                }
-            })
-            
-        }.resume()
         
         addSongFromLib(songId: songId)
     }
@@ -180,46 +151,40 @@ class UserLibraryViewModel: ObservableObject {
     func removeSong(songId: String, notifyServer: Bool = true, completion: ((Error?) -> ())? = nil) {
         guard let lib = self.lib else { return }
         
+        func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
+            lib.update(didUpdate: {
+                self.songs.removeAll { song in
+                    song.id == sId
+                }
+                
+                if let complete = complete {
+                    complete(nil)
+                }
+            })
+        }
+        
         if notifyServer {
             let url = URL(string: Config.SERVER + HttpRequests.REMOVE_SONG)!
             
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-            
-            let data = ["url" : songId]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: data)
-            
-            URLSession.shared.dataTask(with: request) { data, response, err in
-                guard let _ = data, err == nil else {
-                    self.appError = AppError(description: err?.localizedDescription)
-                    if let completion = completion {
-                        completion(err)
+            var subscription: AnyCancellable?
+            subscription = NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId]))
+                .decode(type: Dictionary<String, String>.self, decoder: JSONDecoder())
+                .sink(receiveCompletion: { fail in
+                    switch fail {
+                    case .failure(let e):
+                        self.appError = AppError(description: e.localizedDescription)
+                        if let completion = completion {
+                            completion(e)
+                        }
+                    case .finished:
+                        break
                     }
-                    return
-                }
-                
-                lib.update(didUpdate: {
-                    self.songs.removeAll { song in
-                        song.id == songId
-                    }
-                    
-                    if let completion = completion {
-                        completion(nil)
-                    }
+                }, receiveValue: { (response) in
+                    removeSongfromLib(sId: songId, complete: completion)
+                    subscription?.cancel()
                 })
-                
-            }.resume()
         } else {
-            lib.update(didUpdate: {
-                self.songs.removeAll { song in
-                    song.id == songId
-                }
-                
-                if let completion = completion {
-                    completion(nil)
-                }
-            })
+            removeSongfromLib(sId: songId, complete: completion)
         }
     }
     
@@ -233,18 +198,16 @@ class UserLibraryViewModel: ObservableObject {
     func updateStatus(taskId: String, songId: String, tryNum: Int = 0) {
         if self.downloadProgress[songId]?.progress == 100 { return }
         
+        if self.downloadProgress[songId] == nil {
+            self.downloadProgress[songId] = TaskStatus.Status(progress: 10, description: "Downloading Song")
+        }
+        
         let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId)!
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-        
-        DispatchQueue.main.async {
-            if self.downloadProgress[songId] == nil {
-                self.downloadProgress[songId] = TaskStatus.Status(progress: 10, description: "Downloading Song")
-            }
-        }
-        
+
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 DispatchQueue.main.async {

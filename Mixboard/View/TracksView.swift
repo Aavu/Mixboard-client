@@ -21,6 +21,8 @@ struct TracksView: View {
     @EnvironmentObject var library: LibraryViewModel
     @EnvironmentObject var spotify: SpotifyViewModel
     
+    @ObservedObject var audioManager = AudioManager.shared
+    
     let labelWidth: CGFloat = 86
     
     @Binding var audioProgress: CGFloat
@@ -72,6 +74,7 @@ struct TracksView: View {
                                                         }
                                                         .simultaneousGesture(DragGesture(coordinateSpace: .global)
                                                             .onChanged({ value in
+                                                                if audioManager.isPlaying { return }
                                                                 if dragType == .None || dragType == .horizontal || dragType == .vertical {
                                                                     if value.translation.height > 0 {
                                                                         dummyRegionView = RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
@@ -88,6 +91,7 @@ struct TracksView: View {
                                                             })
                                                                              
                                                             .onEnded({ value in
+                                                                if audioManager.isPlaying { return }
                                                                 dummyRegionView = nil
                                                                 if let l = mashup.getLaneForLocation(location: value.location) {
                                                                     if l != lane {
@@ -127,20 +131,23 @@ struct TracksView: View {
                         .offset(x: (isControllingPlayHead ? playHeadProgress : audioProgress) * playHeadMultiplier)
                         .gesture(DragGesture(coordinateSpace: .local)
                             .onChanged({ value in
+                                if audioManager.isPlaying { return }
                                 isControllingPlayHead = true
                                 
                                 playHeadProgress =  min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier
                             })
-                                .onEnded({ value in
-                                    isControllingPlayHead = false
-                                    
-                                    playHeadProgress =  min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier
-                                    audioProgress = playHeadProgress
-                                })
+                            .onEnded({ value in
+                                if audioManager.isPlaying { return }
+                                isControllingPlayHead = false
+                                
+                                playHeadProgress =  min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier
+                                audioProgress = playHeadProgress
+                            })
                         )
                 }
             }
             .onTapGesture {
+                if audioManager.isPlaying { return }
                 mashup.unselectAllRegions()
             }
     }
@@ -178,6 +185,7 @@ struct LaneView: View {
 struct RegionView: View {
     
     @EnvironmentObject var mashup: MashupViewModel
+    @ObservedObject var audioManager = AudioManager.shared
     
     let song: Song?
     
@@ -216,6 +224,7 @@ struct RegionView: View {
                 SongCardView(song: song).frame(width: max(0, width - 2*pad)).background(.black)
                     .onTapGesture {
                         withAnimation {
+                            if audioManager.isPlaying { return }
                             mashup.unselectAllRegions()
                             if !isSelected {
                                 mashup.setSelected(uuid: uuid, isSelected: true)
@@ -227,7 +236,7 @@ struct RegionView: View {
                     .offset(x: start)
                     .gesture(DragGesture(minimumDistance: 5)
                         .onChanged({ value in
-                            
+                            if audioManager.isPlaying { return }
                             dragType = .horizontal
                             let tempStartX = lastStartX + value.translation.width
                             let tempEndX = lastEndX + value.translation.width
@@ -242,6 +251,7 @@ struct RegionView: View {
                         })
                              
                         .onEnded({ value in
+                            if audioManager.isPlaying { return }
                             startX[uuid] = round(start / conversion) * conversion
                             endX[uuid] = round(end / conversion) * conversion
                             withAnimation {
@@ -267,6 +277,7 @@ struct RegionView: View {
                         .offset(x: start)
                         .simultaneousGesture(DragGesture(minimumDistance: 5)
                             .onChanged({ value in
+                                if audioManager.isPlaying { return }
                                 dragType = .start
                                 let temp = max(0, lastStartX + value.translation.width)
                                 if (endX[uuid]! - temp) >= conversion {
@@ -277,6 +288,7 @@ struct RegionView: View {
                                 }
                             })
                                 .onEnded({ value in
+                                    if audioManager.isPlaying { return }
                                     startX[uuid] = round(start / conversion) * conversion
                                     withAnimation {
                                         
@@ -291,6 +303,7 @@ struct RegionView: View {
                         .offset(x: end - handleWidth - 2*pad)
                         .simultaneousGesture(DragGesture(minimumDistance: 5)
                             .onChanged({ value in
+                                if audioManager.isPlaying { return }
                                 dragType = .end
                                 let temp = min(geometry.size.width, lastEndX + value.translation.width)
                                 if (temp - startX[uuid]!) >= conversion {
@@ -301,6 +314,7 @@ struct RegionView: View {
                                 }
                             })
                                 .onEnded({ value in
+                                    if audioManager.isPlaying { return }
                                     endX[uuid] = round(end / conversion) * conversion
                                     withAnimation {
                                         

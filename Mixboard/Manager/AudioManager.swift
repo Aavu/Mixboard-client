@@ -12,7 +12,7 @@ import Combine
 class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var player: AVAudioPlayer?
     @Published var progress: Double = 0
-    @Published var isPlaying = false
+    @Published var isPlaying: Bool = false
     @Published var currentAudio: Audio?
     
     @Published var appError: AppError?
@@ -22,7 +22,6 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     static let shared = AudioManager()
     
     func play(audio: Audio) {
-        let audioFile = audio.file
         if let player {
             if currentAudio == audio {
                 player.play()
@@ -60,7 +59,14 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         player.pause()
         displayLink?.invalidate()
         updateProgress()    // Just in case the timer is invalidated before the final update
+        
         isPlaying = player.isPlaying
+    }
+    
+    func reset() {
+        stop()
+        progress = 0
+        currentAudio = nil
     }
     
     @objc func updateProgress() {
