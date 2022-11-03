@@ -156,6 +156,7 @@ class UserLibraryViewModel: ObservableObject {
                 self.songs.removeAll { song in
                     song.id == sId
                 }
+                print(sId)
                 
                 if let complete = complete {
                     complete(nil)
@@ -191,7 +192,7 @@ class UserLibraryViewModel: ObservableObject {
     func restoreFromHistory(history: History) {
         songs = [Song]()
         for song in history.userLibrary {
-            addSongFromLib(songId: song.id)
+            addSong(songId: song.id)
         }
     }
     

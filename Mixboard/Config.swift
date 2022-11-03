@@ -13,6 +13,7 @@ struct Config {
 
 struct HttpRequests {
     static let ROOT = "/"
+    static let NEW_SESSION = "/newSession"
     static let CREATE_LIB = "/createLibrary"
     static let GENERATE = "/generate"
     static let ADD_SONG = "/addSong"

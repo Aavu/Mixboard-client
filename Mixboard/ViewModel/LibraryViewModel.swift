@@ -127,12 +127,11 @@ class LibraryViewModel: ObservableObject {
         if (library.items[song.id] == nil) {
             self.library!.items[song.id] = song
             updateSongList()
-            return true
         } else {
             print("Warning: Song already in library...")
         }
         
-        return false
+        return true
     }
     
     //TODO: Content repeats with SpotifyVM getSong function. DRY!!!

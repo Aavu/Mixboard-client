@@ -43,6 +43,7 @@ struct ToolbarView: View {
                     }.padding([.all], 8)
                         .zIndex(1)
                         .opacity(userLibVM.songs.count > 0 ? 1 : 0)
+                        .opacity(audioManager.isPlaying ? 0.5 : 1)
                     
                 }.disabled(mashupVM.isGenerating || audioManager.isPlaying)
                 
@@ -93,24 +94,25 @@ struct ToolbarView: View {
                 
                 Spacer()
                 
+                let generateBtnDisabled = mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying
                 // MARK: Generate Button
                 Button {
-                    if audioManager.isPlaying { return }
+                    audioManager.reset()
                     let uuid = UUID()
                     mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
                         guard let audio = audio else { return }
                         let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
                         historyVM.current = history
                         historyVM.add(history: history)
-                        audioManager.currentAudio = audio
                     }
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : .SecondaryAccentColor).shadow(radius:  4)
+                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : generateBtnDisabled ? .NeutralColor : .SecondaryAccentColor).shadow(radius:  4)
                         Text("Generate").foregroundColor(.BgColor)
                     }.offset(y: mashupVM.isEmpty ? 100.0 : 0.0)
                         .animation(.spring(), value: mashupVM.isEmpty)
-                }.disabled(mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying)
+                        .opacity(generateBtnDisabled ? 0.5 : 1)
+                }.disabled(generateBtnDisabled)
                     .padding(.trailing, 4)
                 
                 Spacer()
@@ -126,6 +128,7 @@ struct ToolbarView: View {
                         .resizable()
                         .scaledToFit()
                         .foregroundColor(historyVM.isEmpty() ? .SecondaryBgColor : .AccentColor)
+                        .frame(width: 24)
                 }.padding()
                     .disabled(historyVM.isEmpty())
                 
@@ -141,6 +144,7 @@ struct ToolbarView: View {
                 print("No Audio file available")
                 return
             }
+            print(audio.file.absoluteString)
             audioManager.play(audio: audio)
         }
     }

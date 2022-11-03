@@ -39,6 +39,7 @@ struct SongCardView: View {
                         if geo.frame(in: .local).width > minFrameWidthForText {
                             VStack(alignment: .leading) {    // Title and subtitle
                                 StrokeText(text: title, width: 0.25, color: .black).font(.title3)
+                                StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
                                 StrokeText(text: artist, width: 0.25, color: .black).font(.body)
                             }
                             
@@ -83,6 +84,7 @@ struct UserLibSongCardView: View {
                         HStack {
                             VStack(alignment: .leading) {    // Title and subtitle
                                 StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
+                                StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
                                 StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
                             }
                             
@@ -107,10 +109,6 @@ struct UserLibSongCardView: View {
                         ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
                             StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
                         }
-                        
-//                        ProgressView(status.description, value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS))
-//                            .font(.callout)
-//                            .foregroundColor(.SecondaryAccentColor)
                     }
                 }
             }
@@ -121,7 +119,7 @@ struct UserLibSongCardView: View {
                         if let songId = song?.id {
                             userLibVM.removeSong(songId: songId) { err in
                                 userLibVM.dragOffset[songId] = nil
-                                guard err != nil else { return }
+                                if err != nil { return }
                                 mashupVM.deleteRegionsFor(songId: songId)
                             }
                         }

@@ -22,6 +22,7 @@ struct HistoryView: View {
                 Section("Active") {
                     if let history = historyVM.current {
                         Text(historyVM.getDateString(history: history))
+                            .allowsHitTesting(false)
                     } else {
                         Text("No active sessions")
                     }
@@ -29,7 +30,6 @@ struct HistoryView: View {
                 
                 Section("History") {
                     ForEach(historyVM.histories, id: \.self) { history in
-                        let _ = print(history, historyVM.current)
                         if history.id != historyVM.current?.id {
                             Text(historyVM.getDateString(history: history))
                                 .onTapGesture {

@@ -35,7 +35,6 @@
 		7AED712C28F9FF8F00336B56 /* SongSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED712B28F9FF8F00336B56 /* SongSource.swift */; };
 		7AED712E28FA201F00336B56 /* UserLibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED712D28FA201F00336B56 /* UserLibraryViewModel.swift */; };
 		7AED713028FA21CD00336B56 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED712F28FA21CC00336B56 /* Config.swift */; };
-		7AED713228FB2A1800336B56 /* DropViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713128FB2A1800336B56 /* DropViewDelegate.swift */; };
 		7AED713428FB43FA00336B56 /* Lanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713328FB43FA00336B56 /* Lanes.swift */; };
 		7AED713628FC6A0A00336B56 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713528FC6A0A00336B56 /* Region.swift */; };
 		7AED713828FC6F9000336B56 /* generateRequestExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED713728FC6F9000336B56 /* generateRequestExample.json */; };
@@ -82,7 +81,6 @@
 		7AED712B28F9FF8F00336B56 /* SongSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSource.swift; sourceTree = "<group>"; };
 		7AED712D28FA201F00336B56 /* UserLibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLibraryViewModel.swift; sourceTree = "<group>"; };
 		7AED712F28FA21CC00336B56 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		7AED713128FB2A1800336B56 /* DropViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropViewDelegate.swift; sourceTree = "<group>"; };
 		7AED713328FB43FA00336B56 /* Lanes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lanes.swift; sourceTree = "<group>"; };
 		7AED713528FC6A0A00336B56 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
 		7AED713728FC6F9000336B56 /* generateRequestExample.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = generateRequestExample.json; sourceTree = "<group>"; };
@@ -196,7 +194,6 @@
 				7A25ED0A28F8E65600B2396A /* ImageViewModel.swift */,
 				7AED711E28F99D1300336B56 /* LibraryViewModel.swift */,
 				7AED712D28FA201F00336B56 /* UserLibraryViewModel.swift */,
-				7AED713128FB2A1800336B56 /* DropViewDelegate.swift */,
 				7AED713928FC6FD900336B56 /* MashupViewModel.swift */,
 				7AED714F28FF4B2C00336B56 /* HistoryViewModel.swift */,
 			);
@@ -320,7 +317,6 @@
 				7A25ED0728F8A41F00B2396A /* Extensions.swift in Sources */,
 				7A25ED0528F8A27700B2396A /* SpotifyViewModel.swift in Sources */,
 				7A25ECFA28F84EC500B2396A /* Library.swift in Sources */,
-				7AED713228FB2A1800336B56 /* DropViewDelegate.swift in Sources */,
 				7A25ECF428F83FD800B2396A /* TracksView.swift in Sources */,
 				7AED714E28FF4A6C00336B56 /* History.swift in Sources */,
 				7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */,
@@ -455,7 +451,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 35A3E26LB3;
 				ENABLE_PREVIEWS = YES;
@@ -475,7 +471,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.techitunes.Mixboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -490,7 +486,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 35A3E26LB3;
 				ENABLE_PREVIEWS = YES;
@@ -510,7 +506,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.techitunes.Mixboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

@@ -45,7 +45,7 @@ class MashupViewModel: ObservableObject {
         for lane in Lane.allCases {
             layoutInfo.lane[lane.rawValue] = Layout.Track()
         }
-        self.createLibrary()
+        self.createNewSession()
         self.addSubscriber()
         LuckyMeManager.instance.loadTemplateFile()
     }
@@ -59,7 +59,7 @@ class MashupViewModel: ObservableObject {
         }
     }
     
-    func createLibrary() {
+    func createNewSession() {
         guard let url = URL(string: Config.SERVER + HttpRequests.ROOT) else {
             self.appError = AppError(description: "Url invalid")
             return
@@ -91,6 +91,7 @@ class MashupViewModel: ObservableObject {
             }
         }
         AudioManager.shared.reset()
+        readyToPlay = false
         isEmpty = true
     }
     
@@ -131,6 +132,7 @@ class MashupViewModel: ObservableObject {
         isEmpty = false
         updateLastBeat()
         setSelected(uuid: region.id, isSelected: false)
+        readyToPlay = false
     }
     
     func setSelected(uuid: UUID, isSelected: Bool) {
@@ -160,6 +162,7 @@ class MashupViewModel: ObservableObject {
                     layoutInfo.lane[lane.rawValue]!.layout.remove(at: idx)
                     isEmpty = isCanvasEmpty()
                     updateLastBeat()
+                    readyToPlay = false
                     return
                 }
             }
@@ -171,6 +174,12 @@ class MashupViewModel: ObservableObject {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for (idx, region) in lanes.layout.enumerated() {
                     if region.id == id {
+                        if layoutInfo.lane[lane.rawValue]!.layout[idx].x != x
+                            ||
+                            layoutInfo.lane[lane.rawValue]!.layout[idx].w != length {
+                            print("ready to play: \(readyToPlay)")
+                            readyToPlay = false
+                        }
                         layoutInfo.lane[lane.rawValue]!.layout[idx].x = x
                         layoutInfo.lane[lane.rawValue]!.layout[idx].w = length
                         updateLastBeat()
@@ -190,6 +199,7 @@ class MashupViewModel: ObservableObject {
                     updateLastBeat()
                     isEmpty = false
                     setSelected(uuid: region.id, isSelected: false)
+                    readyToPlay = false
                     return
                 }
             }
@@ -202,6 +212,7 @@ class MashupViewModel: ObservableObject {
                 for region in regions {
                     if region.item.id == songId {
                         removeRegion(lane: lane, id: region.id)
+                        readyToPlay = false
                     }
                 }
             }
@@ -249,6 +260,7 @@ class MashupViewModel: ObservableObject {
                 updateRegions(lane: lane, regions: lanes.layout)
             }
         }
+        readyToPlay = true
     }
     
     func surpriseMe(songs: [Song]) {
@@ -328,7 +340,7 @@ class MashupViewModel: ObservableObject {
                                     if let audio = self.mashupAudio {
                                         self.timer = nil
                                         self.isGenerating = false
-                                        
+                                        self.readyToPlay = true
                                         guard let onCompletion = onCompletion else { return }
                                         onCompletion(audio, self.layoutInfo)
                                     }
@@ -380,7 +392,6 @@ class MashupViewModel: ObservableObject {
                 
                 DispatchQueue.main.async {
                     self.generationProgress = result.task_result
-                    print(self.generationProgress)
                     self.updateStatus(taskId: taskId)  //  Recursive call
                 }
             } catch let e {
@@ -427,6 +438,7 @@ class MashupViewModel: ObservableObject {
                     DispatchQueue.main.async {
                         self.tempo = result.task_result.tempo
                         self.mashupAudio = Audio(file: tempFile)
+                        AudioManager.shared.currentAudio = self.mashupAudio
                         self.generationTaskId = nil
                         self.readyToPlay = true
                         

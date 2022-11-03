@@ -22,7 +22,6 @@ struct UserLibraryView: View {
     
     let cardWidth: CGFloat
     
-//    @State var dragOffset = Dictionary<String, CGSize>()
     @State var dragLocation = Dictionary<String, CGPoint>()
     
     @State var isDragging = Dictionary<String, Bool>()
@@ -50,7 +49,6 @@ struct UserLibraryView: View {
                                 .environmentObject(userLib)
                                 .gesture(DragGesture(coordinateSpace: .global)
                                     .onChanged({ value in
-                                        if audioManager.isPlaying { return }
                                         dragLocation[song.id] = value.location
                                         isDragging[song.id] = true
                                         let lane = mashup.getLaneForLocation(location: dragLocation[song.id]!)
@@ -74,7 +72,6 @@ struct UserLibraryView: View {
                                     })
                                          
                                     .onEnded({ value in
-                                        if audioManager.isPlaying { return }
                                         isDragging[song.id] = false
                                         
                                         if value.predictedEndLocation.x < 0 {
@@ -93,8 +90,9 @@ struct UserLibraryView: View {
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                                                     userLib.removeSong(songId: song.id) { err in
                                                         userLib.dragOffset[song.id] = nil
-                                                        guard err != nil else { return }
+                                                        if err != nil { return }
                                                         mashup.deleteRegionsFor(songId: song.id)
+                                                        mashup.readyToPlay = false
                                                     }
                                                 }
                                             }
@@ -108,6 +106,7 @@ struct UserLibraryView: View {
                                                     dragLocation[song.id]? = .zero
                                                     if success {
                                                         userLib.dragOffset[song.id] = .zero
+                                                        mashup.readyToPlay = false
                                                     }
                                                 }
                                             }
@@ -124,7 +123,6 @@ struct UserLibraryView: View {
                                 )
                                 .simultaneousGesture(TapGesture()
                                     .onEnded({ value in
-                                        if audioManager.isPlaying { return }
                                         withAnimation {
                                             mashup.isFocuingSongs.toggle()
                                         }
@@ -162,6 +160,7 @@ struct UserLibraryView: View {
             .padding([.top, .bottom], 16)
         }.sheet(isPresented: $isPresented) {
             LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
+                mashup.readyToPlay = false
                 userLib.addSongs(songIds: results)
             }
         }
@@ -169,7 +168,6 @@ struct UserLibraryView: View {
             userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
         }
         .onTapGesture {
-            if audioManager.isPlaying { return }
             withAnimation {
                 mashup.isFocuingSongs = false
                 userLib.isSelected.removeAll()

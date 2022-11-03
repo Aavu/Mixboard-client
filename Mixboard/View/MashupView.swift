@@ -32,7 +32,8 @@ struct MashupView: View {
                     UserLibraryView(numSongs: 4, presentHistoryView: $presentHistoryView, cardWidth: mashupVM.userLibCardWidth)
                         .zIndex(2)
                         .blur(radius: presentHistoryView ? 2:0)
-
+                        .allowsHitTesting(!(audioManager.isPlaying || presentHistoryView))
+                    
                     ZStack {
                         VStack {
                             Spacer()
@@ -56,6 +57,8 @@ struct MashupView: View {
                             }
                     }.blur(radius: presentHistoryView ? 2:0)
                         .padding([.horizontal], 4)
+                        .allowsHitTesting(!(mashupVM.isFocuingSongs || presentHistoryView))
+                    
                     
                     
                     if presentHistoryView {
@@ -63,7 +66,7 @@ struct MashupView: View {
                             if success {
                                 audioManager.stop()
                                 playHeadProgress = 0
-                                
+                                mashupVM.readyToPlay = true
                                 withAnimation {
                                     presentHistoryView = false
                                 }
@@ -78,6 +81,7 @@ struct MashupView: View {
                 .disabled(mashupVM.isGenerating)
                 .blur(radius: mashupVM.isGenerating ? 8: 0)
                 .overlay(mashupVM.isGenerating ? .black.opacity(0.5) : .clear)
+                .allowsHitTesting(!mashupVM.isGenerating)
                 .environmentObject(libViewModel)
                 .environmentObject(userLibVM)
                 .environmentObject(mashupVM)

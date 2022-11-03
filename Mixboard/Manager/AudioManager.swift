@@ -67,6 +67,7 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         stop()
         progress = 0
         currentAudio = nil
+        player = nil
     }
     
     @objc func updateProgress() {
