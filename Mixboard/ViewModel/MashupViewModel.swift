@@ -10,7 +10,7 @@ import Combine
 
 class MashupViewModel: ObservableObject {
     @Published var canDisplayLibrary = false
-    
+    @Published var appFailed = false
     @Published var layoutInfo = Layout()
     @Published var isGenerating = false
     @Published var isEmpty = true
@@ -300,11 +300,6 @@ class MashupViewModel: ObservableObject {
         
         request.httpBody = try? JSONEncoder().encode(self.layoutInfo.lane)
         
-//        if let body = request.httpBody {
-//            let out = try? JSONSerialization.jsonObject(with: body)
-//            print(out as Any)
-//        }
-        
         isGenerating = true
         
         URLSession.shared.dataTask(with: request) { data, response, err in
@@ -370,7 +365,6 @@ class MashupViewModel: ObservableObject {
             
             do {
                 let resp = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! Dictionary<String, Any>
-                print(resp)
                 if resp["requestStatus"] as! String == RequestStatus.Pending.rawValue {
                     DispatchQueue.main.async {
                         self.updateStatus(taskId: taskId)  //  Recursive call

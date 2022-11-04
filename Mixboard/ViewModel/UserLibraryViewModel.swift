@@ -180,11 +180,14 @@ class UserLibraryViewModel: ObservableObject {
         guard let lib = self.lib else { return }
         
         func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
-            lib.update(didUpdate: {
+            lib.update(didUpdate: { err in
+                if err == nil {
+                    self.appError = AppError(description: err?.localizedDescription)
+                    return
+                }
                 self.songs.removeAll { song in
                     song.id == sId
                 }
-                print(sId)
                 
                 if let complete = complete {
                     complete(nil)
@@ -258,7 +261,6 @@ class UserLibraryViewModel: ObservableObject {
             
             do {
                 let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, Any>
-                print(resp)
                 if let stat = RequestStatus(rawValue: resp["requestStatus"] as! String) {
                     switch stat {
                     case .Progress:
@@ -283,7 +285,11 @@ class UserLibraryViewModel: ObservableObject {
                         }
                         
                         if let lib = self.lib {
-                            lib.update(didUpdate: {
+                            lib.update(didUpdate: { err in
+                                if err == nil {
+                                    self.appError = AppError(description: err?.localizedDescription)
+                                    return
+                                }
                                 if let song = lib.getSong(songId: songId) {
                                     self.replaceDummy(song: song)
                                 }

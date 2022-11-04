@@ -25,6 +25,7 @@ class SpotifyViewModel: ObservableObject {
         $searchText
             .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
             .sink { [weak self] txt in
+                if txt.isEmpty { return }
                 if self?.credentials == nil {
                     self?.getCredentials(callback: { credentials in
                         self?.searchSpotify(txt: txt, credentials: credentials)

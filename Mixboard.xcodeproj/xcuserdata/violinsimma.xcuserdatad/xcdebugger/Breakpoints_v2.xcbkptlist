@@ -3,4 +3,54 @@
    uuid = "B76DF3DC-099D-4B3A-AAAE-E4D1B44FBA33"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5F715C28-BAD5-4AE5-A69E-B6A627747537"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Mixboard/Manager/NetworkManager.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "62"
+            endingLineNumber = "62"
+            landmarkName = "handleCompletion(completion:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "5F715C28-BAD5-4AE5-A69E-B6A627747537 - cbd2eaeeb59f98f2"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "static Mixboard.NetworkManager.handleCompletion(completion: Combine.Subscribers.Completion&lt;Swift.Error&gt;) -&gt; ()"
+                  moduleName = "Mixboard"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/violinsimma/Documents/Xcode%20Projects/Mixboard/Mixboard/Manager/NetworkManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "62"
+                  endingLineNumber = "62"
+                  offsetFromSymbolStart = "124">
+               </Location>
+               <Location
+                  uuid = "5F715C28-BAD5-4AE5-A69E-B6A627747537 - cbd2eaeeb59f98f2"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "static Mixboard.NetworkManager.handleCompletion(completion: Combine.Subscribers.Completion&lt;Swift.Error&gt;) -&gt; ()"
+                  moduleName = "Mixboard"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/violinsimma/Documents/Xcode%20Projects/Mixboard/Mixboard/Manager/NetworkManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "62"
+                  endingLineNumber = "62"
+                  offsetFromSymbolStart = "200">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

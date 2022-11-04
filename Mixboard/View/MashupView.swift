@@ -123,6 +123,17 @@ struct MashupView: View {
                 }
             })
             .onAppear {
+                libViewModel.update(didUpdate: { err in
+                    if let err = err {
+                        if err._code == -1011 {
+                            mashupVM.appError = AppError(description: "Server not responding. Please try again later")
+                            mashupVM.appFailed = true
+                        } else {
+                            mashupVM.appError = AppError(description: err.localizedDescription)
+                        }
+                        
+                    }
+                })
                 mashupVM.userLibCardWidth = geo.size.width * 0.20
             }
             .onChange(of: geo.size) { newValue in

@@ -144,7 +144,6 @@ struct ToolbarView: View {
                 print("No Audio file available")
                 return
             }
-            print(audio.file.absoluteString)
             audioManager.play(audio: audio)
         }
     }

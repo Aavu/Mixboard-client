@@ -59,7 +59,7 @@ class NetworkManager {
         case .finished:
             break
         case .failure(let e):
-            print(e)
+            print("completion failed: \(e)")
         }
     }
     

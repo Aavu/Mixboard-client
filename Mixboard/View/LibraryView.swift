@@ -36,121 +36,123 @@ struct LibraryView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            TabBarView(isPresented: $isPresented, selectedSongId: $selectedSongId, searchText: selectedTab == 0 ? $libraryVM.searchText : $spotifyVM.searchText, handleDoneBtn: handleDoneBtn) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 32).fill(Color.SecondaryBgColor).shadow(radius: 4).padding(4)
+        ZStack {
+            Color.BgColor
+            VStack(spacing: 0) {
+                TabBarView(isPresented: $isPresented, selectedSongId: $selectedSongId, searchText: selectedTab == 0 ? $libraryVM.searchText : $spotifyVM.searchText, handleDoneBtn: handleDoneBtn) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 32).fill(Color.SecondaryBgColor).shadow(radius: 4).padding(4)
+                        HStack(spacing: 0) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 32).foregroundColor(.BgColor).frame(width: 120).padding(8)
+                                    .offset(x: selectedTab == 0 ? -60 : 60)
+                                
+                                HStack(spacing: 32) {
+                                    Button {
+                                        withAnimation {
+                                            selectedTab = 0
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Image("MusicLib").renderingMode(.template).resizable().scaledToFit().padding(.vertical, 14)
+                                            Text("Library")
+                                        }
+                                    }
+                                    
+                                    Button {
+                                        withAnimation {
+                                            selectedTab = 1
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Image("Spotify").renderingMode(.original).resizable().scaledToFit().padding(.vertical, 14)
+                                            Text("Spotify")
+                                        }
+                                    }
+                                }
+                            }
+                            ZStack {
+                                
+                            }
+                        }
+                    }
+                    .frame(width: 256)
+                    
+                }.frame(height: 100)
+                
+                if selectedSongId.count > 0 {
+                    SelectionView(selectedSongs: $selectedSongId)
+                        .frame(height: 32)
+                        .padding([.bottom, .horizontal], 8)
+                        .animation(.spring(), value: selectedSongId.count > 0)
+                        .transition(.move(edge: SwiftUI.Edge.bottom))
+                }
+                
+                GeometryReader { geo in
                     HStack(spacing: 0) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 32).foregroundColor(.BgColor).frame(width: 120).padding(8)
-                                .offset(x: selectedTab == 0 ? -60 : 60)
-                             
-                            HStack(spacing: 32) {
-                                Button {
-                                    withAnimation {
-                                        selectedTab = 0
+                        LibContentView {
+                            ForEach(libraryVM.songs, id: \.self) { song in
+                                SongCardView(song: song).frame(height: 100)
+                                    .cornerRadius(8)
+                                    .border((selectedSongId[song.id] != nil) ? Color.NeutralColor: .clear, width: 4)
+                                    .overlay((freezeSelection && selectedSongId[song.id] == nil) ? .gray.opacity(0.75) : .clear)
+                                    .blur(radius: (freezeSelection && selectedSongId[song.id] == nil) ? 2 : 0)
+                                    .onTapGesture {
+                                        handleTapGesture(id: song.id, songSource: .Library)
                                     }
-                                } label: {
-                                    HStack {
-                                        Image("MusicLib").renderingMode(.template).resizable().scaledToFit().padding(.vertical, 14)
-                                        Text("Library")
+                            }
+                        }
+                        .frame(width: geo.frame(in: .global).width)
+                        .opacity(selectedTab == 0 ? 1 : 0)
+                        .onAppear {
+                            libraryVM.filterUserLibSongs(songs: userLibSongs)
+                        }
+                        .animation(.spring(), value: selectedSongId.count > 0)
+                        .transition(.move(edge: .bottom))
+                        
+                        LibContentView {
+                            ForEach(spotifyVM.songs, id: \.self) { song in
+                                SongCardView(spotifySong: song).frame(height: 100)
+                                    .cornerRadius(8)
+                                    .border((selectedSongId[song.id] != nil) ? Color.NeutralColor: .clear, width: 4)
+                                    .overlay((freezeSelection && selectedSongId[song.id] == nil) ? .gray.opacity(0.75) : .clear)
+                                    .blur(radius: (freezeSelection && selectedSongId[song.id] == nil) ? 2 : 0)
+                                    .onTapGesture {
+                                        handleTapGesture(id: song.id, songSource: .Spotify)
                                     }
+                            }
+                        }
+                        .frame(width: geo.frame(in: .global).width)
+                        .opacity(selectedTab == 1 ? 1 : 0)
+                        .animation(.spring(), value: selectedSongId.count > 0)
+                        .transition(.move(edge: .bottom))
+                    }
+                    .offset(x: (selectedTab == 0 ? 0: -geo.frame(in: .global).width) + draggingOffsetWidth)
+                    .gesture(DragGesture()
+                        .onEnded({ value in
+                            withAnimation(.spring()) {
+                                if value.predictedEndTranslation.width < 0 {
+                                    selectedTab = 1
                                 }
                                 
-                                Button {
-                                    withAnimation {
-                                        selectedTab = 1
-                                    }
-                                } label: {
-                                    HStack {
-                                        Image("Spotify").renderingMode(.original).resizable().scaledToFit().padding(.vertical, 14)
-                                        Text("Spotify")
-                                    }
+                                else if value.predictedEndTranslation.width > geo.frame(in: .global).width {
+                                    selectedTab = 0
                                 }
-                            }
-                        }
-                        ZStack {
-                            
-                        }
-                    }
-                }
-                .frame(width: 256)
-            
-            }.frame(height: 100)
-            
-            if selectedSongId.count > 0 {
-                SelectionView(selectedSongs: $selectedSongId)
-                    .frame(height: 32)
-                    .padding([.horizontal], 8)
-                    .padding(.bottom, 16)
-                    .animation(.spring(), value: selectedSongId.count > 0)
-                    .transition(.move(edge: SwiftUI.Edge.bottom))
-            }
-            
-            GeometryReader { geo in
-                HStack(spacing: 0) {
-                    LibContentView {
-                        ForEach(libraryVM.songs, id: \.self) { song in
-                            SongCardView(song: song).frame(height: 100)
-                                .cornerRadius(8)
-                                .border((selectedSongId[song.id] != nil) ? Color.NeutralColor: .clear, width: 4)
-                                .overlay((freezeSelection && selectedSongId[song.id] == nil) ? .gray.opacity(0.75) : .clear)
-                                .blur(radius: (freezeSelection && selectedSongId[song.id] == nil) ? 2 : 0)
-                                .onTapGesture {
-                                    handleTapGesture(id: song.id, songSource: .Library)
-                                }
-                        }
-                    }
-                    .frame(width: geo.frame(in: .global).width)
-                    .opacity(selectedTab == 0 ? 1 : 0)
-                    .onAppear {
-                        libraryVM.filterUserLibSongs(songs: userLibSongs)
-                    }
-                    .animation(.spring(), value: selectedSongId.count > 0)
-                    .transition(.move(edge: .bottom))
-                    
-                    LibContentView {
-                        ForEach(spotifyVM.songs, id: \.self) { song in
-                            SongCardView(spotifySong: song).frame(height: 100)
-                                .cornerRadius(8)
-                                .border((selectedSongId[song.id] != nil) ? Color.NeutralColor: .clear, width: 4)
-                                .overlay((freezeSelection && selectedSongId[song.id] == nil) ? .gray.opacity(0.75) : .clear)
-                                .blur(radius: (freezeSelection && selectedSongId[song.id] == nil) ? 2 : 0)
-                                .onTapGesture {
-                                    handleTapGesture(id: song.id, songSource: .Spotify)
-                                }
-                        }
-                    }
-                    .frame(width: geo.frame(in: .global).width)
-                    .opacity(selectedTab == 1 ? 1 : 0)
-                    .animation(.spring(), value: selectedSongId.count > 0)
-                    .transition(.move(edge: .bottom))
-                }
-                .offset(x: (selectedTab == 0 ? 0: -geo.frame(in: .global).width) + draggingOffsetWidth)
-                .gesture(DragGesture()
-                    .onEnded({ value in
-                        withAnimation(.spring()) {
-                            if value.predictedEndTranslation.width < 0 {
-                                selectedTab = 1
                             }
                             
-                            else if value.predictedEndTranslation.width > geo.frame(in: .global).width {
-                                selectedTab = 0
-                            }
-                        }
-                        
-                        draggingOffsetWidth = 0
-                    })
-                )
+                            draggingOffsetWidth = 0
+                        })
+                    )
+                }
             }
-        }
-        .onAppear {
-            spotifyVM.getRecommendations(numTracks: 20)
-        }
-        .onChange(of: selectedSongId) { newValue in
-            withAnimation {
-                freezeSelection = (selectedSongId.count + userLibSongs.count) >= 4
-                inSelectionMode = !selectedSongId.isEmpty
+            .onAppear {
+                spotifyVM.getRecommendations(numTracks: 20)
+            }
+            .onChange(of: selectedSongId) { newValue in
+                withAnimation {
+                    freezeSelection = (selectedSongId.count + userLibSongs.count) >= 4
+                    inSelectionMode = !selectedSongId.isEmpty
+                }
             }
         }
     }
@@ -192,43 +194,41 @@ struct SelectionView: View {
             
             RoundedRectangle(cornerRadius: 4).fill(Color.BgColor).shadow(radius: 4)
             HStack {
-                HStack {
-                    GeometryReader { geo in
-                        HStack {
-                            ForEach(libSongs, id: \.self.id) { song in
-                                SongCardView(song: song)
-                                    .frame(minWidth: 100)
-                                    .frame(width: geo.size.width / 4)
-                                    .cornerRadius(4)
-                                    .onTapGesture {
-                                        selectedSongs.removeValue(forKey: song.id)
-                                    }
-                            }
-                            
-                            ForEach(spotifySongs, id: \.self.id) { song in
-                                SongCardView(spotifySong: song)
-                                    .frame(minWidth: 100)
-                                    .frame(width: geo.size.width / 4)
-                                    .cornerRadius(4)
-                                    .onTapGesture {
-                                        selectedSongs.removeValue(forKey: song.id)
-                                    }
-                            }
+                GeometryReader { geo in
+                    HStack {
+                        ForEach(libSongs, id: \.self.id) { song in
+                            SongCardView(song: song)
+                                .frame(minWidth: 100)
+                                .frame(width: geo.size.width / 4)
+                                .cornerRadius(4)
+                                .onTapGesture {
+                                    selectedSongs.removeValue(forKey: song.id)
+                                }
+                        }
+                        
+                        ForEach(spotifySongs, id: \.self.id) { song in
+                            SongCardView(spotifySong: song)
+                                .frame(minWidth: 100)
+                                .frame(width: geo.size.width / 4)
+                                .cornerRadius(4)
+                                .onTapGesture {
+                                    selectedSongs.removeValue(forKey: song.id)
+                                }
                         }
                     }
-                    
-                    Spacer(minLength: 32)
-                    
-                    Button {
-                        selectedSongs = [:]
-                    } label: {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8).foregroundColor(.BgColor).shadow(radius: 4)
-                            Text("Clear").foregroundColor(.red)
-                        }.frame(width: 64)
-                    }
-                    
                 }
+                
+                Spacer(minLength: 32)
+                
+                Button {
+                    selectedSongs = [:]
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8).foregroundColor(.BgColor).shadow(radius: 4)
+                        Text("Clear").foregroundColor(.red)
+                    }.frame(width: 64)
+                }
+                
             }
         }
         .onAppear {
@@ -248,7 +248,6 @@ struct SelectionView: View {
             case .Spotify:
                 spotifyVM.getSpotifySong(songId: songId) { spotifyTrack in
                     if let song = spotifyTrack {
-                        print(song.id)
                         spotifySongs.append(song)
                     }
                 }
@@ -258,7 +257,6 @@ struct SelectionView: View {
                 }
             }
         }
-        print(selectedSongs.keys)
     }
 }
 

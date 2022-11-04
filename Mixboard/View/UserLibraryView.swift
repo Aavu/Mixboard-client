@@ -161,27 +161,28 @@ struct UserLibraryView: View {
                                 }
                         }
                 }
-                
-                
-                if mashup.canDisplayLibrary {
-                    Spacer()
-                    if userLib.songs.count < numSongs {
-                        Button {
-                            withAnimation {
-                                presentHistoryView = false
-                            }
-                            
-                            isPresented.toggle()
-                        } label: {
-                            VStack {
-                                Image(systemName: "plus.circle").foregroundColor(.AccentColor).padding(.all, 4).font(.title)
-                                Text("Add Songs").foregroundColor(.AccentColor).font(.subheadline)
+
+                if !mashup.appFailed {
+                    if mashup.canDisplayLibrary {
+                        Spacer()
+                        if userLib.songs.count < numSongs {
+                            Button {
+                                withAnimation {
+                                    presentHistoryView = false
+                                }
+                                
+                                isPresented.toggle()
+                            } label: {
+                                VStack {
+                                    Image(systemName: "plus.circle").foregroundColor(.AccentColor).padding(.all, 4).font(.title)
+                                    Text("Add Songs").foregroundColor(.AccentColor).font(.subheadline)
+                                }
                             }
                         }
-                    }
-                } else {
-                    ProgressView {
-                        Text("Preparing App")
+                    } else {
+                        ProgressView {
+                            Text("Preparing App")
+                        }
                     }
                 }
             }
