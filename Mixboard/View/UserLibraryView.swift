@@ -26,14 +26,43 @@ struct UserLibraryView: View {
     
     @State var isDragging = Dictionary<String, Bool>()
     
+    @State var removingSong = false
+    
     var body: some View {
         let ExpandedCardWidth: CGFloat = cardWidth + 120
+        
             ZStack {
                 RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
                     .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
                     .ignoresSafeArea(edges: [.vertical])
                 
                 VStack {
+                    if userLib.songs.count > 0 {
+                        Button {
+                            handleRemoveAllSongs()
+                        } label: {
+                            ZStack {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 4).frame(height: 36)
+                                        .foregroundColor(.BgColor)
+                                        .shadow(radius:  4)
+                                    Text("Remove all Songs").foregroundColor(.red)
+                                }
+                                .opacity(removingSong || userLib.downloadingSong ? 0.5: 1)
+                                
+                                if removingSong {
+                                    ProgressView()
+                                }
+                            }
+                            .frame(width:cardWidth)
+                            .padding([.all], 8)
+                        }
+                        .animation(.spring(), value: userLib.songs.count > 0)
+                        .transition(.move(edge: .top))
+                        .allowsHitTesting(!(removingSong || userLib.downloadingSong))
+                    }
+
+                    
                     ForEach(userLib.songs, id: \.self) { song in
                         ZStack {
                             if userLib.dragOffset[song.id]?.width ?? 0 > 0 {
@@ -45,7 +74,6 @@ struct UserLibraryView: View {
                                 .frame(width: (isDragging[song.id] ?? false) ? (8 * (mashup.tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)) : mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
                                 .frame(maxHeight: (isDragging[song.id] ?? false) ? mashup.tracksViewSize.height / 4 : nil)
                                 .offset(userLib.dragOffset[song.id] ?? .zero)
-                            
                                 .environmentObject(userLib)
                                 .gesture(DragGesture(coordinateSpace: .global)
                                     .onChanged({ value in
@@ -174,6 +202,31 @@ struct UserLibraryView: View {
             }
         }
         
+    }
+
+    func handleRemoveAllSongs() {
+        removingSong = true
+        
+        let numSongs = userLib.songs.count
+        var removeCount = 0
+        for song in userLib.songs {
+            userLib.removeSong(songId: song.id) { err in
+                if let err = err {
+                    print("error removing song. \(err)")
+                    removingSong = false
+                }
+                
+                mashup.deleteRegionsFor(songId: song.id)
+                
+                removeCount += 1
+                
+                if removeCount == numSongs {
+                    removingSong = false
+                    mashup.isEmpty = true
+                }
+            }
+
+        }
     }
 }
 

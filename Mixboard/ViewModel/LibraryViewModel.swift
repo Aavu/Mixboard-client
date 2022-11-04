@@ -127,9 +127,10 @@ class LibraryViewModel: ObservableObject {
         if (library.items[song.id] == nil) {
             self.library!.items[song.id] = song
             updateSongList()
-        } else {
-            print("Warning: Song already in library...")
         }
+//        else {
+//            print("Warning: Song already in library...")
+//        }
         
         return true
     }

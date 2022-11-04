@@ -174,10 +174,7 @@ class MashupViewModel: ObservableObject {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for (idx, region) in lanes.layout.enumerated() {
                     if region.id == id {
-                        if layoutInfo.lane[lane.rawValue]!.layout[idx].x != x
-                            ||
-                            layoutInfo.lane[lane.rawValue]!.layout[idx].w != length {
-                            print("ready to play: \(readyToPlay)")
+                        if region.x != x || region.w != length {
                             readyToPlay = false
                         }
                         layoutInfo.lane[lane.rawValue]!.layout[idx].x = x

@@ -11,7 +11,7 @@ struct SongCardView: View {
     var spotifySong: Spotify.Track?
     var song: Song?
     
-    let minFrameWidthForText: CGFloat = 120
+    let minFrameWidthForText: CGFloat = 100
     
     @ObservedObject var imageVM: ImageViewModel
     
@@ -28,26 +28,29 @@ struct SongCardView: View {
     var body: some View {
         let title = song?.name ?? spotifySong?.name ?? "Song"
         let artist = song?.artist ?? spotifySong?.artists[0].name ?? "Artist"
-        let padding: CGFloat = 8
         ZStack(alignment: .top) {
             Rectangle()
                 .fill(imageVM.averageColor)
                 .shadow(radius: 4)
             ZStack {
                 GeometryReader { geo in
+                    let padding: CGFloat = geo.size.height > 32 ? 8 : 4
                     HStack {
-                        if geo.frame(in: .local).width > minFrameWidthForText {
+                        if geo.frame(in: .local).width >= minFrameWidthForText {
                             VStack(alignment: .leading) {    // Title and subtitle
-                                StrokeText(text: title, width: 0.25, color: .black).font(.title3)
-                                StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
-                                StrokeText(text: artist, width: 0.25, color: .black).font(.body)
+                                StrokeText(text: title, width: 0.25, color: .black).font(geo.size.height > 32 && geo.size.width >= 150 ? .title3 : .callout)
+                                if geo.size.height >= 72 && geo.size.width >= 100 {
+                                    StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
+                                    StrokeText(text: artist, width: 0.25, color: .black).font(.body)
+                                }
                             }
                             
                             Spacer()
                         }
                         ImageView(image: $imageVM.image)
                             .frame(height: max(0, geo.frame(in: .local).height - (padding * 2)))
-                    }.padding([.all], padding)
+                    }
+                    .padding([.all], padding)
                 }
             }
         }
@@ -184,6 +187,6 @@ struct StrokeText: View {
 
 struct SongCardView_Previews: PreviewProvider {
     static var previews: some View {
-        UserLibSongCardView(song: nil).frame(width: 300, height: 300)
+        SongCardView(song: nil).frame(width: 100, height: 32)
     }
 }

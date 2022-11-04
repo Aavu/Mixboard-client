@@ -10,7 +10,7 @@ import SwiftUI
 struct MashupView: View {
     @StateObject var libViewModel = LibraryViewModel()
     @StateObject var userLibVM = UserLibraryViewModel()
-    @StateObject var spotifyVM = SpotifyViewModel(numTracks: 20)
+    @StateObject var spotifyVM = SpotifyViewModel()
     @StateObject var mashupVM = MashupViewModel()
     @StateObject var audioManager = AudioManager.shared
     

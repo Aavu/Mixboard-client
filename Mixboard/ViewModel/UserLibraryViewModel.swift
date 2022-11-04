@@ -11,6 +11,7 @@ import Combine
 class UserLibraryViewModel: ObservableObject {
     @Published var songs = [Song]()
     @Published var downloadProgress = Dictionary<String, TaskStatus.Status>()
+    @Published var downloadingSong = false
     private var downloadFailure = false
     @Published var isSelected = Dictionary<String, Bool>()
     @Published var silenceOverlayText = Dictionary<String, String>()
@@ -48,9 +49,20 @@ class UserLibraryViewModel: ObservableObject {
         return lib?.getSong(songId: songId) != nil
     }
     
-    func addSongs(songIds: [String]) {
-        for id in songIds {
-            addSong(songId: id)
+    func addSongs(songIds: [String: SongSource]) {
+        
+        // First add local songs
+        for (id, src) in songIds {
+            if src == .Library {
+                addSong(songId: id)
+            }
+        }
+        
+        // Then add spotify songs
+        for (id, src) in songIds {
+            if src == .Spotify {
+                addSong(songId: id)
+            }
         }
     }
     
@@ -65,25 +77,41 @@ class UserLibraryViewModel: ObservableObject {
         }
         
         let url = URL(string: Config.SERVER + HttpRequests.ADD_SONG)!
-        
+        downloadingSong = true
         var subscription: AnyCancellable?
         subscription = NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId]))
             .decode(type: Dictionary<String, String>.self, decoder: JSONDecoder())
             .sink(receiveCompletion: NetworkManager.handleCompletion) {[weak self] (response) in
-                if let song = self?.spotifyVM?.getSpotifySong(songId: songId) {
-                    if lib.addSong(spotifySong: song) {
+                self?.spotifyVM?.getSpotifySong(songId: songId, completion: { spotifyTrack in
+                    guard let spotifyTrack = spotifyTrack else {
+                        print("spotify track empty for id : \(songId)")
+                        return
+                    }
+                    if lib.addSong(spotifySong: spotifyTrack) {
                         self?.addSongFromLib(songId: songId)
                     } else {
-                        self?.appError = AppError(description: "Error adding \(song.name) to library")
+                        self?.appError = AppError(description: "Error adding \(spotifyTrack.name) to library")
                     }
-                }
+                })
                 
                 guard let taskId = response["task_id"] else { return }
                 self?.updateStatus(taskId: taskId, songId: songId)
+                
                 subscription?.cancel()
             }
         
         addSongFromLib(songId: songId)
+    }
+    
+    func setIsDownloading() {
+        for (_, status) in downloadProgress {
+            if status.progress != 100 {
+                downloadingSong = true
+                return
+            }
+        }
+        
+        downloadingSong = false
     }
     
     func addSongFromLib(songId: String) {
@@ -200,7 +228,7 @@ class UserLibraryViewModel: ObservableObject {
         if self.downloadProgress[songId]?.progress == 100 { return }
         
         if self.downloadProgress[songId] == nil {
-            self.downloadProgress[songId] = TaskStatus.Status(progress: 10, description: "Downloading Song")
+            self.downloadProgress[songId] = TaskStatus.Status(progress: 10, description: "Waiting in queue")
         }
         
         let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId)!
@@ -211,15 +239,26 @@ class UserLibraryViewModel: ObservableObject {
 
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
+                if let err = err {
+                    if err._code == -1001 {
+                        if tryNum < 100 {
+                            print("Request timeout: trying again...")
+                            self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)
+                            return
+                        }
+                    }
+                }
                 DispatchQueue.main.async {
                     self.appError = AppError(description: err?.localizedDescription)
                     self.downloadProgress[songId] = nil
+                    self.removeSong(songId: songId)
                 }
                 return
             }
             
             do {
                 let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, Any>
+                print(resp)
                 if let stat = RequestStatus(rawValue: resp["requestStatus"] as! String) {
                     switch stat {
                     case .Progress:
@@ -251,6 +290,10 @@ class UserLibraryViewModel: ObservableObject {
                             })
                         }
                         
+                        DispatchQueue.main.async {
+                            self.setIsDownloading()
+                        }
+                        
                     default:
                         print("Request Status: \(stat.rawValue)")
                     }
@@ -265,6 +308,7 @@ class UserLibraryViewModel: ObservableObject {
                     } else {
                         self.appError = AppError(description: err.localizedDescription)
                         self.downloadProgress[songId] = nil
+                        self.removeSong(songId: songId)
                     }
                 }
             }

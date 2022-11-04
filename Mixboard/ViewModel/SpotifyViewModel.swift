@@ -17,8 +17,7 @@ class SpotifyViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     
-    init(numTracks: Int) {
-        self.getRecommendations(numTracks: numTracks)
+    init() {
         addSubscribers()
     }
     
@@ -47,7 +46,7 @@ class SpotifyViewModel: ObservableObject {
             return
         }
         
-        let urlString = "https://api.spotify.com/v1/search?q=\(truncatedText)&type=track"
+        let urlString = "https://api.spotify.com/v1/search?q=\(truncatedText)&type=album,artist,track&limit=50"
         let url = URL(string: urlString)!
         
         let header = NetworkManager.Header(value: "\(cred.token_type) \(cred.access_token)", key: "Authorization")
@@ -104,14 +103,34 @@ class SpotifyViewModel: ObservableObject {
             })
     }
     
-    func getSpotifySong(songId: String) -> Spotify.Track? {
+    func getSpotifySong(songId: String, completion: @escaping (_ spotifyTrack: Spotify.Track?) -> ()) {
         for song in songs {
             if song.id == songId {
-                return song
+                completion(song)
+                return
             }
         }
         
-        return nil
+        // If the chosen song is not part of the recommendation.
+        // This happens when the user cancels search after selecting a song from the searched song list
+        getCredentials { credentials in
+            guard let cred = credentials else {
+                print("credentials is nil")
+                return
+            }
+            
+            let url = URL(string: "https://api.spotify.com/v1/tracks/\(songId)")!
+            
+            let header = NetworkManager.Header(value: "\(cred.token_type) \(cred.access_token)", key: "Authorization")
+            
+            var subscription: AnyCancellable?
+            subscription = NetworkManager.request(url: url, type: .GET, headers: [header])
+                .decode(type: Spotify.Track.self, decoder: JSONDecoder())
+                .sink(receiveCompletion: NetworkManager.handleCompletion, receiveValue: { (track) in
+                    completion(track)
+                    subscription?.cancel()
+                })
+        }
     }
     
     func getSong(songId: String) -> Song? {
