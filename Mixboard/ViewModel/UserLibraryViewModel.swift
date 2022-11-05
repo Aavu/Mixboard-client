@@ -181,7 +181,7 @@ class UserLibraryViewModel: ObservableObject {
         
         func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
             lib.update(didUpdate: { err in
-                if err == nil {
+                if err != nil {
                     self.appError = AppError(description: err?.localizedDescription)
                     return
                 }
@@ -286,7 +286,7 @@ class UserLibraryViewModel: ObservableObject {
                         
                         if let lib = self.lib {
                             lib.update(didUpdate: { err in
-                                if err == nil {
+                                if err != nil {
                                     self.appError = AppError(description: err?.localizedDescription)
                                     return
                                 }
