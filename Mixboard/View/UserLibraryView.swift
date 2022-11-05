@@ -33,7 +33,8 @@ struct UserLibraryView: View {
         
             ZStack {
                 RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
-                    .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
+                    .frame(width: cardWidth + 6)
+//                    .frame(width: mashup.isFocuingSongs ? ExpandedCardWidth + 6: cardWidth + 6)
                     .ignoresSafeArea(edges: [.vertical])
                 
                 VStack {
@@ -71,7 +72,8 @@ struct UserLibraryView: View {
                             }
                             
                             UserLibSongCardView(song: song)
-                                .frame(width: (isDragging[song.id] ?? false) ? (8 * (mashup.tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)) : mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
+                                .frame(width: cardWidth)
+//                                       (isDragging[song.id] ?? false) ? (8 * (mashup.tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)) : mashup.isFocuingSongs ? ExpandedCardWidth: cardWidth)
                                 .frame(maxHeight: (isDragging[song.id] ?? false) ? mashup.tracksViewSize.height / 4 : nil)
                                 .offset(userLib.dragOffset[song.id] ?? .zero)
                                 .environmentObject(userLib)

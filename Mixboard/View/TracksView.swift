@@ -44,7 +44,7 @@ struct TracksView: View {
                     HStack(spacing: 0.0) {
                         Rectangle().foregroundColor(.clear).frame(width: labelWidth, height: 20)
                         
-                        BarAxisView(width: 1, height: 22)
+                        BarAxisView(width: 1, height: 22, numBeats: MashupViewModel.TOTAL_BEATS)
                     }
                     
                     GeometryReader { geo in
