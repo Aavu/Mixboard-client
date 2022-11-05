@@ -78,9 +78,9 @@ struct ToolbarView: View {
                         handlePlayBtn()
                     } label: {
                         Image(systemName: audioManager.player?.isPlaying ?? false ? "pause.fill" : "play.fill")
-                            .font(.title).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
+                            .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
                     }
-                    .disabled(!mashupVM.readyToPlay)
+                    .disabled(mashupVM.isEmpty)
                     .padding([.leading, .trailing], 24)
                     
                     // MARK: Forward 10 Button
@@ -94,26 +94,26 @@ struct ToolbarView: View {
                 
                 Spacer()
                 
-                let generateBtnDisabled = mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying
-                // MARK: Generate Button
-                Button {
-                    audioManager.reset()
-                    let uuid = UUID()
-                    mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
-                        guard let audio = audio else { return }
-                        let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
-                        historyVM.current = history
-                        historyVM.add(history: history)
-                    }
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : generateBtnDisabled ? .NeutralColor : .SecondaryAccentColor).shadow(radius:  4)
-                        Text("Generate").foregroundColor(.BgColor)
-                    }.offset(y: mashupVM.isEmpty ? 100.0 : 0.0)
-                        .animation(.spring(), value: mashupVM.isEmpty)
-                        .opacity(generateBtnDisabled ? 0.5 : 1)
-                }.disabled(generateBtnDisabled)
-                    .padding(.trailing, 4)
+//                let generateBtnDisabled = mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying
+//                // MARK: Generate Button
+//                Button {
+//                    audioManager.reset()
+//                    let uuid = UUID()
+//                    mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
+//                        guard let audio = audio else { return }
+//                        let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
+//                        historyVM.current = history
+//                        historyVM.add(history: history)
+//                    }
+//                } label: {
+//                    ZStack {
+//                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : generateBtnDisabled ? .NeutralColor : .SecondaryAccentColor).shadow(radius:  4)
+//                        Text("Generate").foregroundColor(.BgColor)
+//                    }.offset(y: mashupVM.isEmpty ? 100.0 : 0.0)
+//                        .animation(.spring(), value: mashupVM.isEmpty)
+//                        .opacity(generateBtnDisabled ? 0.5 : 1)
+//                }.disabled(generateBtnDisabled)
+//                    .padding(.trailing, 4)
                 
                 Spacer()
                 
@@ -137,14 +137,30 @@ struct ToolbarView: View {
     }
     
     func handlePlayBtn() {
-        if audioManager.isPlaying {
-            audioManager.stop()
-        } else {
-            guard let audio = mashupVM.mashupAudio else {
-                print("No Audio file available")
-                return
+        func play() {
+            if audioManager.isPlaying {
+                audioManager.stop()
+            } else {
+                guard let audio = mashupVM.mashupAudio else {
+                    print("No Audio file available")
+                    return
+                }
+                audioManager.play(audio: audio)
             }
-            audioManager.play(audio: audio)
+        }
+        
+        if mashupVM.readyToPlay {   // Play
+            play()
+        } else {                    // Generate
+            audioManager.reset()
+            let uuid = UUID()
+            mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
+                guard let audio = audio else { return }
+                let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
+                historyVM.current = history
+                historyVM.add(history: history)
+                play()
+            }
         }
     }
 }

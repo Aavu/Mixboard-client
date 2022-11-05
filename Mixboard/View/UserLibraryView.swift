@@ -48,7 +48,7 @@ struct UserLibraryView: View {
                                         .shadow(radius:  4)
                                     Text("Remove all Songs").foregroundColor(.red)
                                 }
-                                .opacity(removingSong || userLib.downloadingSong ? 0.5: 1)
+                                .opacity(removingSong || userLib.downloadingSong || audioManager.isPlaying ? 0.5: 1)
                                 
                                 if removingSong {
                                     ProgressView()
@@ -181,7 +181,7 @@ struct UserLibraryView: View {
                         }
                     } else {
                         ProgressView {
-                            Text("Preparing App")
+                            Text("Connecting to Server")
                         }
                     }
                 }

@@ -22,7 +22,9 @@ struct HistoryView: View {
                 Section("Active") {
                     if let history = historyVM.current {
                         Text(historyVM.getDateString(history: history))
-                            .allowsHitTesting(false)
+                            .onTapGesture {
+                                handleTap(history: history)
+                            }
                     } else {
                         Text("No active sessions")
                     }
@@ -33,18 +35,22 @@ struct HistoryView: View {
                         if history.id != historyVM.current?.id {
                             Text(historyVM.getDateString(history: history))
                                 .onTapGesture {
-                                    mashupVM.restoreFromHistory(history: history)
-                                    userLibVM.restoreFromHistory(history: history)
-                                    historyVM.current = history
-                                    
-                                    if let onCompletion = onCompletion {
-                                        onCompletion(true)
-                                    }
+                                    handleTap(history: history)
                                 }
                         }
                     }
                 }
             }
+        }
+    }
+    
+    func handleTap(history: History) {
+        mashupVM.restoreFromHistory(history: history)
+        userLibVM.restoreFromHistory(history: history)
+        historyVM.current = history
+        
+        if let onCompletion = onCompletion {
+            onCompletion(true)
         }
     }
 }

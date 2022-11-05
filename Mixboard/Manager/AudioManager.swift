@@ -82,6 +82,7 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         guard let player = self.player else { return }
         
         player.currentTime = progress * player.duration
+        self.progress = progress
     }
     
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {

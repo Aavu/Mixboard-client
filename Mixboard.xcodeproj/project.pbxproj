@@ -178,9 +178,9 @@
 				7AED712B28F9FF8F00336B56 /* SongSource.swift */,
 				7AED713328FB43FA00336B56 /* Lanes.swift */,
 				7AED713528FC6A0A00336B56 /* Region.swift */,
-				7AED714128FD0DF300336B56 /* TaskStatus.swift */,
 				7AED714D28FF4A6C00336B56 /* History.swift */,
 				7A221D0D2900726200DC949F /* AppError.swift */,
+				7AED714128FD0DF300336B56 /* TaskStatus.swift */,
 				7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */,
 				7A75C322290D87A000AB2134 /* Audio.swift */,
 			);
