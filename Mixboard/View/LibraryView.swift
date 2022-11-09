@@ -7,10 +7,13 @@
 
 import SwiftUI
 
+// MARK: Library View
 struct LibraryView: View {
     
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
+    
+    @AppStorage("loginProvider") var loginProvider: LoginProvider?
     
     @Binding var userLibSongs: [Song]
     
@@ -90,7 +93,7 @@ struct LibraryView: View {
                 
                 GeometryReader { geo in
                     HStack(spacing: 0) {
-                        LibContentView {
+                        LibContentView(contentType: .Library) {
                             ForEach(libraryVM.songs, id: \.self) { song in
                                 SongCardView(song: song).frame(height: 100)
                                     .cornerRadius(8)
@@ -110,7 +113,7 @@ struct LibraryView: View {
                         .animation(.spring(), value: selectedSongId.count > 0)
                         .transition(.move(edge: .bottom))
                         
-                        LibContentView {
+                        LibContentView(contentType: .Spotify) {
                             ForEach(spotifyVM.songs, id: \.self) { song in
                                 SongCardView(spotifySong: song).frame(height: 100)
                                     .cornerRadius(8)
@@ -126,6 +129,14 @@ struct LibraryView: View {
                         .opacity(selectedTab == 1 ? 1 : 0)
                         .animation(.spring(), value: selectedSongId.count > 0)
                         .transition(.move(edge: .bottom))
+                        .environmentObject(spotifyVM)
+                        .onChange(of: SpotifyManager.shared.isLinked) { newValue in
+                            SpotifyManager.shared.getRecommendations(numTracks: 20, forUser: SpotifyManager.shared.isLinked) { spotifyTracks in
+                                if let tracks = spotifyTracks {
+                                    spotifyVM.songs = tracks
+                                }
+                            }
+                        }
                     }
                     .offset(x: (selectedTab == 0 ? 0: -geo.frame(in: .global).width) + draggingOffsetWidth)
                     .gesture(DragGesture()
@@ -146,7 +157,15 @@ struct LibraryView: View {
                 }
             }
             .onAppear {
-                spotifyVM.getRecommendations(numTracks: 20)
+                libraryVM.update()
+                
+                SpotifyManager.shared.isLinked = (SpotifyManager.shared.code != nil)
+                
+                SpotifyManager.shared.getRecommendations(numTracks: 20, forUser: SpotifyManager.shared.isLinked) { (tracks) in
+                    if let tracks = tracks {
+                        spotifyVM.songs = tracks
+                    }
+                }
             }
             .onChange(of: selectedSongId) { newValue in
                 withAnimation {
@@ -180,6 +199,7 @@ struct LibraryView: View {
     }
 }
 
+// MARK: Selection View
 struct SelectionView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
@@ -260,12 +280,16 @@ struct SelectionView: View {
     }
 }
 
+// MARK: Library Content View
 struct LibContentView<T: View>: View {
-
     let content: T
+    let contentType: SongSource
     
-    init(@ViewBuilder content: () -> T) {
+    @EnvironmentObject var spotifyVM: SpotifyViewModel
+    
+    init(contentType: SongSource, @ViewBuilder content: () -> T) {
         self.content = content()
+        self.contentType = contentType
     }
     
     let gridItem = [GridItem(.adaptive(minimum: 250))]
@@ -273,9 +297,23 @@ struct LibContentView<T: View>: View {
     var body: some View {
         ZStack {
             Color.BgColor.ignoresSafeArea()
-            ScrollView {
-                LazyVGrid(columns: gridItem) {
-                    content
+            VStack {
+                if contentType == .Spotify {
+                    if !SpotifyManager.shared.isLinked {
+                        SpotifyBtn() { err in
+                            SpotifyManager.shared.getRecommendations(numTracks: 20, forUser: true) { spotifyTracks in
+                                if let tracks = spotifyTracks {
+                                    spotifyVM.songs = tracks
+                                }
+                            }
+                        }
+                        .frame(width: 200, height: 48)
+                    }
+                }
+                ScrollView {
+                    LazyVGrid(columns: gridItem) {
+                        content
+                    }
                 }
             }.padding(.horizontal, 8)
         }
@@ -314,7 +352,7 @@ struct TabBarView<T: View>: View {
                         Button {
                             isPresented = false
                         } label: {
-                            Image(systemName: "xmark.square").padding(8).font(.largeTitle).foregroundColor(.AccentColor)
+                            Image(systemName: "xmark").padding(8).font(.largeTitle).foregroundColor(.AccentColor)
                         }
                         Spacer()
 
@@ -330,7 +368,11 @@ struct TabBarView<T: View>: View {
                         }.padding(8)
                     }
                 }
-                SearchBarView(searchText: $searchText).padding([.horizontal], 8).padding(.bottom, 20)
+                
+                HStack {
+                    SearchBarView(searchText: $searchText)
+                }
+                .padding([.horizontal], 8).padding(.bottom, 20)
             }
         }
     }

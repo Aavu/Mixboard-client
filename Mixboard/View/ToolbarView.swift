@@ -46,21 +46,6 @@ struct ToolbarView: View {
                         .opacity(audioManager.isPlaying ? 0.5 : 1)
                     
                 }.disabled(mashupVM.isGenerating || audioManager.isPlaying)
-                
-                
-                Button {
-                    mashupVM.clearCanvas()
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36)
-                            .foregroundColor(.BgColor)
-                            .shadow(radius:  4)
-                        Text("Clear Canvas").foregroundColor(.red)
-                    }
-                    .padding([.all], 8)
-                    .zIndex(1)
-                    .opacity(mashupVM.isEmpty ? 0: 1)
-                }
 
                 Spacer()
 
@@ -94,6 +79,20 @@ struct ToolbarView: View {
                 
                 Spacer()
                 
+                Button {
+                    mashupVM.clearCanvas()
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36)
+                            .foregroundColor(.BgColor)
+                            .shadow(radius:  4)
+                        Text("Clear Canvas").foregroundColor(.red)
+                    }
+                    .padding([.all], 8)
+                    .zIndex(1)
+                    .opacity(mashupVM.isEmpty ? 0: 1)
+                }
+                
 //                let generateBtnDisabled = mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying
 //                // MARK: Generate Button
 //                Button {
@@ -123,14 +122,13 @@ struct ToolbarView: View {
                         presentHistoryView = true
                     }
                 } label: {
-                    Image("History")
+                    Image(systemName: "person.crop.circle")
                         .renderingMode(.template)
                         .resizable()
                         .scaledToFit()
-                        .foregroundColor(historyVM.isEmpty() ? .SecondaryBgColor : .AccentColor)
+                        .foregroundColor(.AccentColor)
                         .frame(width: 24)
                 }.padding()
-                    .disabled(historyVM.isEmpty())
                 
             }.padding(.top, 4)
         }
@@ -142,7 +140,7 @@ struct ToolbarView: View {
                 audioManager.stop()
             } else {
                 guard let audio = mashupVM.mashupAudio else {
-                    print("No Audio file available")
+                    print("Function: \(#function), line: \(#line),", "No Audio file available")
                     return
                 }
                 audioManager.play(audio: audio)

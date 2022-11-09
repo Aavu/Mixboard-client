@@ -7,9 +7,13 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
 class MashupViewModel: ObservableObject {
-    @Published var canDisplayLibrary = false
+    @AppStorage("email") var currentEmail: String?
+    
+    @Published var loggedIn = false
+    
     @Published var appFailed = false
     @Published var layoutInfo = Layout()
     @Published var isGenerating = false
@@ -32,7 +36,6 @@ class MashupViewModel: ObservableObject {
     
     var generationTaskId: String?
     var mashupAudio: Audio?
-    var tempo: Float?
     
     var timer: AnyCancellable?
     
@@ -45,9 +48,15 @@ class MashupViewModel: ObservableObject {
         for lane in Lane.allCases {
             layoutInfo.lane[lane.rawValue] = Layout.Track()
         }
-        self.createNewSession()
         self.addSubscriber()
         LuckyMeManager.instance.loadTemplateFile()
+        
+        self.loggedIn = (FirebaseManager.getCurrentUser() != nil)
+        if loggedIn {
+            self.currentEmail = FirebaseManager.getCurrentUser()?.email
+        }
+        
+        createNewSession()
     }
     
     func addSubscriber() {
@@ -60,28 +69,30 @@ class MashupViewModel: ObservableObject {
     }
     
     func createNewSession() {
-        guard let url = URL(string: Config.SERVER + HttpRequests.ROOT) else {
-            self.appError = AppError(description: "Url invalid")
+        if !loggedIn { return }
+        
+        guard let email = currentEmail else {
+            print("Function: \(#function), line: \(#line),", "Please signin before creating session")
             return
         }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        let url = URL(string: Config.SERVER + HttpRequests.NEW_SESSION)!
+        let body = try? JSONEncoder().encode(["email": email])
         
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let _ = data, err == nil else {
-                DispatchQueue.main.async {
-                    self.appError = AppError(description: err?.localizedDescription)
+        var subscriber: AnyCancellable?
+        subscriber = NetworkManager.request(url: url, type: .POST, httpbody: body, contentType: .JSON)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    break
+                case .failure(let e):
+                    print("Function: \(#function), line: \(#line),", e)
+                    self.appError = AppError(description: "Server not responding. Please try again later...")
                 }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                print("Library Created")
-                self.canDisplayLibrary = true
-            }
-            
-        }.resume()
+                
+            }, receiveValue: { data in
+                subscriber?.cancel()
+            })
     }
     
     func clearCanvas() {
@@ -282,6 +293,7 @@ class MashupViewModel: ObservableObject {
             self.layoutInfo = try JSONDecoder().decode(Layout.self, from: data)
         } catch let e {
             self.appError = AppError(description: e.localizedDescription)
+            print("Function: \(#function), line: \(#line),", e)
             return false
         }
         
@@ -305,6 +317,7 @@ class MashupViewModel: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 self.appError = AppError(description: err?.localizedDescription)
+                print("Function: \(#function), line: \(#line),", err as Any)
                 self.isGenerating = false
                 return
             }
@@ -313,7 +326,6 @@ class MashupViewModel: ObservableObject {
                 let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, String>
                 DispatchQueue.main.async { [self] in
                     mashupAudio = nil
-                    tempo = nil
                     generationTaskId = resp["task_id"]
                     
                     readyToPlay = false
@@ -342,6 +354,7 @@ class MashupViewModel: ObservableObject {
                 }
             } catch let e {
                 self.appError = AppError(description: e.localizedDescription)
+                print("Function: \(#function), line: \(#line),", e)
                 self.isGenerating = false
             }
             
@@ -360,6 +373,7 @@ class MashupViewModel: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 self.appError = AppError(description: err?.localizedDescription)
+                print("Function: \(#function), line: \(#line),", err as Any)
                 return
             }
             
@@ -374,7 +388,7 @@ class MashupViewModel: ObservableObject {
             } catch let e {
                 DispatchQueue.main.async {
                     self.appError = AppError(description: e.localizedDescription)
-                    print("line 377:", e)
+                    print("Function: \(#function), line: \(#line),", e)
                 }
             }
             
@@ -392,7 +406,7 @@ class MashupViewModel: ObservableObject {
                     } else {
                         self.appError = AppError(description: e.localizedDescription)
                         self.generationProgress = nil
-                        print("line 391:", e)
+                        print("Function: \(#function), line: \(#line),", e)
                     }
                 }
             }
@@ -413,6 +427,7 @@ class MashupViewModel: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 self.appError = AppError(description: err?.localizedDescription)
+                print("Function: \(#function), line: \(#line),", err as Any)
                 return
             }
             
@@ -427,7 +442,6 @@ class MashupViewModel: ObservableObject {
                 
                 if let tempFile = tempFile {
                     DispatchQueue.main.async {
-                        self.tempo = result.task_result.tempo
                         self.mashupAudio = Audio(file: tempFile)
                         AudioManager.shared.currentAudio = self.mashupAudio
                         self.generationTaskId = nil
@@ -445,7 +459,7 @@ class MashupViewModel: ObservableObject {
                         self.fetchMashup(uuid: uuid, tryNum: tryNum + 1, onCompletion: onCompletion)  //  Recursive call
                     } else {
                         self.appError = AppError(description: e.localizedDescription)
-                        print("line 451:", e)
+                        print("Function: \(#function), line: \(#line),", e)
                     }
                 }
             }

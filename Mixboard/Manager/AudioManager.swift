@@ -50,7 +50,7 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             currentAudio = audio
             isPlaying = player.isPlaying
         } catch let err {
-            print(err)
+            print("Function: \(#function), line: \(#line),", err)
         }
     }
     

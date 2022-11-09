@@ -11,8 +11,9 @@ struct MashupView: View {
     @StateObject var libViewModel = LibraryViewModel()
     @StateObject var userLibVM = UserLibraryViewModel()
     @StateObject var spotifyVM = SpotifyViewModel()
-    @StateObject var mashupVM = MashupViewModel()
     @StateObject var audioManager = AudioManager.shared
+    
+    @EnvironmentObject var mashupVM: MashupViewModel
     
     @StateObject var historyVM = HistoryViewModel()
     
@@ -123,22 +124,26 @@ struct MashupView: View {
                 }
             })
             .onAppear {
-                libViewModel.update(didUpdate: { err in
-                    if let err = err {
-                        if err._code == -1011 {
-                            mashupVM.appError = AppError(description: "Server not responding. Please try again later")
-                            mashupVM.appFailed = true
-                        } else {
-                            mashupVM.appError = AppError(description: err.localizedDescription)
+                if mashupVM.loggedIn {
+                    libViewModel.update(didUpdate: { err in
+                        if let err = err {
+                            if err._code == -1011 {
+                                mashupVM.appError = AppError(description: "Server not responding. Please try again later")
+                                mashupVM.appFailed = true
+                            } else {
+                                mashupVM.appError = AppError(description: err.localizedDescription)
+                                print("Function: \(#function), line: \(#line),", err)
+                            }
+                            
                         }
-                        
-                    }
-                })
+                    })
+                }
                 mashupVM.userLibCardWidth = geo.size.width * 0.20
             }
             .onChange(of: geo.size) { newValue in
                 mashupVM.userLibCardWidth = geo.size.width * 0.20
             }
+            .ignoresSafeArea(.keyboard)
         }
     }
     

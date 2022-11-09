@@ -37,7 +37,7 @@ class NetworkManager {
             }
         }
         request.httpBody = httpbody
-        
+                
         return URLSession.shared.dataTaskPublisher(for: request)
             .subscribe(on: DispatchQueue.global(qos: .default))
             .tryMap({try handleURLResponse(output: $0)})
@@ -46,10 +46,24 @@ class NetworkManager {
     }
     
     static func handleURLResponse(output: URLSession.DataTaskPublisher.Output) throws -> Data {
-        guard let response = output.response as? HTTPURLResponse,
-              response.statusCode >= 200 && response.statusCode < 300 else {
+//        print(output)
+        guard let response = output.response as? HTTPURLResponse else { throw URLError(.badServerResponse)
+        }
+        
+        if response.statusCode == 401 {
+            throw URLError(.userAuthenticationRequired)
+        }
+        
+        if response.statusCode < 200 || response.statusCode >= 300 {
             throw URLError(.badServerResponse)
         }
+        
+//        do {
+//            let json = try JSONSerialization.jsonObject(with: output.data, options: [.fragmentsAllowed]) as? [String : Any]
+//            print(json)
+//        } catch ( let err){
+//            print("errorMsg: \(err)")
+//        }
         
         return output.data
     }
@@ -59,8 +73,21 @@ class NetworkManager {
         case .finished:
             break
         case .failure(let e):
-            print("completion failed: \(e)")
+            print("Function: \(#function), line: \(#line),", e)
         }
+    }
+    
+    static func getAsHttpBody(body: Dictionary<String, String>) -> Data? {
+        var dataString = ""
+        for (k, v) in body {
+            dataString.append(k)
+            dataString.append("=")
+            dataString.append(v)
+            dataString.append("&")
+        }
+        
+        dataString = String(dataString[..<dataString.index(dataString.startIndex, offsetBy: dataString.count - 1)])
+        return dataString.data(using: String.Encoding.ascii, allowLossyConversion: true)
     }
     
 }

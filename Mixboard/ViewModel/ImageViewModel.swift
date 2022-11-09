@@ -54,11 +54,11 @@ class ImageViewModel: ObservableObject {
     
     private func getImageFromResponse(data: Data?, response: URLResponse?, error: Error?) {
         guard error == nil else {
-            print(error!)
+            print("Function: \(#function), line: \(#line),", error!)
             return
         }
         guard let data = data else {
-            print("Data not found")
+            print("Function: \(#function), line: \(#line),", "Data not found")
             return
         }
         

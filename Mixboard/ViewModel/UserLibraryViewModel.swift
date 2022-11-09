@@ -71,7 +71,7 @@ class UserLibraryViewModel: ObservableObject {
         
         for song in self.songs {
             if song.id == songId {
-                print("Song already in library")
+                print("Function: \(#function), line: \(#line),", "Song already in library")
                 return
             }
         }
@@ -84,7 +84,7 @@ class UserLibraryViewModel: ObservableObject {
             .sink(receiveCompletion: NetworkManager.handleCompletion) {[weak self] (response) in
                 self?.spotifyVM?.getSpotifySong(songId: songId, completion: { spotifyTrack in
                     guard let spotifyTrack = spotifyTrack else {
-                        print("spotify track empty for id : \(songId)")
+                        print("Function: \(#function), line: \(#line),", "spotify track empty for id : \(songId)")
                         return
                     }
                     if lib.addSong(spotifySong: spotifyTrack) {
@@ -117,7 +117,7 @@ class UserLibraryViewModel: ObservableObject {
     func addSongFromLib(songId: String) {
         if let song = lib?.getSong(songId: songId) {
             if !isSongInLib(songId: songId) {
-                print("Adding \(String(describing: song.name)) to library")
+                print("Function: \(#function), line: \(#line),", "Adding \(String(describing: song.name)) to library")
                 self.songs.append(song)
                 self.isSelected[songId] = false
             }
@@ -181,8 +181,9 @@ class UserLibraryViewModel: ObservableObject {
         
         func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
             lib.update(didUpdate: { err in
-                if err != nil {
-                    self.appError = AppError(description: err?.localizedDescription)
+                if let err = err {
+                    self.appError = AppError(description: err.localizedDescription)
+                    print("Function: \(#function), line: \(#line),", err)
                     return
                 }
                 self.songs.removeAll { song in
@@ -205,6 +206,7 @@ class UserLibraryViewModel: ObservableObject {
                     switch fail {
                     case .failure(let e):
                         self.appError = AppError(description: e.localizedDescription)
+                        print("Function: \(#function), line: \(#line),", e)
                         if let completion = completion {
                             completion(e)
                         }
@@ -245,7 +247,7 @@ class UserLibraryViewModel: ObservableObject {
                 if let err = err {
                     if err._code == -1001 {
                         if tryNum < 100 {
-                            print("Request timeout: trying again...")
+                            print("Function: \(#function), line: \(#line),", "Request timeout: trying again...")
                             self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)
                             return
                         }
@@ -253,6 +255,7 @@ class UserLibraryViewModel: ObservableObject {
                 }
                 DispatchQueue.main.async {
                     self.appError = AppError(description: err?.localizedDescription)
+                    print("Function: \(#function), line: \(#line),", err as Any)
                     self.downloadProgress[songId] = nil
                     self.removeSong(songId: songId)
                 }
@@ -286,8 +289,9 @@ class UserLibraryViewModel: ObservableObject {
                         
                         if let lib = self.lib {
                             lib.update(didUpdate: { err in
-                                if err != nil {
-                                    self.appError = AppError(description: err?.localizedDescription)
+                                if let err = err {
+                                    self.appError = AppError(description: err.localizedDescription)
+                                    print("Function: \(#function), line: \(#line),", err)
                                     return
                                 }
                                 if let song = lib.getSong(songId: songId) {
@@ -301,18 +305,19 @@ class UserLibraryViewModel: ObservableObject {
                         }
                         
                     default:
-                        print("Request Status: \(stat.rawValue)")
+                        print("Function: \(#function), line: \(#line),", "Request Status: \(stat.rawValue)")
                     }
                 }
                 
             } catch let err {
-                print("Error decoding task status: ", err)
-                print("trying again...")
+                print("Function: \(#function), line: \(#line),", "Error decoding task status: ", err)
+                print("Function: \(#function), line: \(#line),", "trying again...")
                 DispatchQueue.main.async {
                     if tryNum < 3 {
                         self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)  //  Recursive call
                     } else {
                         self.appError = AppError(description: err.localizedDescription)
+                        print("Function: \(#function), line: \(#line),", err)
                         self.downloadProgress[songId] = nil
                         self.removeSong(songId: songId)
                     }

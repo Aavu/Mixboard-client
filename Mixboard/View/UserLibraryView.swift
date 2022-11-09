@@ -29,7 +29,7 @@ struct UserLibraryView: View {
     @State var removingSong = false
     
     var body: some View {
-        let ExpandedCardWidth: CGFloat = cardWidth + 120
+//        let ExpandedCardWidth: CGFloat = cardWidth + 120
         
             ZStack {
                 RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16)
@@ -165,7 +165,7 @@ struct UserLibraryView: View {
                 }
 
                 if !mashup.appFailed {
-                    if mashup.canDisplayLibrary {
+                    if mashup.loggedIn {
                         Spacer()
                         if userLib.songs.count < numSongs {
                             Button {
@@ -215,7 +215,7 @@ struct UserLibraryView: View {
         for song in userLib.songs {
             userLib.removeSong(songId: song.id) { err in
                 if let err = err {
-                    print("error removing song. \(err)")
+                    print("Function: \(#function), line: \(#line),", "error removing song. \(err)")
                     removingSong = false
                 }
                 

@@ -18,6 +18,7 @@ class LuckyMeManager {
         guard let url = Bundle.main.url(forResource: "LuckyMeTemplates", withExtension: "json")
         else {
             appError = AppError(description: "LuckyMe templates JSON file not found")
+            print("Function: \(#function), line: \(#line),", "LuckyMe templates JSON file not found")
             return
         }
         
@@ -25,7 +26,7 @@ class LuckyMeManager {
             let data = try Data(contentsOf: url)
             self.templates = try JSONDecoder().decode(LuckyMeTemplates.self, from: data)
         } catch let e {
-            print(e)
+            print("Function: \(#function), line: \(#line),", e)
             appError = AppError(description: e.localizedDescription)
             return
         }

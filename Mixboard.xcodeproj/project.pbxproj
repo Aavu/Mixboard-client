@@ -29,6 +29,21 @@
 		7A4D7F992910DA3D00651CCF /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4D7F982910DA3D00651CCF /* NetworkManager.swift */; };
 		7A75C323290D87A000AB2134 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A75C322290D87A000AB2134 /* Audio.swift */; };
 		7A8AD5442906F059001AE70F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8AD5432906F059001AE70F /* HapticManager.swift */; };
+		7ACBADBB291A0B50002B3A38 /* SpotifyBtn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACBADBA291A0B50002B3A38 /* SpotifyBtn.swift */; };
+		7ACBADBD291B33A1002B3A38 /* Elements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACBADBC291B33A1002B3A38 /* Elements.swift */; };
+		7ADD6B34291734B2001F59B1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7ADD6B33291734B2001F59B1 /* GoogleService-Info.plist */; };
+		7ADD6B3729173622001F59B1 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B3629173622001F59B1 /* FirebaseAuth */; };
+		7ADD6B3929173622001F59B1 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B3829173622001F59B1 /* FirebaseAuthCombine-Community */; };
+		7ADD6B3B29173622001F59B1 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B3A29173622001F59B1 /* FirebaseFirestore */; };
+		7ADD6B3D29173622001F59B1 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B3C29173622001F59B1 /* FirebaseFirestoreCombine-Community */; };
+		7ADD6B3F29173622001F59B1 /* FirebaseFirestoreSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B3E29173622001F59B1 /* FirebaseFirestoreSwift */; };
+		7ADD6B4229173746001F59B1 /* FirebaseAnalyticsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B4129173746001F59B1 /* FirebaseAnalyticsSwift */; };
+		7ADD6B4429173749001F59B1 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 7ADD6B4329173749001F59B1 /* FirebaseAnalytics */; };
+		7ADD6B46291737B1001F59B1 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B45291737B1001F59B1 /* LoginView.swift */; };
+		7ADD6B492917A639001F59B1 /* SpotifyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B482917A639001F59B1 /* SpotifyManager.swift */; };
+		7ADD6B4B29183A89001F59B1 /* Login.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B4A29183A89001F59B1 /* Login.swift */; };
+		7ADD6B4D29196271001F59B1 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B4C29196271001F59B1 /* LoginViewModel.swift */; };
+		7ADD6B4F291963B9001F59B1 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B4E291963B9001F59B1 /* FirebaseManager.swift */; };
 		7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED711E28F99D1300336B56 /* LibraryViewModel.swift */; };
 		7AED712128F9CF4A00336B56 /* songExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED712028F9CF4A00336B56 /* songExample.json */; };
 		7AED712528F9D3D100336B56 /* libraryExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED712428F9D3D100336B56 /* libraryExample.json */; };
@@ -75,6 +90,15 @@
 		7A5658E8291034600065000C /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mixboard/Info.plist; sourceTree = SOURCE_ROOT; };
 		7A75C322290D87A000AB2134 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
 		7A8AD5432906F059001AE70F /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		7ACBADBA291A0B50002B3A38 /* SpotifyBtn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyBtn.swift; sourceTree = "<group>"; };
+		7ACBADBC291B33A1002B3A38 /* Elements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Elements.swift; sourceTree = "<group>"; };
+		7ADD6B33291734B2001F59B1 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		7ADD6B45291737B1001F59B1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		7ADD6B4729174971001F59B1 /* Mixboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mixboard.entitlements; sourceTree = "<group>"; };
+		7ADD6B482917A639001F59B1 /* SpotifyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyManager.swift; sourceTree = "<group>"; };
+		7ADD6B4A29183A89001F59B1 /* Login.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Login.swift; sourceTree = "<group>"; };
+		7ADD6B4C29196271001F59B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		7ADD6B4E291963B9001F59B1 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		7AED711E28F99D1300336B56 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		7AED712028F9CF4A00336B56 /* songExample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = songExample.json; sourceTree = "<group>"; };
 		7AED712428F9D3D100336B56 /* libraryExample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = libraryExample.json; sourceTree = "<group>"; };
@@ -101,6 +125,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7ADD6B4429173749001F59B1 /* FirebaseAnalytics in Frameworks */,
+				7ADD6B4229173746001F59B1 /* FirebaseAnalyticsSwift in Frameworks */,
+				7ADD6B3F29173622001F59B1 /* FirebaseFirestoreSwift in Frameworks */,
+				7ADD6B3729173622001F59B1 /* FirebaseAuth in Frameworks */,
+				7ADD6B3D29173622001F59B1 /* FirebaseFirestoreCombine-Community in Frameworks */,
+				7ADD6B3929173622001F59B1 /* FirebaseAuthCombine-Community in Frameworks */,
+				7ADD6B3B29173622001F59B1 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +143,7 @@
 			children = (
 				7A25ECDE28F83F6700B2396A /* Mixboard */,
 				7A25ECDD28F83F6700B2396A /* Products */,
+				7ADD6B4029173746001F59B1 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -126,6 +158,8 @@
 		7A25ECDE28F83F6700B2396A /* Mixboard */ = {
 			isa = PBXGroup;
 			children = (
+				7ADD6B4729174971001F59B1 /* Mixboard.entitlements */,
+				7ADD6B33291734B2001F59B1 /* GoogleService-Info.plist */,
 				7A5658E8291034600065000C /* Info.plist */,
 				7A8AD5422906F03F001AE70F /* Manager */,
 				7A25ECF528F8408C00B2396A /* View */,
@@ -166,6 +200,9 @@
 				7AED714328FD2F7E00336B56 /* PlayHeadView.swift */,
 				7AED714728FE110F00336B56 /* SearchBarView.swift */,
 				7AED714B28FF419700336B56 /* HistoryView.swift */,
+				7ADD6B45291737B1001F59B1 /* LoginView.swift */,
+				7ACBADBA291A0B50002B3A38 /* SpotifyBtn.swift */,
+				7ACBADBC291B33A1002B3A38 /* Elements.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -183,6 +220,7 @@
 				7AED714128FD0DF300336B56 /* TaskStatus.swift */,
 				7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */,
 				7A75C322290D87A000AB2134 /* Audio.swift */,
+				7ADD6B4A29183A89001F59B1 /* Login.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -196,6 +234,7 @@
 				7AED712D28FA201F00336B56 /* UserLibraryViewModel.swift */,
 				7AED713928FC6FD900336B56 /* MashupViewModel.swift */,
 				7AED714F28FF4B2C00336B56 /* HistoryViewModel.swift */,
+				7ADD6B4C29196271001F59B1 /* LoginViewModel.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -208,8 +247,17 @@
 				7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */,
 				7A8AD5432906F059001AE70F /* HapticManager.swift */,
 				7A4D7F982910DA3D00651CCF /* NetworkManager.swift */,
+				7ADD6B482917A639001F59B1 /* SpotifyManager.swift */,
+				7ADD6B4E291963B9001F59B1 /* FirebaseManager.swift */,
 			);
 			path = Manager;
+			sourceTree = "<group>";
+		};
+		7ADD6B4029173746001F59B1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -229,6 +277,13 @@
 			);
 			name = Mixboard;
 			packageProductDependencies = (
+				7ADD6B3629173622001F59B1 /* FirebaseAuth */,
+				7ADD6B3829173622001F59B1 /* FirebaseAuthCombine-Community */,
+				7ADD6B3A29173622001F59B1 /* FirebaseFirestore */,
+				7ADD6B3C29173622001F59B1 /* FirebaseFirestoreCombine-Community */,
+				7ADD6B3E29173622001F59B1 /* FirebaseFirestoreSwift */,
+				7ADD6B4129173746001F59B1 /* FirebaseAnalyticsSwift */,
+				7ADD6B4329173749001F59B1 /* FirebaseAnalytics */,
 			);
 			productName = Mashup;
 			productReference = 7A25ECDC28F83F6700B2396A /* Mixboard.app */;
@@ -259,6 +314,7 @@
 			);
 			mainGroup = 7A25ECD328F83F6700B2396A;
 			packageReferences = (
+				7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = 7A25ECDD28F83F6700B2396A /* Products */;
 			projectDirPath = "";
@@ -280,6 +336,7 @@
 				7AED712128F9CF4A00336B56 /* songExample.json in Resources */,
 				7A25ECE428F83F6800B2396A /* Assets.xcassets in Resources */,
 				7AED713828FC6F9000336B56 /* generateRequestExample.json in Resources */,
+				7ADD6B34291734B2001F59B1 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,11 +355,16 @@
 				7AED714C28FF419700336B56 /* HistoryView.swift in Sources */,
 				7A25ECF228F83FB500B2396A /* ToolbarView.swift in Sources */,
 				7AED713628FC6A0A00336B56 /* Region.swift in Sources */,
+				7ADD6B4D29196271001F59B1 /* LoginViewModel.swift in Sources */,
 				7AED712C28F9FF8F00336B56 /* SongSource.swift in Sources */,
 				7AED714228FD0DF300336B56 /* TaskStatus.swift in Sources */,
 				7A25ED0028F8942800B2396A /* SongCardView.swift in Sources */,
+				7ADD6B4F291963B9001F59B1 /* FirebaseManager.swift in Sources */,
 				7AED712E28FA201F00336B56 /* UserLibraryViewModel.swift in Sources */,
+				7ACBADBD291B33A1002B3A38 /* Elements.swift in Sources */,
 				7A32917D2901CBB7007AF70F /* LuckyMeManager.swift in Sources */,
+				7ACBADBB291A0B50002B3A38 /* SpotifyBtn.swift in Sources */,
+				7ADD6B4B29183A89001F59B1 /* Login.swift in Sources */,
 				7A25ED0928F8E51600B2396A /* ImageView.swift in Sources */,
 				7A25ECF828F84DE600B2396A /* Spotify.swift in Sources */,
 				7A25ECE228F83F6700B2396A /* MashupView.swift in Sources */,
@@ -316,10 +378,12 @@
 				7AED714028FD04E300336B56 /* MashupFileManager.swift in Sources */,
 				7A25ED0728F8A41F00B2396A /* Extensions.swift in Sources */,
 				7A25ED0528F8A27700B2396A /* SpotifyViewModel.swift in Sources */,
+				7ADD6B492917A639001F59B1 /* SpotifyManager.swift in Sources */,
 				7A25ECFA28F84EC500B2396A /* Library.swift in Sources */,
 				7A25ECF428F83FD800B2396A /* TracksView.swift in Sources */,
 				7AED714E28FF4A6C00336B56 /* History.swift in Sources */,
 				7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */,
+				7ADD6B46291737B1001F59B1 /* LoginView.swift in Sources */,
 				7AED714828FE110F00336B56 /* SearchBarView.swift in Sources */,
 				7AED714628FDC68900336B56 /* AudioManager.swift in Sources */,
 				7A25ECE028F83F6700B2396A /* MixboardApp.swift in Sources */,
@@ -450,6 +514,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Mixboard/Mixboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
@@ -463,7 +528,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = NO;
-				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -485,6 +550,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Mixboard/Mixboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
@@ -498,7 +564,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = NO;
-				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -537,6 +603,55 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7ADD6B3629173622001F59B1 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		7ADD6B3829173622001F59B1 /* FirebaseAuthCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseAuthCombine-Community";
+		};
+		7ADD6B3A29173622001F59B1 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		7ADD6B3C29173622001F59B1 /* FirebaseFirestoreCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseFirestoreCombine-Community";
+		};
+		7ADD6B3E29173622001F59B1 /* FirebaseFirestoreSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestoreSwift;
+		};
+		7ADD6B4129173746001F59B1 /* FirebaseAnalyticsSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsSwift;
+		};
+		7ADD6B4329173749001F59B1 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ADD6B3529173622001F59B1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7A25ECD428F83F6700B2396A /* Project object */;
 }

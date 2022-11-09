@@ -25,7 +25,7 @@ class HistoryViewModel: ObservableObject {
             }
         }
         self.histories.append(history)
-        print("History for '\(history.id)' saved!")
+        print("Function: \(#function), line: \(#line),", "History for '\(history.id)' saved!")
     }
     
     func isEmpty() -> Bool {
