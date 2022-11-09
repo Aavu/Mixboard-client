@@ -56,7 +56,6 @@ class FirebaseManager {
                 print(err)
             }
             
-            print(email, passwd, shouldLink)
             if shouldLink {
                 let cred = EmailAuthProvider.credential(withEmail: email, password: passwd)
                 linkAccount(credential: cred) { user, err in

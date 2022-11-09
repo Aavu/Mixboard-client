@@ -22,7 +22,6 @@ struct LoginView: View {
     @State var rePass = ""
     
     @AppStorage("email") var currentEmail: String?
-    @AppStorage("loginProvider") var loginProvider: LoginProvider?
     
     let btnHeight:CGFloat = 36
     
@@ -139,7 +138,6 @@ struct LoginView: View {
                             // You will get email and name only once!
                             if let em = user?.email {
                                 self.currentEmail = em
-                                self.loginProvider = .Apple
                                 mashupVM.loggedIn = true
                                 mashupVM.createNewSession()
                             } else {
@@ -191,7 +189,6 @@ struct LoginView: View {
                         }
                         
                         currentEmail = email
-                        loginProvider = .Email
                         mashupVM.loggedIn = true
                         mashupVM.createNewSession()
                     }
@@ -233,7 +230,6 @@ struct LoginView: View {
                 }
                 
                 currentEmail = _email
-                loginProvider = .Email
                 mashupVM.loggedIn = true
                 mashupVM.createNewSession()
             }

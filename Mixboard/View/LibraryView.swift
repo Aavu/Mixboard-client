@@ -13,8 +13,6 @@ struct LibraryView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
     
-    @AppStorage("loginProvider") var loginProvider: LoginProvider?
-    
     @Binding var userLibSongs: [Song]
     
     @State var selectedSongId = [String: SongSource]()
