@@ -10,20 +10,28 @@ import SwiftUI
 struct ToolbarView: View {
     @EnvironmentObject var mashupVM: MashupViewModel
     @EnvironmentObject var userLibVM: UserLibraryViewModel
-    @EnvironmentObject var historyVM: HistoryViewModel
+    @EnvironmentObject var historyVM: UserInfoViewModel
     
     @ObservedObject var audioManager = AudioManager.shared
-    
-    @Binding var presentHistoryView: Bool
+    @ObservedObject var backend = BackendManager.shared
     
     var body: some View {
         ZStack(alignment: .top) {
             Rectangle().foregroundColor(.BgColor).shadow(radius: 8)
             HStack {
-                if let audio = audioManager.currentAudio {
-                    ShareLink(item: audio, preview: SharePreview("Share"))
-                        .padding([.all], 16)
-                }
+                // MARK: UserInfo Button
+                Button {
+                    withAnimation {
+                        mashupVM.UserInfoViewVisibility = .doubleColumn
+                    }
+                } label: {
+                    Image(systemName: "person.crop.circle")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.AccentColor)
+                        .frame(width: 24)
+                }.padding()
 
                 Spacer()
                 
@@ -45,7 +53,7 @@ struct ToolbarView: View {
                         .opacity(userLibVM.songs.count > 0 ? 1 : 0)
                         .opacity(audioManager.isPlaying ? 0.5 : 1)
                     
-                }.disabled(mashupVM.isGenerating || audioManager.isPlaying)
+                }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0)
 
                 Spacer()
 
@@ -56,16 +64,20 @@ struct ToolbarView: View {
                     } label: {
                         Image(systemName: "gobackward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
                     }
-                    .disabled(!mashupVM.readyToPlay)
+                    .disabled(!mashupVM.readyToPlay || mashupVM.isEmpty)
                     
                     // MARK: Play Button
                     Button {
                         handlePlayBtn()
                     } label: {
-                        Image(systemName: audioManager.player?.isPlaying ?? false ? "pause.fill" : "play.fill")
-                            .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
+                        if backend.isGenerating {
+                            ProgressView(value: CGFloat(backend.generationStatus?.progress ?? 50), total: 100).progressViewStyle(.circular)
+                        } else {
+                            Image(systemName: audioManager.player?.isPlaying ?? false ? "pause.fill" : "play.fill")
+                                .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
+                        }
                     }
-                    .disabled(mashupVM.isEmpty)
+                    .disabled(mashupVM.isEmpty || backend.isGenerating)
                     .padding([.leading, .trailing], 24)
                     
                     // MARK: Forward 10 Button
@@ -74,7 +86,7 @@ struct ToolbarView: View {
                     } label: {
                         Image(systemName: "goforward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
                     }
-                    .disabled(!mashupVM.readyToPlay)
+                    .disabled(!mashupVM.readyToPlay || mashupVM.isEmpty)
                 }
                 
                 Spacer()
@@ -93,43 +105,15 @@ struct ToolbarView: View {
                     .opacity(mashupVM.isEmpty ? 0: 1)
                 }
                 
-//                let generateBtnDisabled = mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying
-//                // MARK: Generate Button
-//                Button {
-//                    audioManager.reset()
-//                    let uuid = UUID()
-//                    mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
-//                        guard let audio = audio else { return }
-//                        let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
-//                        historyVM.current = history
-//                        historyVM.add(history: history)
-//                    }
-//                } label: {
-//                    ZStack {
-//                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : generateBtnDisabled ? .NeutralColor : .SecondaryAccentColor).shadow(radius:  4)
-//                        Text("Generate").foregroundColor(.BgColor)
-//                    }.offset(y: mashupVM.isEmpty ? 100.0 : 0.0)
-//                        .animation(.spring(), value: mashupVM.isEmpty)
-//                        .opacity(generateBtnDisabled ? 0.5 : 1)
-//                }.disabled(generateBtnDisabled)
-//                    .padding(.trailing, 4)
-                
                 Spacer()
                 
-                // MARK: History Button
-                Button {
-                    withAnimation {
-                        presentHistoryView = true
-                    }
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundColor(.AccentColor)
-                        .frame(width: 24)
-                }.padding()
                 
+                if let audio = audioManager.currentAudio {
+                    ShareLink(item: audio, preview: SharePreview("Share"))
+                        .padding([.all], 16)
+                } else {
+                    Rectangle().fill(.clear).frame(width: 100)
+                }
             }.padding(.top, 4)
         }
     }
@@ -151,12 +135,8 @@ struct ToolbarView: View {
             play()
         } else {                    // Generate
             audioManager.reset()
-            let uuid = UUID()
-            mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
-                guard let audio = audio else { return }
-                let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
-                historyVM.current = history
-                historyVM.add(history: history)
+            let uuid = UUID().uuidString
+            mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
                 play()
             }
         }

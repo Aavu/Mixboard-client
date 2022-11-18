@@ -13,14 +13,14 @@ class MashupViewModel: ObservableObject {
     @AppStorage("email") var currentEmail: String?
     
     @Published var loggedIn = false
-    
+        
     @Published var appFailed = false
     @Published var layoutInfo = Layout()
-    @Published var isGenerating = false
     @Published var isEmpty = true
     @Published var isSelected = Dictionary<UUID, Bool>()
     
     @Published var readyToPlay = false
+    @Published var showGenerationProgress = true
     
     @Published var isFocuingSongs = false
     
@@ -32,24 +32,25 @@ class MashupViewModel: ObservableObject {
     static let TOTAL_BEATS = 32
     
     @Published var lastBeat = TOTAL_BEATS
-    @Published var generationProgress:TaskStatus.Status?
     
-    var generationTaskId: String?
     var mashupAudio: Audio?
-    
-    var timer: AnyCancellable?
     
     private var errorSubscriber: AnyCancellable?
     
     @Published var appError: AppError?
     @Published var showError = false
     
+    @Published var UserInfoViewVisibility: NavigationSplitViewVisibility = .detailOnly
+    
+    private var userInfoVM: UserInfoViewModel?
+    private var userLibVM: UserLibraryViewModel?
+    
     init() {
         for lane in Lane.allCases {
             layoutInfo.lane[lane.rawValue] = Layout.Track()
         }
         self.addSubscriber()
-        LuckyMeManager.instance.loadTemplateFile()
+        LuckyMeManager.shared.loadTemplateFile()
         
         self.loggedIn = (FirebaseManager.getCurrentUser() != nil)
         if loggedIn {
@@ -59,14 +60,21 @@ class MashupViewModel: ObservableObject {
         createNewSession()
     }
     
+    func attach(userInfoVM: UserInfoViewModel, userLibVM: UserLibraryViewModel) {
+        self.userInfoVM = userInfoVM
+        self.userLibVM = userLibVM
+    }
+    
     func addSubscriber() {
         errorSubscriber = $appError.sink {[weak self] err in
             DispatchQueue.main.async {
-                self?.isGenerating = false
+                BackendManager.shared.isGenerating = false
                 self?.showError = (err != nil)
             }
         }
     }
+    
+    
     
     func createNewSession() {
         if !loggedIn { return }
@@ -79,20 +87,17 @@ class MashupViewModel: ObservableObject {
         let url = URL(string: Config.SERVER + HttpRequests.NEW_SESSION)!
         let body = try? JSONEncoder().encode(["email": email])
         
-        var subscriber: AnyCancellable?
-        subscriber = NetworkManager.request(url: url, type: .POST, httpbody: body, contentType: .JSON)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let e):
-                    print("Function: \(#function), line: \(#line),", e)
-                    self.appError = AppError(description: "Server not responding. Please try again later...")
-                }
-                
-            }, receiveValue: { data in
-                subscriber?.cancel()
-            })
+        NetworkManager.request(url: url, type: .POST, httpbody: body) { completion in
+            switch completion {
+            case .finished:
+                break
+            case .failure(let e):
+                print("Function: \(#function), line: \(#line),", e)
+                self.appError = AppError(description: "Server not responding. Please try again later...")
+            }
+        } completion: { (data:[String:Int]?) in
+            print("Fetched Library")
+        }
     }
     
     func clearCanvas() {
@@ -144,6 +149,9 @@ class MashupViewModel: ObservableObject {
         updateLastBeat()
         setSelected(uuid: region.id, isSelected: false)
         readyToPlay = false
+        
+//        let uuid = UUID().uuidString
+//        generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
     }
     
     func setSelected(uuid: UUID, isSelected: Bool) {
@@ -174,6 +182,10 @@ class MashupViewModel: ObservableObject {
                     isEmpty = isCanvasEmpty()
                     updateLastBeat()
                     readyToPlay = false
+//
+//                    let uuid = UUID().uuidString
+//                    generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
+                    
                     return
                 }
             }
@@ -181,6 +193,7 @@ class MashupViewModel: ObservableObject {
     }
     
     func updateRegion(id: UUID, x: Int, length: Int) {
+        
         for lane in Lane.allCases {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for (idx, region) in lanes.layout.enumerated() {
@@ -190,7 +203,15 @@ class MashupViewModel: ObservableObject {
                         }
                         layoutInfo.lane[lane.rawValue]!.layout[idx].x = x
                         layoutInfo.lane[lane.rawValue]!.layout[idx].w = length
+                        setRegionState(region: &layoutInfo.lane[lane.rawValue]!.layout[idx], state: .Moved)
                         updateLastBeat()
+                        
+//                        if region.x != x || region.w != length {
+//                            let uuid = UUID().uuidString
+//                            generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
+//                        }
+                        
+                        
                         return
                     }
                 }
@@ -198,11 +219,30 @@ class MashupViewModel: ObservableObject {
         }
     }
     
+    func setRegionState(region: inout Region, state: Region.State) {
+        region.state = state
+    }
+    
+    /// Updates region state of all regions in layout. This is useful to call after each generation so as to track user edits
+    func updateRegionState(_ state: Region.State = .Ready) {
+        for lane in Lane.allCases {
+            if let lanes = layoutInfo.lane[lane.rawValue] {
+                for idx in (0..<lanes.layout.count) {
+                    layoutInfo.lane[lane.rawValue]!.layout[idx].state = state
+                }
+            }
+        }
+    }
+    
     func changeLane(regionId: UUID, currentLane: Lane, newLane: Lane) {
         if let lanes = layoutInfo.lane[currentLane.rawValue] {
-            for (idx, region) in lanes.layout.enumerated() {
+            for (idx, var region) in lanes.layout.enumerated() {
                 if region.id == regionId {
                     layoutInfo.lane[currentLane.rawValue]!.layout.remove(at: idx)
+                    // If the region state is ready, it means it has generation. Change it to new to denote it is a new region and requires generation
+                    if region.state == .Ready {
+                        setRegionState(region: &region, state: .New)
+                    }
                     layoutInfo.lane[newLane.rawValue]?.layout.append(region)
                     updateLastBeat()
                     isEmpty = false
@@ -212,18 +252,28 @@ class MashupViewModel: ObservableObject {
                 }
             }
         }
+        
+//        let uuid = UUID().uuidString
+//        generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
+        
     }
     
     func deleteRegionsFor(songId: String) {
+        var didRemove = false
         for lane in Lane.allCases {
             if let regions = layoutInfo.lane[lane.rawValue]?.layout {
                 for region in regions {
                     if region.item.id == songId {
                         removeRegion(lane: lane, id: region.id)
                         readyToPlay = false
+                        didRemove = true
                     }
                 }
             }
+        }
+        
+        if didRemove {
+            updateRegionState(.New)
         }
     }
     
@@ -268,14 +318,27 @@ class MashupViewModel: ObservableObject {
                 updateRegions(lane: lane, regions: lanes.layout)
             }
         }
-        readyToPlay = true
+        
+        if mashupAudio == nil {
+            AudioManager.shared.reset()
+            
+            // Update region state to new so that the backend knows it needs to generate the entire mashup again
+            updateRegionState(.New)
+            let uuid = history.id ?? UUID().uuidString
+            
+            generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false)
+        }
+        
+        readyToPlay = (self.mashupAudio != nil)
     }
     
     func surpriseMe(songs: [Song]) {
-        if let layout = LuckyMeManager.instance.surpriseMe(songs: songs) {
+        if let layout = LuckyMeManager.shared.surpriseMe(songs: songs) {
             self.layoutInfo = layout
             isEmpty = isCanvasEmpty()
             updateLastBeat()
+            readyToPlay = false
+            userInfoVM?.lastSessionId = nil
         } else {
             self.appError = AppError(description: "Error creating luckyme template")
         }
@@ -300,172 +363,48 @@ class MashupViewModel: ObservableObject {
         return true
     }
     
-    func sendGenerateRequest(uuid: UUID, onCompletion: ((Audio?, Layout) -> ())?) {
-        guard let url = URL(string: Config.SERVER + HttpRequests.GENERATE) else {
-            self.appError = AppError(description: "Url invalid")
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-        
-        request.httpBody = try? JSONEncoder().encode(self.layoutInfo.lane)
-        
-        isGenerating = true
-        
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let data = data, err == nil else {
-                self.appError = AppError(description: err?.localizedDescription)
-                print("Function: \(#function), line: \(#line),", err as Any)
-                self.isGenerating = false
-                return
-            }
-            
-            do {
-                let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, String>
-                DispatchQueue.main.async { [self] in
-                    mashupAudio = nil
-                    generationTaskId = resp["task_id"]
-                    
-                    readyToPlay = false
-                    
-                    guard let taskId = self.generationTaskId else { return }
-                    
-                    self.generationProgress = TaskStatus.Status(progress: 5, description: "Hold On! Creating some magic...")
-                    self.updateStatus(taskId: taskId)
-                    
-                    timer = Timer
-                        .publish(every: 0.5, on: .current, in: .common)
-                        .autoconnect()
-                        .sink(receiveValue: { value in
-                            if self.generationProgress?.progress == 100 && self.isGenerating {
-                                self.fetchMashup(uuid: uuid) { url in
-                                    if let audio = self.mashupAudio {
-                                        self.timer = nil
-                                        self.isGenerating = false
-                                        self.readyToPlay = true
-                                        guard let onCompletion = onCompletion else { return }
-                                        onCompletion(audio, self.layoutInfo)
-                                    }
-                                }
-                            }
-                        })
-                }
-            } catch let e {
-                self.appError = AppError(description: e.localizedDescription)
-                print("Function: \(#function), line: \(#line),", e)
-                self.isGenerating = false
-            }
-            
-        }.resume()
-    }
-    
-    func updateStatus(taskId: String, tryNum: Int = 0) {
-        if self.generationProgress?.progress == 100 { return }
-        
-        let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId)!
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let data = data, err == nil else {
-                self.appError = AppError(description: err?.localizedDescription)
-                print("Function: \(#function), line: \(#line),", err as Any)
-                return
-            }
-            
-            do {
-                let resp = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! Dictionary<String, Any>
-                if resp["requestStatus"] as! String == RequestStatus.Pending.rawValue {
-                    DispatchQueue.main.async {
-                        self.updateStatus(taskId: taskId)  //  Recursive call
-                        return
-                    }
-                }
-            } catch let e {
+    func generateMashup(uuid: String, lastSessionId: String?, addToHistory: Bool = true, completion: (() -> ())? = nil) {
+        showGenerationProgress = lastSessionId == nil
+        readyToPlay = false
+        BackendManager.shared.sendGenerateRequest(uuid: uuid, lastSessionId: lastSessionId, layout: self.layoutInfo) { audio, layout, err in
+            if let err = err {
                 DispatchQueue.main.async {
-                    self.appError = AppError(description: e.localizedDescription)
-                    print("Function: \(#function), line: \(#line),", e)
+                    self.appError = AppError(description: err.localizedDescription)
                 }
+                print("Function: \(#function), line: \(#line),", err)
             }
             
-            do {
-                let result = try JSONDecoder().decode(TaskStatus.self, from: data)
-                
-                DispatchQueue.main.async {
-                    self.generationProgress = result.task_result
-                    self.updateStatus(taskId: taskId)  //  Recursive call
-                }
-            } catch let e {
-                DispatchQueue.main.async {
-                    if tryNum < 3 {
-                        self.updateStatus(taskId: taskId, tryNum: tryNum + 1)  //  Recursive call
-                    } else {
-                        self.appError = AppError(description: e.localizedDescription)
-                        self.generationProgress = nil
-                        print("Function: \(#function), line: \(#line),", e)
-                    }
-                }
-            }
-            
-        }.resume()
-    }
-    
-    func fetchMashup(uuid: UUID, tryNum: Int = 0, onCompletion: ((Audio) -> ())? = nil) {
-        guard let taskId = self.generationTaskId else { return }
-        
-        let url = URL(string: Config.SERVER + HttpRequests.RESULT + "/" + taskId)!
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-        
-        
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let data = data, err == nil else {
-                self.appError = AppError(description: err?.localizedDescription)
-                print("Function: \(#function), line: \(#line),", err as Any)
-                return
-            }
-            
-            do {
-                let result = try JSONDecoder().decode(TaskResult.self, from: data)
-                guard let audioData = Data(base64Encoded: result.task_result.snd) else {
-                    self.appError = AppError(description: "Cannot convert snd from base64 data")
-                    return
-                }
-                
-                let tempFile = MashupFileManager.saveAudio(data: audioData, name: uuid.uuidString, ext: "aac")
-                
-                if let tempFile = tempFile {
-                    DispatchQueue.main.async {
-                        self.mashupAudio = Audio(file: tempFile)
-                        AudioManager.shared.currentAudio = self.mashupAudio
-                        self.generationTaskId = nil
-                        self.readyToPlay = true
-                        
-                        guard let onCompletion = onCompletion else { return }
-                        onCompletion(self.mashupAudio!)
-                    }
+            if let audio = audio {
+                self.mashupAudio = audio
+                if let layout = layout {
+                    self.layoutInfo = layout
                 } else {
-                    self.appError = AppError(description: "Failed to save audio")
+                    print("Function: \(#function), line: \(#line),", "Warning: Layout is nil")
                 }
-            } catch let e {
+                
+                AudioManager.shared.currentAudio = self.mashupAudio
+                self.updateRegionState(.Ready)
+                self.readyToPlay = true
+                
+            } else {
                 DispatchQueue.main.async {
-                    if tryNum < 3 {
-                        self.fetchMashup(uuid: uuid, tryNum: tryNum + 1, onCompletion: onCompletion)  //  Recursive call
-                    } else {
-                        self.appError = AppError(description: e.localizedDescription)
-                        print("Function: \(#function), line: \(#line),", e)
-                    }
+                    self.appError = AppError(description: "Audio is nil")
                 }
             }
             
-        }.resume()
-        
+            if addToHistory {
+                if let userLibVM = self.userLibVM, let userInfoVM = self.userInfoVM {
+                    let history = History(id: uuid, audio: self.mashupAudio, date: Date(), userLibrary: userLibVM.songs, layout: self.layoutInfo)
+                    userInfoVM.current = history
+                    
+                    print("adding to history")
+                    userInfoVM.add(history: history)
+                }
+            }
+            
+            if let completion = completion {
+                completion()
+            }
+        }
     }
-    
 }

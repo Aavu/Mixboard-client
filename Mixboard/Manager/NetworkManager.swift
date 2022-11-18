@@ -26,7 +26,8 @@ class NetworkManager {
         case FORM = "Application/x-www-form-urlencoded"
     }
     
-    static func request(url: URL, type: RequestType, httpbody: Data? = nil, contentType: ContentType = .JSON, headers: [Header]? = nil) -> AnyPublisher<Data, Error> {
+    
+    static func request<T:Decodable>(url: URL, type: RequestType, httpbody: Data? = nil, contentType: ContentType = .JSON, headers: [Header]? = nil, handleCompletion: ((Subscribers.Completion<Error>) -> ())? = nil, completion: @escaping (T?) -> ()) {
         var request = URLRequest(url: url)
         request.httpMethod = type.rawValue
         request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
@@ -37,33 +38,40 @@ class NetworkManager {
             }
         }
         request.httpBody = httpbody
-                
-        return URLSession.shared.dataTaskPublisher(for: request)
+        
+        var cancellable: AnyCancellable?
+        cancellable = URLSession.shared.dataTaskPublisher(for: request)
             .subscribe(on: DispatchQueue.global(qos: .default))
             .tryMap({try handleURLResponse(output: $0)})
+            .decode(type: T.self, decoder: JSONDecoder())
             .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+            .sink(receiveCompletion: { completion in
+                if let handleCompletion = handleCompletion {
+                    handleCompletion(completion)
+                } else {
+                    self.handleCompletion(completion: completion)
+                }
+            }, receiveValue: { (output) in
+                completion(output)
+                cancellable?.cancel()
+            })
     }
     
     static func handleURLResponse(output: URLSession.DataTaskPublisher.Output) throws -> Data {
-//        print(output)
-        guard let response = output.response as? HTTPURLResponse else { throw URLError(.badServerResponse)
+        guard let response = output.response as? HTTPURLResponse else {
+            print(output.response)
+            throw URLError(.badServerResponse)
         }
         
         if response.statusCode == 401 {
+            print(output.response)
             throw URLError(.userAuthenticationRequired)
         }
         
         if response.statusCode < 200 || response.statusCode >= 300 {
+            print(output.response)
             throw URLError(.badServerResponse)
         }
-        
-//        do {
-//            let json = try JSONSerialization.jsonObject(with: output.data, options: [.fragmentsAllowed]) as? [String : Any]
-//            print(json)
-//        } catch ( let err){
-//            print("errorMsg: \(err)")
-//        }
         
         return output.data
     }
@@ -74,6 +82,7 @@ class NetworkManager {
             break
         case .failure(let e):
             print("Function: \(#function), line: \(#line),", e)
+            print(Thread.callStackSymbols)
         }
     }
     

@@ -58,26 +58,24 @@ struct SongCardView: View {
 }
 
 struct UserLibSongCardView: View {
-    var song: Song?
+    private var song: Song
     
     @ObservedObject var imageVM: ImageViewModel
     @ObservedObject var audioManager = AudioManager.shared
+    @ObservedObject var backend = BackendManager.shared
     
     @EnvironmentObject var userLibVM: UserLibraryViewModel
     @EnvironmentObject var mashupVM: MashupViewModel
     
-    private let canShowOverlay: Bool
-    
-    init(song: Song?, canShowOverlay: Bool = true) {
+    init(song: Song) {
         self.song = song
-        self.imageVM = ImageViewModel(imageUrl: song?.img_url)
-        self.canShowOverlay = canShowOverlay
+        self.imageVM = ImageViewModel(imageUrl: song.img_url)
     }
     
     var body: some View {
-        let title = song?.name ?? "Song"
-        let artist = song?.artist ?? "Artist"
-        let songId = song?.id ?? ""
+        let title = song.name ?? "Name"
+        let artist = song.artist ?? "Artist"
+        let songId = song.id
         
         ZStack(alignment: .topLeading) {
             Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
@@ -99,15 +97,15 @@ struct UserLibSongCardView: View {
                     }
                     
                     
-                    if let status = userLibVM.downloadProgress[songId] {
+                    if let status = backend.downloadStatus[songId] {
                         if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
-                            Rectangle().fill(.clear).frame(height: 8)
+                            Rectangle().fill(.black).opacity(0.5).frame(height: 8)
                         }
                     }
                 }
                 
                 
-                if let status = userLibVM.downloadProgress[songId] {
+                if let status = backend.downloadStatus[songId] {
                     if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
                         ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
                             StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
@@ -116,25 +114,25 @@ struct UserLibSongCardView: View {
                 }
             }
             
-            if userLibVM.isSelected[songId] ?? false {
-                Button {
-                    withAnimation {
-                        if let songId = song?.id {
-                            userLibVM.removeSong(songId: songId) { err in
-                                userLibVM.dragOffset[songId] = nil
-                                if err != nil { return }
-                                mashupVM.deleteRegionsFor(songId: songId)
-                            }
+            Button {
+                withAnimation {
+                        userLibVM.removeSong(songId: song.id ) { err in
+                            userLibVM.dragOffset[song.id ] = nil
+                            if err != nil { return }
+                            mashupVM.deleteRegionsFor(songId: song.id )
                         }
-                    }
-                } label: {
-                    ZStack {
-                        Color.BgColor.shadow(radius: 4).cornerRadius(4)
-                        Text("Remove").foregroundColor(.AccentColor)
-                    }
                 }
-                .frame(height: 32)
+            } label: {
+                ZStack {
+                    Color.BgColor.shadow(radius: 4).cornerRadius(4)
+                    Text("Remove").foregroundColor(.AccentColor)
+                }
             }
+            .frame(height: 32)
+            .opacity((userLibVM.isSelected[songId] ?? false) ? 1 : 0)
+            .disabled(!(userLibVM.isSelected[songId] ?? false))
+            .animation(.spring(), value: userLibVM.isSelected[songId])
+            .transition(.opacity)
         }
         .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) ? 4 : 0)
         .overlay(content: {

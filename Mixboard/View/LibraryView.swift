@@ -12,6 +12,7 @@ struct LibraryView: View {
     
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
+    @ObservedObject var spotifyManager = SpotifyManager.shared
     
     @Binding var userLibSongs: [Song]
     
@@ -128,13 +129,6 @@ struct LibraryView: View {
                         .animation(.spring(), value: selectedSongId.count > 0)
                         .transition(.move(edge: .bottom))
                         .environmentObject(spotifyVM)
-                        .onChange(of: SpotifyManager.shared.isLinked) { newValue in
-                            SpotifyManager.shared.getRecommendations(numTracks: 20, forUser: SpotifyManager.shared.isLinked) { spotifyTracks in
-                                if let tracks = spotifyTracks {
-                                    spotifyVM.songs = tracks
-                                }
-                            }
-                        }
                     }
                     .offset(x: (selectedTab == 0 ? 0: -geo.frame(in: .global).width) + draggingOffsetWidth)
                     .gesture(DragGesture()
@@ -154,21 +148,25 @@ struct LibraryView: View {
                     )
                 }
             }
-            .onAppear {
-                libraryVM.update()
-                
-                SpotifyManager.shared.isLinked = (SpotifyManager.shared.code != nil)
-                
-                SpotifyManager.shared.getRecommendations(numTracks: 20, forUser: SpotifyManager.shared.isLinked) { (tracks) in
-                    if let tracks = tracks {
-                        spotifyVM.songs = tracks
-                    }
-                }
-            }
             .onChange(of: selectedSongId) { newValue in
                 withAnimation {
                     freezeSelection = (selectedSongId.count + userLibSongs.count) >= 4
                     inSelectionMode = !selectedSongId.isEmpty
+                }
+            }
+            .onChange(of: spotifyManager.isLinked) { newValue in
+                print("spotify linked: \(spotifyManager.isLinked)")
+                spotifyManager.getRecommendations(numTracks: 50, forUser: spotifyManager.isLinked) { spotifyTracks in
+                    if let tracks = spotifyTracks {
+                        spotifyVM.songs = tracks
+                    }
+                }
+            }
+            .onAppear {
+                spotifyManager.getRecommendations(numTracks: 50, forUser: spotifyManager.isLinked) { spotifyTracks in
+                    if let tracks = spotifyTracks {
+                        spotifyVM.songs = tracks
+                    }
                 }
             }
         }
@@ -201,7 +199,7 @@ struct LibraryView: View {
 struct SelectionView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
-    
+        
     @Binding var selectedSongs: [String: SongSource]
     
     @State var libSongs = [Song]()
@@ -284,6 +282,7 @@ struct LibContentView<T: View>: View {
     let contentType: SongSource
     
     @EnvironmentObject var spotifyVM: SpotifyViewModel
+    @ObservedObject var spotifyManager = SpotifyManager.shared
     
     init(contentType: SongSource, @ViewBuilder content: () -> T) {
         self.content = content()
@@ -297,15 +296,11 @@ struct LibContentView<T: View>: View {
             Color.BgColor.ignoresSafeArea()
             VStack {
                 if contentType == .Spotify {
-                    if !SpotifyManager.shared.isLinked {
-                        SpotifyBtn() { err in
-                            SpotifyManager.shared.getRecommendations(numTracks: 20, forUser: true) { spotifyTracks in
-                                if let tracks = spotifyTracks {
-                                    spotifyVM.songs = tracks
-                                }
-                            }
+                    if !spotifyManager.isLinked {
+                        if let auth = spotifyManager.spotifyOAuth {
+                            LinkSpotifyBtn(spotifyOAuth: auth)
+                                .frame(width: 200, height: 48)
                         }
-                        .frame(width: 200, height: 48)
                     }
                 }
                 ScrollView {

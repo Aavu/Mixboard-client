@@ -27,6 +27,7 @@ struct Song: Codable, Hashable {
     var preview_url: String?
     var release_date: String?
     var tempo: Float?
+    var placeholder: Bool?
 }
 
 struct Library: Decodable, Hashable {

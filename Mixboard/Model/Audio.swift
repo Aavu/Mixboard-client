@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct Audio: Equatable, Hashable, Transferable {
+struct Audio: Equatable, Hashable, Transferable, Codable {
     let file: URL
     
     static var transferRepresentation: some TransferRepresentation {

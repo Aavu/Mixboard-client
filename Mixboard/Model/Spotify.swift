@@ -8,9 +8,14 @@
 import Foundation
 
 class Spotify {
-    enum GrantType: String, Codable {
+    enum GrantType: String, Codable, CaseIterable {
         case code
         case client
+    }
+    
+    struct ClientIdSecret: Codable {
+        let clientId: String
+        let clientSecret: String
     }
     
     struct Artist: Codable, Hashable {
@@ -97,12 +102,14 @@ class Spotify {
         
     }
     
-    struct Credentials: Codable, Hashable {
+    struct Credential: Codable, Hashable {
         let access_token: String
         let expires_in: Int
         let token_type: String
         var scope: String?
         var refresh_token: String?
+        var creationTime: Date?
+        var code: String?
     }
     
     struct UserInfo: Codable, Identifiable {

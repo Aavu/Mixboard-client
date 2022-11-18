@@ -13,6 +13,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
         
+//        var appearance = UINavigationBarAppearance()
+//        appearance.configureWithTransparentBackground()
         return true
     }
 }
@@ -28,15 +30,14 @@ struct MixboardApp: App {
             ZStack {
                 MashupView()
                     .blur(radius: mashupVM.loggedIn ? 0 : 64)
-                    .environmentObject(mashupVM)
-                
+
                 if !mashupVM.loggedIn {
                     LoginView()
-                        .environmentObject(mashupVM)
                         .animation(.spring(), value: mashupVM.loggedIn)
                         .transition(.move(edge: .bottom))
                 }
             }
+            .environmentObject(mashupVM)
         }
     }
 }

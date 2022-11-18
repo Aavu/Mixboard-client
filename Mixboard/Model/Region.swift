@@ -8,6 +8,15 @@
 import Foundation
 
 struct Region: Hashable, Codable, Identifiable {
+    enum State: String, Codable {
+        case New
+        case Moved
+//        case Changed
+//        case Increased
+//        case Reduced
+        case Ready
+    }
+    
     struct Item: Hashable, Codable {
         let id: String
         var name: String? = nil
@@ -44,7 +53,7 @@ struct Region: Hashable, Codable, Identifiable {
     var del: Bool? = nil
     var Class: [String]? = nil
     var item: Item
-    var moved: Bool? = nil
+    var state: State = .New
     let id = UUID()
     
     private enum CodingKeys: String, CodingKey {
@@ -56,8 +65,8 @@ struct Region: Hashable, Codable, Identifiable {
         case del     = "del"
         case Class   = "class"
         case item    = "item"
-        case moved   = "moved"
         case id      = "id"
+        case state   = "state"
     }
 }
 
@@ -71,4 +80,11 @@ struct Layout: Hashable, Codable {
     }
     
     var lane = Dictionary<String, Track>()
+}
+
+struct GenerateRequest: Hashable, Codable {
+    let data: Dictionary<String, Layout.Track>
+    let email: String
+    let sessionId: String
+    var lastSessionId: String? = nil
 }

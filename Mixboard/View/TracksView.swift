@@ -37,7 +37,6 @@ struct TracksView: View {
     @State var dragType: DragType = .None
     @State var dummyRegionView: RegionView?
     
-    
     var body: some View {
             ZStack(alignment: .leading) {
                 VStack(spacing: 0.0) {
@@ -52,8 +51,8 @@ struct TracksView: View {
                             if let dummyRegionView = dummyRegionView {
                                 let laneMultiplier = CGFloat(Lane.allCases.firstIndex(of: dummyRegionView.lane)!)
                                 dummyRegionView
-                                    .frame(width: geo.size.width - 86, height: geo.size.height / 4)
-                                    .offset(x: 86, y: (laneMultiplier * geo.size.height / 4) + (yPos[dummyRegionView.uuid] ?? 0))
+                                    .frame(width: geo.size.width - labelWidth, height: geo.size.height / 4)
+                                    .offset(x: labelWidth, y: (laneMultiplier * geo.size.height / 4) + (yPos[dummyRegionView.uuid] ?? 0))
                                     .zIndex(10)
                                     .transition(AnyTransition.identity)
                             }
@@ -64,43 +63,41 @@ struct TracksView: View {
                                         
                                         if let lanes = mashup.layoutInfo.lane[lane.rawValue] {
                                             ForEach(lanes.layout) { region in
-                                                GeometryReader { regionGeo in
-                                                    let song = library.getSong(songId: region.item.id) ?? spotify.getSong(songId: region.item.id)
-                                                    RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
-                                                        .frame(width: geo.size.width - 86)
-                                                        .offset(x: 86, y: yPos[region.id] ?? 0)
-                                                        .onAppear {
+                                                let song = library.getSong(songId: region.item.id) ?? spotify.getSong(songId: region.item.id)
+                                                RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
+                                                    .frame(width: geo.size.width - labelWidth)
+                                                    .offset(x: labelWidth / 2, y: yPos[region.id] ?? 0)
+                                                    .onAppear {
+                                                        yPos[region.id] = 0
+                                                    }
+                                                    .simultaneousGesture(DragGesture(coordinateSpace: .global)
+                                                        .onChanged({ value in
+                                                            if dragType == .None || dragType == .horizontal || dragType == .vertical {
+                                                                if value.translation.height > 0 {
+                                                                    dummyRegionView = RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
+                                                                }
+
+                                                                dragType = .vertical
+
+                                                                yPos[region.id] = value.translation.height
+                                                                withAnimation {
+
+                                                                }
+
+                                                            }
+                                                        })
+
+                                                        .onEnded({ value in
+                                                            dummyRegionView = nil
+                                                            if let l = mashup.getLaneForLocation(location: value.location) {
+                                                                if l != lane {
+                                                                    mashup.changeLane(regionId: region.id, currentLane: lane, newLane: l)
+                                                                }
+                                                            }
                                                             yPos[region.id] = 0
-                                                        }
-                                                        .simultaneousGesture(DragGesture(coordinateSpace: .global)
-                                                            .onChanged({ value in
-                                                                if dragType == .None || dragType == .horizontal || dragType == .vertical {
-                                                                    if value.translation.height > 0 {
-                                                                        dummyRegionView = RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
-                                                                    }
-                                                                    
-                                                                    dragType = .vertical
-                                                                    
-                                                                    yPos[region.id] = value.translation.height
-                                                                    withAnimation {
-                                                                        
-                                                                    }
-                                                                    
-                                                                }
-                                                            })
-                                                                             
-                                                            .onEnded({ value in
-                                                                dummyRegionView = nil
-                                                                if let l = mashup.getLaneForLocation(location: value.location) {
-                                                                    if l != lane {
-                                                                        mashup.changeLane(regionId: region.id, currentLane: lane, newLane: l)
-                                                                    }
-                                                                }
-                                                                yPos[region.id] = 0
-                                                                dragType = .None
-                                                            })
-                                                        )
-                                                }
+                                                            dragType = .None
+                                                        })
+                                                    )
                                             }
                                         }
                                     }
@@ -167,11 +164,9 @@ struct LaneView: View {
                 Text(label).font(.subheadline).fontWeight(.bold).foregroundColor(.BgColor).padding(.all, 16)
             }
             
-            ZStack {
-                Rectangle()
-                    .foregroundColor(.SecondaryBgColor).opacity(0.75)
-                    .padding([.bottom, .top], 1)
-            }
+            Rectangle()
+                .foregroundColor(.SecondaryBgColor).opacity(0.75)
+                .padding([.bottom, .top], 1)
         }
     }
 }

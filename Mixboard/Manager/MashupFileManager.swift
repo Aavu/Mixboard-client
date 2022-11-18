@@ -19,4 +19,8 @@ class MashupFileManager {
         
         return nil
     }
+    
+    static func exists(file: URL) -> Bool {
+        return FileManager.default.fileExists(atPath: file.absoluteString)
+    }
 }

@@ -18,6 +18,7 @@ class LibraryViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     init() {
+        update()
         addSubscribers()
     }
     
@@ -88,26 +89,22 @@ class LibraryViewModel: ObservableObject {
     func update(didUpdate: ((Error?) -> ())? = nil) {
         let url = URL(string: Config.SERVER + HttpRequests.TRACK_LIST)!
         
-        var subscription: AnyCancellable?
-        subscription = NetworkManager.request(url: url, type: .POST)
-            .decode(type: Library.self, decoder: JSONDecoder())
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let e):
-                    if let didUpdate = didUpdate {
-                        didUpdate(e)
-                    }
-                }
-            }, receiveValue: { [weak self] (lib) in
-                self?.library = lib
-                self?.updateSongList()
+        NetworkManager.request(url: url, type: .POST, handleCompletion: { completion in
+            switch completion {
+            case .finished:
+                break
+            case .failure(let e):
                 if let didUpdate = didUpdate {
-                    didUpdate(nil)
+                    didUpdate(e)
                 }
-                subscription?.cancel()
-            })
+            }
+        }) { [weak self] (lib) in
+            self?.library = lib
+            self?.updateSongList()
+            if let didUpdate = didUpdate {
+                didUpdate(nil)
+            }
+        }
     }
     
     private func updateSongList() {

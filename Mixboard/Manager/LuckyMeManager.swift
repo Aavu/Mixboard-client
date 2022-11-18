@@ -8,7 +8,7 @@
 import Foundation
 
 class LuckyMeManager {
-    static let instance = LuckyMeManager()
+    static let shared = LuckyMeManager()
     
     private var templates: LuckyMeTemplates?
     

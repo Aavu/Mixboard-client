@@ -1,5 +1,5 @@
 //
-//  SpotifyBtn.swift
+//  LinkSpotifyBtn.swift
 //  Mixboard
 //
 //  Created by Raghavasimhan Sankaranarayanan on 11/7/22.
@@ -9,17 +9,12 @@ import SwiftUI
 import WebKit
 import FirebaseAuth
 
-struct SpotifyBtn: View {
-    @State var showWebView = false
-    var spotifyAuthUrl: URL
+struct LinkSpotifyBtn: View {
+    var spotifyOAuth: SpotifyOAuth
     
-    @State var loadCount: Int = 0
+    @State private var showWebView = false
     
-    var authCompletion: (Error?) -> ()
-    init(authCompletion: @escaping (Error?) -> ()) {
-        self.authCompletion = authCompletion
-        self.spotifyAuthUrl = SpotifyManager.shared.getAuthUrl()
-    }
+    @State private var loadCount: Int = 0
     
     var body: some View {
         Button {
@@ -36,21 +31,20 @@ struct SpotifyBtn: View {
                 }
             }
         }.sheet(isPresented: $showWebView) {
-            WebView(url: spotifyAuthUrl) { urlString in
+            WebView(url: spotifyOAuth.getAuthUrl()) { urlString in
                 if let urlString = urlString {
-                    let splitUrl = urlString.split(separator: "?")
-                    let code = splitUrl[1].split(separator: "=")
-                    if code[0] == "code" {
-                        SpotifyManager.shared.setCode(code: String(code[1]))
-                        showWebView = false
-                        authCompletion(nil)
-                    } else {
-                        print("Function: \(#function), line: \(#line),", "Error getting access token")
+                    if let code = spotifyOAuth.parseResponseCode(urlString: urlString) {
+                        spotifyOAuth.exchangeAccessToken(forCode: code) { accessToken in
+                            if let _ = accessToken {
+                                SpotifyManager.shared.isLinked = true
+                                
+                                showWebView = false
+                            }
+                        }
                     }
                 }
             }
         }
-        
     }
 }
 
@@ -58,15 +52,17 @@ struct SpotifyBtn: View {
 /// Adapted from: `https://medium.com/geekculture/how-to-use-webview-in-swiftui-and-also-detect-the-url-21d4fab2a9c1`
 struct WebView: UIViewRepresentable {
     
-    var url: URL
+    var url: URL?
     
     var didFinishAuthenticating: (String?) -> ()
         
     func makeUIView(context: Context) -> WKWebView {
         let wkWebView = WKWebView()
         wkWebView.navigationDelegate = context.coordinator
-        let request = URLRequest(url: url)
-        wkWebView.load(request)
+        if let url = url {
+            let request = URLRequest(url: url)
+            wkWebView.load(request)
+        }
         return wkWebView
     }
     
@@ -97,9 +93,8 @@ struct WebView: UIViewRepresentable {
     }
 }
 
-struct SpotifyBtn_Previews: PreviewProvider {
-    static var previews: some View {
-        SpotifyBtn() {err in
-        }
-    }
-}
+//struct LinkSpotifyBtn_Previews: PreviewProvider {
+//    static var previews: some View {
+//        LinkSpotifyBtn()
+//    }
+//}
