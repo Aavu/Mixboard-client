@@ -24,13 +24,14 @@
 		7A25ED0728F8A41F00B2396A /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A25ED0628F8A41F00B2396A /* Extensions.swift */; };
 		7A25ED0928F8E51600B2396A /* ImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A25ED0828F8E51600B2396A /* ImageView.swift */; };
 		7A25ED0B28F8E65600B2396A /* ImageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A25ED0A28F8E65600B2396A /* ImageViewModel.swift */; };
-		7A3291792901B946007AF70F /* LuckyMeTemplates.json in Resources */ = {isa = PBXBuildFile; fileRef = 7A3291782901B946007AF70F /* LuckyMeTemplates.json */; };
+		7A3291792901B946007AF70F /* LuckyMeTemplates32.json in Resources */ = {isa = PBXBuildFile; fileRef = 7A3291782901B946007AF70F /* LuckyMeTemplates32.json */; };
 		7A32917B2901C769007AF70F /* LuckyMeTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */; };
 		7A32917D2901CBB7007AF70F /* LuckyMeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */; };
 		7A4D7F992910DA3D00651CCF /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4D7F982910DA3D00651CCF /* NetworkManager.swift */; };
 		7A5FCE382920166F0037618D /* SpotifyAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5FCE372920166F0037618D /* SpotifyAuth.swift */; };
 		7A75C323290D87A000AB2134 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A75C322290D87A000AB2134 /* Audio.swift */; };
 		7A8AD5442906F059001AE70F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8AD5432906F059001AE70F /* HapticManager.swift */; };
+		7A910DCF2927F48800832130 /* LuckyMeTemplates16.json in Resources */ = {isa = PBXBuildFile; fileRef = 7A910DCE2927F48800832130 /* LuckyMeTemplates16.json */; };
 		7ACBADBB291A0B50002B3A38 /* LinkSpotifyBtn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACBADBA291A0B50002B3A38 /* LinkSpotifyBtn.swift */; };
 		7ACBADBD291B33A1002B3A38 /* Elements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACBADBC291B33A1002B3A38 /* Elements.swift */; };
 		7ACBADBF291B6D4D002B3A38 /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACBADBE291B6D4D002B3A38 /* DatabaseManager.swift */; };
@@ -66,6 +67,7 @@
 		7AED714C28FF419700336B56 /* UserInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED714B28FF419700336B56 /* UserInfoView.swift */; };
 		7AED714E28FF4A6C00336B56 /* History.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED714D28FF4A6C00336B56 /* History.swift */; };
 		7AED715028FF4B2C00336B56 /* UserInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED714F28FF4B2C00336B56 /* UserInfoViewModel.swift */; };
+		7AF88332292896DD001B7FB7 /* MBMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF88331292896DD001B7FB7 /* MBMusic.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -87,7 +89,7 @@
 		7A25ED0628F8A41F00B2396A /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		7A25ED0828F8E51600B2396A /* ImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageView.swift; sourceTree = "<group>"; };
 		7A25ED0A28F8E65600B2396A /* ImageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageViewModel.swift; sourceTree = "<group>"; };
-		7A3291782901B946007AF70F /* LuckyMeTemplates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LuckyMeTemplates.json; sourceTree = "<group>"; };
+		7A3291782901B946007AF70F /* LuckyMeTemplates32.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LuckyMeTemplates32.json; sourceTree = "<group>"; };
 		7A32917A2901C769007AF70F /* LuckyMeTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyMeTemplates.swift; sourceTree = "<group>"; };
 		7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuckyMeManager.swift; sourceTree = "<group>"; };
 		7A4D7F982910DA3D00651CCF /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
@@ -95,6 +97,7 @@
 		7A5FCE372920166F0037618D /* SpotifyAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAuth.swift; sourceTree = "<group>"; };
 		7A75C322290D87A000AB2134 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
 		7A8AD5432906F059001AE70F /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		7A910DCE2927F48800832130 /* LuckyMeTemplates16.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = LuckyMeTemplates16.json; sourceTree = "<group>"; };
 		7ACBADBA291A0B50002B3A38 /* LinkSpotifyBtn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkSpotifyBtn.swift; sourceTree = "<group>"; };
 		7ACBADBC291B33A1002B3A38 /* Elements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Elements.swift; sourceTree = "<group>"; };
 		7ACBADBE291B6D4D002B3A38 /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 		7AED714B28FF419700336B56 /* UserInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfoView.swift; sourceTree = "<group>"; };
 		7AED714D28FF4A6C00336B56 /* History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = History.swift; sourceTree = "<group>"; };
 		7AED714F28FF4B2C00336B56 /* UserInfoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfoViewModel.swift; sourceTree = "<group>"; };
+		7AF88331292896DD001B7FB7 /* MBMusic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBMusic.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,7 +181,9 @@
 				7A25ECE528F83F6800B2396A /* Preview Content */,
 				7A25ED0628F8A41F00B2396A /* Extensions.swift */,
 				7AED712F28FA21CC00336B56 /* Config.swift */,
-				7A3291782901B946007AF70F /* LuckyMeTemplates.json */,
+				7A910DCE2927F48800832130 /* LuckyMeTemplates16.json */,
+				7A3291782901B946007AF70F /* LuckyMeTemplates32.json */,
+				7AF88331292896DD001B7FB7 /* MBMusic.swift */,
 			);
 			path = Mixboard;
 			sourceTree = "<group>";
@@ -347,13 +353,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A3291792901B946007AF70F /* LuckyMeTemplates.json in Resources */,
+				7A3291792901B946007AF70F /* LuckyMeTemplates32.json in Resources */,
 				7AED712528F9D3D100336B56 /* libraryExample.json in Resources */,
 				7A25ECE728F83F6800B2396A /* Preview Assets.xcassets in Resources */,
 				7AED712128F9CF4A00336B56 /* songExample.json in Resources */,
 				7A25ECE428F83F6800B2396A /* Assets.xcassets in Resources */,
 				7AED713828FC6F9000336B56 /* generateRequestExample.json in Resources */,
 				7ADD6B34291734B2001F59B1 /* GoogleService-Info.plist in Resources */,
+				7A910DCF2927F48800832130 /* LuckyMeTemplates16.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,6 +403,7 @@
 				7AED714028FD04E300336B56 /* MashupFileManager.swift in Sources */,
 				7A25ED0728F8A41F00B2396A /* Extensions.swift in Sources */,
 				7A25ED0528F8A27700B2396A /* SpotifyViewModel.swift in Sources */,
+				7AF88332292896DD001B7FB7 /* MBMusic.swift in Sources */,
 				7ADD6B492917A639001F59B1 /* SpotifyManager.swift in Sources */,
 				7A25ECFA28F84EC500B2396A /* Library.swift in Sources */,
 				7A03BFE3291D6F4600B19874 /* BackendManager.swift in Sources */,
@@ -536,7 +544,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Mixboard/Mixboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 35A3E26LB3;
 				ENABLE_PREVIEWS = YES;
@@ -572,7 +580,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Mixboard/Mixboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 35A3E26LB3;
 				ENABLE_PREVIEWS = YES;

@@ -73,7 +73,7 @@ struct ToolbarView: View {
                         if backend.isGenerating {
                             ProgressView(value: CGFloat(backend.generationStatus?.progress ?? 50), total: 100).progressViewStyle(.circular)
                         } else {
-                            Image(systemName: audioManager.player?.isPlaying ?? false ? "pause.fill" : "play.fill")
+                            Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
                                 .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
                         }
                     }
@@ -108,12 +108,12 @@ struct ToolbarView: View {
                 Spacer()
                 
                 
-                if let audio = audioManager.currentAudio {
-                    ShareLink(item: audio, preview: SharePreview("Share"))
-                        .padding([.all], 16)
-                } else {
-                    Rectangle().fill(.clear).frame(width: 100)
-                }
+//                if let music = audioManager.currentMusic {
+//                    ShareLink(item: audio, preview: SharePreview("Share"))
+//                        .padding([.all], 16)
+//                } else {
+//                    Rectangle().fill(.clear).frame(width: 100)
+//                }
             }.padding(.top, 4)
         }
     }
@@ -121,13 +121,15 @@ struct ToolbarView: View {
     func handlePlayBtn() {
         func play() {
             if audioManager.isPlaying {
-                audioManager.stop()
+                audioManager.playOrPause()
             } else {
-                guard let audio = mashupVM.mashupAudio else {
+                guard let music = audioManager.currentMusic else {
                     print("Function: \(#function), line: \(#line),", "No Audio file available")
                     return
                 }
-                audioManager.play(audio: audio)
+                
+                audioManager.setMashupLength(lengthInBars: mashupVM.lastBeat, tempo: mashupVM.tempo)
+                audioManager.playOrPause(music: music)
             }
         }
         

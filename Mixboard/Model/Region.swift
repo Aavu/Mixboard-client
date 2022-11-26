@@ -11,9 +11,6 @@ struct Region: Hashable, Codable, Identifiable {
     enum State: String, Codable {
         case New
         case Moved
-//        case Changed
-//        case Increased
-//        case Reduced
         case Ready
     }
     
@@ -53,8 +50,9 @@ struct Region: Hashable, Codable, Identifiable {
     var del: Bool? = nil
     var Class: [String]? = nil
     var item: Item
-    var state: State = .New
+    var state: State
     let id = UUID()
+    var audioPosition: Int64?
     
     private enum CodingKeys: String, CodingKey {
         case x       = "x"
@@ -67,6 +65,7 @@ struct Region: Hashable, Codable, Identifiable {
         case item    = "item"
         case id      = "id"
         case state   = "state"
+        case audioPosition   = "audioPosition"
     }
 }
 

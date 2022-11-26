@@ -15,7 +15,7 @@ class LuckyMeManager {
     var appError: AppError?
     
     func loadTemplateFile() {
-        guard let url = Bundle.main.url(forResource: "LuckyMeTemplates", withExtension: "json")
+        guard let url = Bundle.main.url(forResource: "LuckyMeTemplates\(MashupViewModel.TOTAL_BEATS)", withExtension: "json")
         else {
             appError = AppError(description: "LuckyMe templates JSON file not found")
             print("Function: \(#function), line: \(#line),", "LuckyMe templates JSON file not found")
@@ -53,7 +53,7 @@ class LuckyMeManager {
                 let trackId = determineTrack(trackId: laneVars.tracks[j])
                 let song = shuffledSongs[trackId]
 
-                let region = Region(x: startPos, w: width, item: Region.Item(id: song.id))
+                let region = Region(x: startPos, w: width, item: Region.Item(id: song.id), state: .New)
                 layout.lane[lane.rawValue]!.layout.append(region)
             }
         }

@@ -48,9 +48,6 @@ struct HomeView: View {
     
     @ObservedObject var backend = BackendManager.shared
     
-    @State var audioProgress:CGFloat = 0
-    @State var playHeadProgress: CGFloat = 0
-    
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     var body: some View {
@@ -67,7 +64,7 @@ struct HomeView: View {
 
                         VStack {
                             Spacer(minLength: 8)
-                            TracksView(audioProgress: $audioProgress, playHeadProgress: $playHeadProgress)
+                            TracksView()
                                 .cornerRadius(8)
                             Spacer(minLength: 8)
 
@@ -113,12 +110,6 @@ struct HomeView: View {
                         .progressViewStyle(LinearProgressViewStyle(tint: .white))
                 }
             }
-        }
-        .onChange(of: audioManager.progress) { progress in
-            audioProgress = progress
-        }
-        .onChange(of: playHeadProgress) { progress in
-            audioManager.setProgress(progress: progress)
         }
         .alert(isPresented: $mashupVM.showError, error: mashupVM.appError, actions: {
             Button("Ok") {

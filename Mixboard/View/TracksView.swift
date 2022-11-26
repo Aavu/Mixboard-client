@@ -24,11 +24,6 @@ struct TracksView: View {
     @ObservedObject var audioManager = AudioManager.shared
     
     let labelWidth: CGFloat = 86
-    
-    @Binding var audioProgress: CGFloat
-    @Binding var playHeadProgress: CGFloat
-    
-    @State var isControllingPlayHead = false
 
     @State var startX = Dictionary<UUID, CGFloat>()
     @State var endX = Dictionary<UUID, CGFloat>()
@@ -78,10 +73,8 @@ struct TracksView: View {
                                                                 }
 
                                                                 dragType = .vertical
-
-                                                                yPos[region.id] = value.translation.height
-                                                                withAnimation {
-
+                                                                withAnimation(.spring(blendDuration: 0.1)) {
+                                                                    yPos[region.id] = value.translation.height
                                                                 }
 
                                                             }
@@ -122,18 +115,10 @@ struct TracksView: View {
                     let playHeadMultiplier: CGFloat = totalWidth * CGFloat(mashup.lastBeat) / CGFloat(MashupViewModel.TOTAL_BEATS)
                     PlayHeadView()
                         .offset(x: labelWidth - 10)
-                        .offset(x: (isControllingPlayHead ? playHeadProgress : audioProgress) * playHeadMultiplier)
+                        .offset(x: CGFloat(audioManager.progress) * playHeadMultiplier)
                         .gesture(DragGesture(coordinateSpace: .local)
                             .onChanged({ value in
-                                isControllingPlayHead = true
-                                
-                                playHeadProgress =  min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier
-                            })
-                            .onEnded({ value in
-                                isControllingPlayHead = false
-                                
-                                playHeadProgress =  min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier
-                                audioProgress = playHeadProgress
+                                audioManager.setProgress(progress: min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier)
                             })
                         )
                 }
@@ -212,7 +197,7 @@ struct RegionView: View {
             GeometryReader { geometry in
                 SongCardView(song: song).frame(width: max(0, width - 2*pad)).background(.black)
                     .onTapGesture {
-                        withAnimation {
+                        withAnimation(.spring(blendDuration: 0.1)) {
                             mashup.unselectAllRegions()
                             if !isSelected {
                                 mashup.setSelected(uuid: uuid, isSelected: true)
@@ -220,28 +205,27 @@ struct RegionView: View {
                         }
                     }
                     .border(Color.NeutralColor, width: isSelected ? 4 : 0)
-                    .animation(.spring(), value: isSelected)
+                    .animation(.spring(blendDuration: 0.1), value: isSelected)
+                    .transition(.opacity)
                     .offset(x: start)
-                    .gesture(DragGesture(minimumDistance: 5)
+                    .gesture(DragGesture(minimumDistance: 0)
                         .onChanged({ value in
                             dragType = .horizontal
                             let tempStartX = lastStartX + value.translation.width
                             let tempEndX = lastEndX + value.translation.width
                             if tempStartX >= 0 && tempEndX < geometry.size.width {
-                                startX[uuid] = tempStartX
-                                endX[uuid] = tempEndX
-                                withAnimation {
-                                    
+                                withAnimation(.spring(blendDuration: 0.1)) {
+                                    startX[uuid] = round(tempStartX / conversion) * conversion
+                                    endX[uuid] = round(tempEndX / conversion) * conversion
                                 }
                             }
                             
                         })
                              
                         .onEnded({ value in
-                            startX[uuid] = round(start / conversion) * conversion
-                            endX[uuid] = round(end / conversion) * conversion
-                            withAnimation {
-                                
+                            withAnimation(.spring(blendDuration: 0.1)) {
+                                startX[uuid] = round(start / conversion) * conversion
+                                endX[uuid] = round(end / conversion) * conversion
                             }
                             handleDragEnded(geometry: geometry)
                         })
@@ -261,21 +245,19 @@ struct RegionView: View {
                         .opacity(0.25)
                         .frame(width: handleWidth)
                         .offset(x: start)
-                        .simultaneousGesture(DragGesture(minimumDistance: 5)
+                        .simultaneousGesture(DragGesture(minimumDistance: 0)
                             .onChanged({ value in
                                 dragType = .start
                                 let temp = max(0, lastStartX + value.translation.width)
                                 if (endX[uuid]! - temp) >= conversion {
-                                    startX[uuid] = temp
-                                }
-                                withAnimation {
-                                    
+                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                        startX[uuid] = round(temp / conversion) * conversion
+                                    }
                                 }
                             })
                                 .onEnded({ value in
-                                    startX[uuid] = round(start / conversion) * conversion
-                                    withAnimation {
-                                        
+                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                        startX[uuid] = round(start / conversion) * conversion
                                     }
                                     handleDragEnded(geometry: geometry)
                                 })
@@ -285,21 +267,19 @@ struct RegionView: View {
                         .opacity(0.25)
                         .frame(width: handleWidth)
                         .offset(x: end - handleWidth - 2*pad)
-                        .simultaneousGesture(DragGesture(minimumDistance: 5)
+                        .simultaneousGesture(DragGesture(minimumDistance: 0)
                             .onChanged({ value in
                                 dragType = .end
                                 let temp = min(geometry.size.width, lastEndX + value.translation.width)
                                 if (temp - startX[uuid]!) >= conversion {
-                                    endX[uuid] = temp
-                                }
-                                withAnimation {
-                                    
+                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                        endX[uuid] = round(temp / conversion) * conversion
+                                    }
                                 }
                             })
                                 .onEnded({ value in
-                                    endX[uuid] = round(end / conversion) * conversion
-                                    withAnimation {
-                                        
+                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                        endX[uuid] = round(end / conversion) * conversion
                                     }
                                     handleDragEnded(geometry: geometry)
                                 })
@@ -308,7 +288,7 @@ struct RegionView: View {
                 
                 if isSelected {
                     Button {
-                        withAnimation {
+                        withAnimation(.spring()) {
                             mashup.removeRegion(lane: lane, id: uuid)
                         }
                     } label: {
@@ -342,11 +322,16 @@ struct RegionView: View {
         dragType = .None
         let tempx = Int(round(startX[uuid]! / conversion))
         let length = Int(round((endX[uuid]! - startX[uuid]!) / conversion))
-        mashup.updateRegion(id: uuid, x: tempx, length: min(Int(MashupViewModel.TOTAL_BEATS) - tempx, length))
-        startX[uuid] = CGFloat(tempx) * conversion
-        endX[uuid] = CGFloat(length + tempx) * conversion
-        lastStartX = startX[uuid]!
-        lastEndX = endX[uuid]!
+        let success = mashup.updateRegion(id: uuid, x: tempx, length: min(Int(MashupViewModel.TOTAL_BEATS) - tempx, length))
+        if success {
+            startX[uuid] = CGFloat(tempx) * conversion
+            endX[uuid] = CGFloat(length + tempx) * conversion
+            lastStartX = startX[uuid]!
+            lastEndX = endX[uuid]!
+        } else {
+            startX[uuid] = lastStartX
+            endX[uuid] = lastEndX
+        }
     }
 }
 
