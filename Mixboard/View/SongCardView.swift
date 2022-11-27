@@ -118,7 +118,10 @@ struct UserLibSongCardView: View {
                 withAnimation {
                         userLibVM.removeSong(songId: song.id ) { err in
                             userLibVM.dragOffset[song.id ] = nil
-                            if err != nil { return }
+                            if err != nil {
+                                print(err!)
+                                return
+                            }
                             mashupVM.deleteRegionsFor(songId: song.id )
                         }
                 }

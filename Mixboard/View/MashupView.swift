@@ -98,12 +98,6 @@ struct HomeView: View {
                 .environmentObject(spotifyVM)
                 .simultaneousGesture(TapGesture()
                     .onEnded({
-                        withAnimation {
-                            mashupVM.unselectAllRegions()
-                            mashupVM.isFocuingSongs = false
-                            userLibVM.isSelected.removeAll()
-                        }
-
                         mashupVM.userInfoViewVisibility = .detailOnly
                     })
                 )

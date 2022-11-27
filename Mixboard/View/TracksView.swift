@@ -104,7 +104,6 @@ struct TracksView: View {
                             mashup.tracksViewLocation = CGPoint(x: geo.frame(in: .global).minX + mashup.trackLabelWidth, y: geo.frame(in: .global).minY)
                             mashup.tracksViewSize = geo.frame(in: .global).size
                         }
-//                        .allowsHitTesting(!audioManager.isPlaying)
                     }
                 }
                 
