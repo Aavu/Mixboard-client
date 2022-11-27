@@ -18,51 +18,32 @@ class AudioManager: NSObject, ObservableObject {
     private var displayLink: CADisplayLink?
     
     private let engine = AVAudioEngine()
-    private var players = [AVAudioPlayerNode]()
+    private var players = [String: AVAudioPlayerNode]()
     private var silencePlayer = AVAudioPlayerNode()
     private var needsFilesScheduled = true
     
     @Published var isPlaying = false
     
-    private var currentPosition: AVAudioFramePosition = 0 {
-        didSet {
-            updateProgress()
-        }
-    }
+    @Published var currentPosition: AVAudioFramePosition = 0
     
     private var currentSilentBufferPosition: AVAudioFramePosition = 0
-    private var audioLengthSamples: AVAudioFramePosition = 0 {
-        didSet {
-            updateProgress()
-        }
-    }
-    
-    @Published var progress: Double = 0
+    @Published var audioLengthSamples: AVAudioFramePosition = 0
+    @Published var timelineLengthSamples: AVAudioFramePosition = 0
     
     private var sampleRate: Double = 44100
     
-    func setMashupLength(lengthInBars: Int, tempo: Double) {
+    @Published var tempo: Double = 120 {
+        didSet {
+            timelineLengthSamples = MBMusic.getInSamples(value: MashupViewModel.TOTAL_BEATS, sampleRate: sampleRate, tempo: tempo)
+        }
+    }
+    
+    func setMashupLength(lengthInBars: Int) {
         audioLengthSamples = MBMusic.getInSamples(value: lengthInBars, sampleRate: sampleRate, tempo: tempo)
     }
     
     func getMashupLength() -> AVAudioFramePosition {
         return audioLengthSamples
-    }
-    
-    func updateProgress() {
-        if audioLengthSamples == 0 {
-            progress = 0
-        }
-        
-        progress = max(min(Double(currentPosition) / Double(audioLengthSamples), 1), 0)
-    }
-    
-    func getProgress() -> Double {
-        return progress
-    }
-    
-    func getPlayHeadMultiplier() -> CGFloat {
-        return 0
     }
     
     func playOrPause(music: MBMusic? = nil) {
@@ -93,7 +74,7 @@ class AudioManager: NSObject, ObservableObject {
     private func play() {
         displayLink?.isPaused = false
         self.silencePlayer.play()
-        for p in self.players {
+        for (_, p) in self.players {
             p.play()
         }
         self.isPlaying = true
@@ -104,7 +85,7 @@ class AudioManager: NSObject, ObservableObject {
         displayLink?.isPaused = true
 
         self.silencePlayer.pause()
-        for p in self.players {
+        for (_, p) in self.players {
             p.pause()
         }
         self.isPlaying = false
@@ -113,7 +94,7 @@ class AudioManager: NSObject, ObservableObject {
     func stop() {
         displayLink?.isPaused = true
         self.silencePlayer.stop()
-        for p in self.players {
+        for (_, p) in self.players {
             p.stop()
         }
         self.isPlaying = false
@@ -123,6 +104,37 @@ class AudioManager: NSObject, ObservableObject {
         stop()
         currentPosition = 0
         needsFilesScheduled = true
+    }
+    
+    func set(volume: Float) {
+        for (_, p) in players {
+            p.volume = volume
+        }
+    }
+    
+    func handleMute(regionIds: [UUID]) {
+        set(volume: 1)
+        
+        for id in regionIds {
+            if let player = players[id.uuidString] {
+                player.volume = 0
+            }
+        }
+    }
+    
+    func handleSolo(regionIds: [UUID]) {
+        if regionIds.count > 0 {
+            set(volume: 0)
+        } else {
+            set(volume: 1)
+            return
+        }
+        
+        for id in regionIds {
+            if let player = players[id.uuidString] {
+                player.volume = 1
+            }
+        }
     }
     
     private func playBackCompleteCallback() {
@@ -159,26 +171,27 @@ class AudioManager: NSObject, ObservableObject {
             return false
         }
         
-        
-        for (audio, player) in zip(music.audios, players) {
-            do {
-                let file = try AVAudioFile(forReading: audio.file)
-                let fmt = file.processingFormat
-                sampleRate = fmt.sampleRate
-                let diffTime = audio.position - position
-                if diffTime >= 0 {  // Region is in the future
-                    let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
-                    player.scheduleFile(file, at: _time)
-                } else {
-                    if position < audio.position + file.length {  // Region under playhead
-                        let startingFrame = AVAudioFramePosition(position - audio.position)
-                        let frameCount = AVAudioFrameCount(file.length - startingFrame)
-                        player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
+        for (id, audio) in music.audios {
+            if let player = players[id] {
+                do {
+                    let file = try AVAudioFile(forReading: audio.file)
+                    let fmt = file.processingFormat
+                    sampleRate = fmt.sampleRate
+                    let diffTime = audio.position - position
+                    if diffTime >= 0 {  // Region is in the future
+                        let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
+                        player.scheduleFile(file, at: _time)
+                    } else {
+                        if position < audio.position + file.length {  // Region under playhead
+                            let startingFrame = AVAudioFramePosition(position - audio.position)
+                            let frameCount = AVAudioFrameCount(file.length - startingFrame)
+                            player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
+                        }
                     }
+                } catch (let e) {
+                    print(e)
+                    return false
                 }
-            } catch (let e) {
-                print(e)
-                return false
             }
         }
         
@@ -187,7 +200,7 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     private func resetPlayers() {
-        for p in players {
+        for (_, p) in players {
             p.engine?.detach(p)
         }
         players.removeAll()
@@ -208,9 +221,9 @@ class AudioManager: NSObject, ObservableObject {
         engine.attach(silencePlayer)
         engine.connect(silencePlayer, to: engine.mainMixerNode, format: .init(standardFormatWithSampleRate: self.sampleRate, channels: 1))
         
-        for _ in music.audios {
+        for (id, _) in music.audios {
             let p = AVAudioPlayerNode()
-            players += [p]
+            players[id] = p
             engine.attach(p)
             engine.connect(p, to: engine.mainMixerNode, format: .init(standardFormatWithSampleRate: self.sampleRate, channels: 1))
         }
@@ -246,10 +259,8 @@ class AudioManager: NSObject, ObservableObject {
         }
     }
     
-    func setProgress(progress p: CGFloat) {
-        if p.isNaN { return }
-        let temp = max(min(p, 1), 0)
-        currentPosition = AVAudioFramePosition(round(Double(audioLengthSamples) * temp))
+    func setCurrentPosition(position: AVAudioFramePosition) {
+        currentPosition = max(min(position, timelineLengthSamples), 0)
         let wasPlaying = isPlaying
         stop()
         let _ = scheduleMusic(at: currentPosition)
@@ -257,5 +268,11 @@ class AudioManager: NSObject, ObservableObject {
         if wasPlaying {
             play()
         }
+    }
+    
+    func setProgress(progress p: CGFloat) {
+        if p.isNaN { return }
+        let temp = max(min(p, 1), 0)
+        setCurrentPosition(position: AVAudioFramePosition(round(Double(timelineLengthSamples) * temp)))
     }
 }

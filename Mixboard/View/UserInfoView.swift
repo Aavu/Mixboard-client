@@ -16,55 +16,59 @@ struct UserInfoView: View {
     var onCompletion: ((History) -> ())
     
     var body: some View {
-        VStack {
-            List {
-                Section("History") {
-                    ForEach(userInfoVM.histories, id: \.self.id) { history in
-                        Button {
-                            DispatchQueue.main.async {
-                                handleTap(history: history)
-                            }
-                        } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 4).foregroundColor(history.id == userInfoVM.current?.id ? Color.SecondaryBgColor : .clear).opacity(0.5)
-                                Text(userInfoVM.getDateString(history: history)).foregroundColor(.accentColor)
+        ZStack {
+            Color.BgColor
+            VStack {
+                Spacer(minLength: 50)
+                List {
+                    Section("History") {
+                        ForEach(userInfoVM.histories, id: \.self.id) { history in
+                            Button {
+                                DispatchQueue.main.async {
+                                    handleTap(history: history)
+                                }
+                            } label: {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 4).foregroundColor(history.id == userInfoVM.current?.id ? Color.SecondaryBgColor : .clear).opacity(0.5)
+                                    Text(userInfoVM.getDateString(history: history)).foregroundColor(.accentColor)
+                                }
                             }
                         }
-                    }
-                    .onDelete { idxSet in
-                        userInfoVM.removeHistory(atOffsets: idxSet)
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            Rectangle().frame(height: 1).foregroundColor(.SecondaryBgColor).opacity(0.5).padding(.vertical, 4)
-            Button {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    FirebaseManager.signOut()
-                    
-                    @AppStorage("email") var currentEmail: String?
-
-                    withAnimation {
-                        currentEmail = nil
-                        mashupVM.loggedIn = false
+                        .onDelete { idxSet in
+                            userInfoVM.removeHistory(atOffsets: idxSet)
+                        }
                     }
                 }
                 
+                Spacer()
                 
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 4).frame(width: 136, height: 36)
-                        .foregroundColor(.SecondaryAccentColor)
-                        .shadow(radius:  4)
+                Rectangle().frame(height: 1).foregroundColor(.SecondaryBgColor).opacity(0.5).padding(.vertical, 4)
+                Button {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        FirebaseManager.signOut()
+                        
+                        @AppStorage("email") var currentEmail: String?
+                        
+                        withAnimation {
+                            currentEmail = nil
+                            mashupVM.loggedIn = false
+                        }
+                    }
                     
                     
-                    Text("Sign Out").foregroundColor(.BgColor)
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4).frame(width: 136, height: 36)
+                            .foregroundColor(.SecondaryAccentColor)
+                            .shadow(radius:  4)
+                        
+                        
+                        Text("Sign Out").foregroundColor(.BgColor)
+                    }
                 }
+                .padding()
+                
             }
-            .padding()
-            
         }
     }
     
@@ -74,7 +78,7 @@ struct UserInfoView: View {
         
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            mashupVM.UserInfoViewVisibility = .detailOnly
+            userInfoVM.showUserInfo = false
         }
     }
 }

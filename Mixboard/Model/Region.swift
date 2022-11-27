@@ -69,6 +69,12 @@ struct Region: Hashable, Codable, Identifiable {
     }
 }
 
+enum LaneState: Hashable, Codable {
+    case Mute
+    case Solo
+    case Default
+}
+
 struct Layout: Hashable, Codable {
     struct Track: Hashable, Codable {
         var name: String? = nil
@@ -76,6 +82,7 @@ struct Layout: Hashable, Codable {
         var id: String? = nil
         var mouseover: Bool? = nil
         var layout = [Region]()
+        var laneState: LaneState = .Default
     }
     
     var lane = Dictionary<String, Track>()

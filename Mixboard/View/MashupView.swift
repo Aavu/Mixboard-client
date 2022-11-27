@@ -16,19 +16,28 @@ struct MashupView: View {
     @StateObject var userInfoVM     = UserInfoViewModel()
     
     var body: some View {
-        NavigationSplitView(columnVisibility: $mashupVM.UserInfoViewVisibility) {
+        ZStack(alignment: .leading) {
+            HomeView()
+                .environmentObject(spotifyVM)
+                .environmentObject(libViewModel)
+                .blur(radius: userInfoVM.showUserInfo ? 4 : 0)
+                .disabled(userInfoVM.showUserInfo)
+                .onTapGesture {
+                    withAnimation {
+                        userInfoVM.showUserInfo = false
+                    }
+                }
+            
             UserInfoView() { history in
                 userLibVM.restoreFromHistory(history: history)
                 mashupVM.restoreFromHistory(history: history)
             }
-            .toolbar(.hidden)
-        } detail: {
-            HomeView()
-                .environmentObject(spotifyVM)
-                .environmentObject(libViewModel)
-                .toolbar(.hidden)
+            .frame(width: 300)
+            .offset(x: userInfoVM.showUserInfo ? 0 : -300)
+            .transition(.move(edge: .leading))
+            .ignoresSafeArea()
+            .shadow(radius: 8)
         }
-        .navigationSplitViewStyle(.prominentDetail)
         .environmentObject(mashupVM)
         .environmentObject(userLibVM)
         .environmentObject(userInfoVM)
@@ -95,7 +104,7 @@ struct HomeView: View {
                             userLibVM.isSelected.removeAll()
                         }
 
-                        mashupVM.UserInfoViewVisibility = .detailOnly
+                        mashupVM.userInfoViewVisibility = .detailOnly
                     })
                 )
             }

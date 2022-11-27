@@ -15,6 +15,7 @@ enum DragType {
     case vertical
 }
 
+
 struct TracksView: View {
     
     @EnvironmentObject var mashup: MashupViewModel
@@ -22,8 +23,6 @@ struct TracksView: View {
     @EnvironmentObject var spotify: SpotifyViewModel
     
     @ObservedObject var audioManager = AudioManager.shared
-    
-    let labelWidth: CGFloat = 86
 
     @State var startX = Dictionary<UUID, CGFloat>()
     @State var endX = Dictionary<UUID, CGFloat>()
@@ -36,7 +35,7 @@ struct TracksView: View {
             ZStack(alignment: .leading) {
                 VStack(spacing: 0.0) {
                     HStack(spacing: 0.0) {
-                        Rectangle().foregroundColor(.clear).frame(width: labelWidth, height: 20)
+                        Rectangle().foregroundColor(.clear).frame(width: mashup.trackLabelWidth, height: 20)
                         
                         BarAxisView(width: 1, height: 22, numBeats: MashupViewModel.TOTAL_BEATS)
                     }
@@ -46,22 +45,21 @@ struct TracksView: View {
                             if let dummyRegionView = dummyRegionView {
                                 let laneMultiplier = CGFloat(Lane.allCases.firstIndex(of: dummyRegionView.lane)!)
                                 dummyRegionView
-                                    .frame(width: geo.size.width - labelWidth, height: geo.size.height / 4)
-                                    .offset(x: labelWidth, y: (laneMultiplier * geo.size.height / 4) + (yPos[dummyRegionView.uuid] ?? 0))
+                                    .frame(width: geo.size.width - mashup.trackLabelWidth, height: geo.size.height / 4)
+                                    .offset(x: mashup.trackLabelWidth, y: (laneMultiplier * geo.size.height / 4) + (yPos[dummyRegionView.uuid] ?? 0))
                                     .zIndex(10)
                                     .transition(AnyTransition.identity)
                             }
                             VStack(spacing: 0.0) {
                                 ForEach(Lane.allCases, id: \.self) { lane in
                                     ZStack {
-                                        LaneView(label: lane.getName()).cornerRadius(2)
-                                        
+                                        LaneView(lane: lane).cornerRadius(2)
                                         if let lanes = mashup.layoutInfo.lane[lane.rawValue] {
                                             ForEach(lanes.layout) { region in
                                                 let song = library.getSong(songId: region.item.id) ?? spotify.getSong(songId: region.item.id)
                                                 RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
-                                                    .frame(width: geo.size.width - labelWidth)
-                                                    .offset(x: labelWidth / 2, y: yPos[region.id] ?? 0)
+                                                    .frame(width: geo.size.width - mashup.trackLabelWidth)
+                                                    .offset(x: mashup.trackLabelWidth / 2, y: yPos[region.id] ?? 0)
                                                     .onAppear {
                                                         yPos[region.id] = 0
                                                     }
@@ -98,27 +96,27 @@ struct TracksView: View {
                             }
                         }
                         .onAppear {
-                            mashup.tracksViewLocation = CGPoint(x: geo.frame(in: .global).minX + 86, y: geo.frame(in: .global).minY)
+                            mashup.tracksViewLocation = CGPoint(x: geo.frame(in: .global).minX + mashup.trackLabelWidth, y: geo.frame(in: .global).minY)
                             mashup.tracksViewSize = geo.frame(in: .global).size
                         }
                         
                         .onChange(of: geo.size) { newValue in
-                            mashup.tracksViewLocation = CGPoint(x: geo.frame(in: .global).minX + 86, y: geo.frame(in: .global).minY)
+                            mashup.tracksViewLocation = CGPoint(x: geo.frame(in: .global).minX + mashup.trackLabelWidth, y: geo.frame(in: .global).minY)
                             mashup.tracksViewSize = geo.frame(in: .global).size
                         }
-                        .allowsHitTesting(!audioManager.isPlaying)
+//                        .allowsHitTesting(!audioManager.isPlaying)
                     }
                 }
                 
                 GeometryReader() { geo in
-                    let totalWidth = geo.frame(in: .local).width - labelWidth
-                    let playHeadMultiplier: CGFloat = totalWidth * CGFloat(mashup.lastBeat) / CGFloat(MashupViewModel.TOTAL_BEATS)
+                    let totalWidth = geo.frame(in: .local).width - mashup.trackLabelWidth
+                    let audioProgressPercentage = audioManager.timelineLengthSamples > 0 ? (CGFloat(audioManager.currentPosition) / CGFloat(audioManager.timelineLengthSamples)) : 0
                     PlayHeadView()
-                        .offset(x: labelWidth - 10)
-                        .offset(x: CGFloat(audioManager.progress) * playHeadMultiplier)
+                        .offset(x: mashup.trackLabelWidth - 10)
+                        .offset(x: audioProgressPercentage * totalWidth)
                         .gesture(DragGesture(coordinateSpace: .local)
                             .onChanged({ value in
-                                audioManager.setProgress(progress: min(max(0, value.location.x - labelWidth), totalWidth) / playHeadMultiplier)
+                                audioManager.setProgress(progress: min(max(0, value.location.x - mashup.trackLabelWidth), totalWidth) / totalWidth)
                             })
                         )
                 }
@@ -130,11 +128,14 @@ struct TracksView: View {
 }
 
 struct LaneView: View {
-
-    let label: String
+    @EnvironmentObject var mashup: MashupViewModel
     
-    init(label: String) {
-        self.label = label
+    let label: String
+    let lane: Lane
+    
+    init(lane: Lane) {
+        self.label = lane.getName()
+        self.lane = lane
     }
     
     var body: some View {
@@ -142,17 +143,51 @@ struct LaneView: View {
             
             ZStack(alignment: .trailing) {
                 Rectangle()
-                    .frame(width: 86)
                     .foregroundColor(.NeutralColor)
                     .padding([.bottom, .top], 1)
                 
-                Text(label).font(.subheadline).fontWeight(.bold).foregroundColor(.BgColor).padding(.all, 16)
+                VStack {
+                    Text(label).font(.subheadline).fontWeight(.bold).foregroundColor(.BgColor).padding(.all, 16)
+                    
+                    if let l = mashup.layoutInfo.lane[lane.rawValue] {
+                        Spacer()
+                        
+                        HStack(spacing:2) {
+                            MBButton {
+                                mashup.handleMute(lane: lane)
+                            } label: {
+                                ZStack {
+                                    Rectangle().fill(l.laneState == .Mute ? Color.red : Color.SecondaryBgColor)
+                                    Text("M")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(l.laneState == .Mute ? Color.PureColor : Color.AccentColor)
+                                }
+                            }
+                            .frame(height: 48)
+                            
+                            MBButton {
+                                mashup.handleSolo(lane: lane)
+                            } label: {
+                                ZStack {
+                                    Rectangle()
+                                        .fill(l.laneState == .Solo ? Color.green : Color.SecondaryBgColor)
+                                    Text("S")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(l.laneState == .Solo ? Color.PureColor : Color.AccentColor)
+                                }
+                            }
+                            .frame(height: 48)
+                        }
+                    }
+                }
             }
+            .frame(width: mashup.trackLabelWidth)
             
             Rectangle()
                 .foregroundColor(.SecondaryBgColor).opacity(0.75)
                 .padding([.bottom, .top], 1)
         }
+        
     }
 }
 
@@ -304,6 +339,7 @@ struct RegionView: View {
 
         }
         .padding([.top, .bottom], 2*pad).padding([.leading, .trailing], pad)
+        .allowsHitTesting(!audioManager.isPlaying)
     }
     
     func updateFrame(geometry: GeometryProxy) {

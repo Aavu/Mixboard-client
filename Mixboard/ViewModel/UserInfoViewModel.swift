@@ -11,6 +11,7 @@ import SwiftUI
 class UserInfoViewModel: ObservableObject {
     @Published var histories = [History]()
     @Published var current: History?
+    @Published var showUserInfo = false
     
     @AppStorage("email") var currentEmail: String?
     

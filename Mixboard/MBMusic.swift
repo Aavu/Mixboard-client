@@ -16,11 +16,11 @@ class MBMusic: Equatable {
         case IllegalArgument
     }
     
-    var audios = Set<Audio>()
+    var audios = [String: Audio]()
     var tempo: Double
     
-    init(audios: Set<Audio> = Set(), tempo: Double? = nil) {
-        self.audios = audios
+    init(audios: [String: Audio]? = nil, tempo: Double? = nil) {
+        self.audios = audios ?? [String : Audio]()
         self.tempo = tempo ?? 120.0
     }
     
@@ -29,25 +29,34 @@ class MBMusic: Equatable {
     }
     
     func add(audio: Audio) {
-        audios.insert(audio)
+        audios[audio.getId()] = audio
+        tempo = audio.tempo
     }
     
     func remove(audio: Audio) {
-        audios.remove(audio)
+        audios[audio.getId()] = nil
     }
     
-    func removeById(id: UUID) {
-        for audio in audios {
-            if audio.getId() == id.uuidString {
-                remove(audio: audio)
-                return
-            }
-        }
+    func remove(id: UUID) {
+        audios[id.uuidString] = nil
     }
     
     func getCommon(music: MBMusic?) -> MBMusic {
         guard let music = music else {return self}
-        return MBMusic(audios: audios.intersection(music.audios), tempo: tempo)
+        
+        let temp = getIntersection(items: music.audios)
+        
+        return MBMusic(audios: temp, tempo: tempo)
+    }
+    
+    func getIntersection(items: [String: Audio]) -> [String: Audio] {
+        var temp = [String: Audio]()
+        for (id, _) in items {
+            if let a = self.audios[id] {
+                temp[id] = a
+            }
+        }
+        return temp
     }
     
     func setTempo(_ tempo: Double) {
@@ -59,8 +68,7 @@ class MBMusic: Equatable {
         
         var updated: SetValueError = .AudioNotFound
         
-        for audio in audios {
-            let id = audio.file.lastPathComponent.split(separator: ".")[0]
+        for (id, audio) in audios {
             if id == audioId.uuidString {
                 var tempPos = audio.position
                 let tempLen = audio.length
@@ -76,7 +84,7 @@ class MBMusic: Equatable {
                 if let length = length {
                     let len = MBMusic.getInSamples(value: length, sampleRate: audio.sampleRate, tempo: audio.tempo)
                     remove(audio: audio)
-                    audios.update(with: Audio(file: audio.file, position: tempPos, length: len))
+                    add(audio: Audio(file: audio.file, position: tempPos, length: len))
                     updated = .Success
                 }
                 
@@ -96,7 +104,7 @@ class MBMusic: Equatable {
     }
     
     static func == (lhs: MBMusic, rhs: MBMusic) -> Bool {
-        let temp = lhs.audios.intersection(rhs.audios)
+        let temp = lhs.getIntersection(items: rhs.audios)
         return temp.count == lhs.audios.count && temp.count == rhs.audios.count
     }
 }

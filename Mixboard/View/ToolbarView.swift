@@ -22,7 +22,8 @@ struct ToolbarView: View {
                 // MARK: UserInfo Button
                 Button {
                     withAnimation {
-                        mashupVM.UserInfoViewVisibility = .doubleColumn
+//                        mashupVM.userInfoViewVisibility = .doubleColumn
+                        historyVM.showUserInfo = true
                     }
                 } label: {
                     Image(systemName: "person.crop.circle")
@@ -60,7 +61,7 @@ struct ToolbarView: View {
                 HStack {
                     // MARK: Backward 10 Button
                     Button {
-                        audioManager.setProgress(progress: max(0, audioManager.progress - 0.1))
+                        audioManager.setCurrentPosition(position: audioManager.currentPosition - (44100 * 10))
                     } label: {
                         Image(systemName: "gobackward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
                     }
@@ -82,7 +83,7 @@ struct ToolbarView: View {
                     
                     // MARK: Forward 10 Button
                     Button {
-                        audioManager.setProgress(progress: min(1, audioManager.progress + 0.1))
+                        audioManager.setCurrentPosition(position: audioManager.currentPosition + (44100 * 10))
                     } label: {
                         Image(systemName: "goforward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
                     }
@@ -128,7 +129,7 @@ struct ToolbarView: View {
                     return
                 }
                 
-                audioManager.setMashupLength(lengthInBars: mashupVM.lastBeat, tempo: mashupVM.tempo)
+                audioManager.setMashupLength(lengthInBars: mashupVM.getLastBeat())
                 audioManager.playOrPause(music: music)
             }
         }

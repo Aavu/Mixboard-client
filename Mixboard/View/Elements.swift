@@ -73,6 +73,25 @@ struct MBTextField: View {
     }
 }
 
+struct MBButton<T: View>: View {
+    var action: () -> ()
+    var label: T
+
+    init(action: @escaping () -> (), @ViewBuilder label: () -> T) {
+        self.action = action
+        self.label = label()
+    }
+    
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            label
+        }
+
+    }
+}
+
 struct Elements_Previews: PreviewProvider {
     static var previews: some View {
         MBTextField(title: "title", text: .constant(""))

@@ -27,13 +27,11 @@ class MashupViewModel: ObservableObject {
     
     @Published var tracksViewLocation: CGPoint = .zero
     @Published var tracksViewSize: CGSize = .zero
+    @Published var trackLabelWidth: CGFloat = 96
     
     @Published var userLibCardWidth: CGFloat = 0
     
     static let TOTAL_BEATS = 32
-    
-    @Published var lastBeat = TOTAL_BEATS
-    @Published var tempo:Double = 120
     
     var mashupAudio: Audio?
     
@@ -44,7 +42,7 @@ class MashupViewModel: ObservableObject {
     @Published var appError: AppError?
     @Published var showError = false
     
-    @Published var UserInfoViewVisibility: NavigationSplitViewVisibility = .detailOnly
+    @Published var userInfoViewVisibility: NavigationSplitViewVisibility = .detailOnly
     
     private var userInfoVM: UserInfoViewModel?
     private var userLibVM: UserLibraryViewModel?
@@ -77,8 +75,6 @@ class MashupViewModel: ObservableObject {
             }
         }
     }
-    
-    
     
     func createNewSession() {
         if !loggedIn { return }
@@ -119,8 +115,6 @@ class MashupViewModel: ObservableObject {
         layoutInfo.lane[lane.rawValue]?.layout = regions
         
         isEmpty = isCanvasEmpty()
-        
-        updateLastBeat()
     }
     
     func isCanvasEmpty() -> Bool {
@@ -135,7 +129,7 @@ class MashupViewModel: ObservableObject {
         return true
     }
     
-    func updateLastBeat() {
+    func getLastBeat() -> Int {
         var lastBeatTemp = 0
         for lane in Lane.allCases {
             if let lanes = layoutInfo.lane[lane.rawValue] {
@@ -144,13 +138,52 @@ class MashupViewModel: ObservableObject {
                 }
             }
         }
-        lastBeat = min(MashupViewModel.TOTAL_BEATS, lastBeatTemp)
+        return min(MashupViewModel.TOTAL_BEATS, lastBeatTemp)
+    }
+    
+    private func getRegionIds(with laneState: LaneState) -> [UUID] {
+        var regions = [UUID]()
+        for lane in Lane.allCases {
+            if let lanes = layoutInfo.lane[lane.rawValue] {
+                for region in lanes.layout {
+                    if lanes.laneState == laneState {
+                        regions.append(region.id)
+                    }
+                }
+            }
+        }
+        
+        return regions
+    }
+    
+    func handleMute(lane: Lane) {
+        if let l = layoutInfo.lane[lane.rawValue] {
+            layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Mute ? .Default : .Mute
+        }
+        
+        let regionsToMute = getRegionIds(with: .Mute)
+        
+        // Respect solo regions. Only if there are no soloed regions, handle mute
+        let soloRegions = getRegionIds(with: .Solo)
+        if soloRegions.count > 0 {
+            audioManager.handleSolo(regionIds: soloRegions)
+        } else {
+            audioManager.handleMute(regionIds: regionsToMute)
+        }
+    }
+    
+    func handleSolo(lane: Lane) {
+        if let l = layoutInfo.lane[lane.rawValue] {
+            layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Solo ? .Default : .Solo
+        }
+        
+        let regionsToSolo = getRegionIds(with: .Solo)
+        audioManager.handleSolo(regionIds: regionsToSolo)
     }
     
     func addRegion(region: Region, lane: Lane) {
         layoutInfo.lane[lane.rawValue]?.layout.append(region)
         isEmpty = false
-        updateLastBeat()
         setSelected(uuid: region.id, isSelected: false)
         readyToPlay = false
         
@@ -184,9 +217,7 @@ class MashupViewModel: ObservableObject {
                 if region.id == id {
                     layoutInfo.lane[lane.rawValue]!.layout.remove(at: idx)
                     isEmpty = isCanvasEmpty()
-                    audioManager.currentMusic?.removeById(id: region.id)
-                    updateLastBeat()
-                    
+                    audioManager.currentMusic?.remove(id: region.id)
                     return
                 }
             }
@@ -216,23 +247,23 @@ class MashupViewModel: ObservableObject {
                         } else {
                             if posChanged {
                                 self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = (prevState == .New) ? .New : .Moved
-                                if let music = self.audioManager.currentMusic {
-                                    let _pos = self.layoutInfo.lane[lane.rawValue]!.layout[idx].x
-                                    let err = music.update(for: region.id, position: _pos)
-                                    if err != .Success {
-                                        self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = prevState
-                                        self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = prevPosition
-                                        appError = AppError(description: "Cannot update position for this region")
-                                        print(err)
-                                        return false
+                                if self.layoutInfo.lane[lane.rawValue]!.layout[idx].state != .New {
+                                    if let music = self.audioManager.currentMusic {
+                                        let _pos = self.layoutInfo.lane[lane.rawValue]!.layout[idx].x
+                                        let err = music.update(for: region.id, position: _pos)
+                                        if err != .Success {
+                                            self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = prevState
+                                            self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = prevPosition
+                                            appError = AppError(description: "Cannot update position for this region")
+                                            print(err)
+                                            return false
+                                        }
+                                        
+                                        audioManager.scheduleMusic()
                                     }
-
-                                    audioManager.scheduleMusic()
                                 }
                             }
                         }
-                        
-                        updateLastBeat()
                         
                         return true
                     }
@@ -268,7 +299,6 @@ class MashupViewModel: ObservableObject {
                     }
                     layoutInfo.lane[currentLane.rawValue]!.layout.remove(at: idx)
                     layoutInfo.lane[newLane.rawValue]?.layout.append(region)
-                    updateLastBeat()
                     isEmpty = false
                     setSelected(uuid: region.id, isSelected: false)
                     readyToPlay = false
@@ -325,7 +355,7 @@ class MashupViewModel: ObservableObject {
     
     func handleDropRegion(songId: String, dropLocation: CGPoint) -> Bool {
         if let lane = getLaneForLocation(location: dropLocation) {
-            let conversion = (tracksViewSize.width - 86) / CGFloat(MashupViewModel.TOTAL_BEATS)
+            let conversion = (tracksViewSize.width - trackLabelWidth) / CGFloat(MashupViewModel.TOTAL_BEATS)
             let x = min(max(0, Int(round((dropLocation.x - tracksViewLocation.x) / conversion) - 4)), MashupViewModel.TOTAL_BEATS - 8)
             addRegion(region: Region(x: Int(x), w: 8, item: Region.Item(id: songId), state: .New), lane: lane)
         }
@@ -334,8 +364,6 @@ class MashupViewModel: ObservableObject {
     }
     
     func restoreFromHistory(history: History) {
-//        self.mashupAudio = history.audio
-
         let layout = history.layout
         for lane in Lane.allCases {
             if let lanes = layout.lane[lane.rawValue] {
@@ -343,15 +371,12 @@ class MashupViewModel: ObservableObject {
             }
         }
         
-        if mashupAudio != nil {
-            AudioManager.shared.reset()
-            
-            // Update region state to new so that the backend knows it needs to generate the entire mashup again
-            updateRegionState(.New)
-            let uuid = history.id ?? UUID().uuidString
-            
-            generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false)
-        }
+        audioManager.reset()
+        
+        let uuid = history.id ?? UUID().uuidString
+        
+        generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false)
+        
         
         readyToPlay = (self.mashupAudio != nil)
     }
@@ -371,7 +396,6 @@ class MashupViewModel: ObservableObject {
         if let layout = LuckyMeManager.shared.surpriseMe(songs: songs) {
             self.layoutInfo = layout
             isEmpty = isCanvasEmpty()
-            updateLastBeat()
             readyToPlay = false
             userInfoVM?.lastSessionId = nil
         } else {
@@ -421,17 +445,11 @@ class MashupViewModel: ObservableObject {
         
         let tempMusic = MBMusic()
         
-        var audios = [String: Audio]()
-        
-        for audio in music.audios {
-            audios[audio.getId()] = audio
-        }
-        
         for lane in Lane.allCases {
             if let lanes = self.layoutInfo.lane[lane.rawValue] {
                 for region in lanes.layout {
                     if region.state != state {
-                        if let audio = audios[region.id.uuidString] {
+                        if let audio = music.audios[region.id.uuidString] {
                             tempMusic.add(audio: audio)
                         }
                     }
@@ -445,22 +463,29 @@ class MashupViewModel: ObservableObject {
     func generateMashup(uuid: String, lastSessionId: String?, addToHistory: Bool = true, completion: (() -> ())? = nil) {
         showGenerationProgress = lastSessionId == nil
         readyToPlay = false
-        removeRegionsFromMusic(with: .New)
+        
+        if lastSessionId == nil {
+            audioManager.currentMusic = MBMusic()
+            updateRegionState(.New)
+        } else {
+            removeRegionsFromMusic(with: .New)
+        }
         
         let regionIds = self.getRegionIds(includeReady: false)
+
         guard regionIds.count > 0 else {
             if let completion = completion {
                 completion()
             }
             return
         }
+        
         BackendManager.shared.sendGenerateRequest(uuid: uuid, lastSessionId: lastSessionId, layout: self.layoutInfo, regionIds: regionIds, statusCallback: { audio in
             if let audio = audio {
-                self.audioManager.currentMusic?.setTempo(audio.tempo)
-                self.audioManager.currentMusic?.add(audio: audio)
                 DispatchQueue.main.async {
-                    self.tempo = audio.tempo
+                    self.audioManager.tempo = audio.tempo
                 }
+                self.audioManager.currentMusic?.add(audio: audio)
             } else {
                 DispatchQueue.main.async {
                     self.appError = AppError(description: "Audio is nil")
