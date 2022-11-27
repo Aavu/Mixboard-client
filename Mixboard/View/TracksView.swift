@@ -147,6 +147,7 @@ struct LaneView: View {
                     .padding([.bottom, .top], 1)
                 
                 VStack {
+                    Spacer()
                     Text(label).font(.subheadline).fontWeight(.bold).foregroundColor(.BgColor).padding(.all, 16)
                     
                     if let l = mashup.layoutInfo.lane[lane.rawValue] {
@@ -162,6 +163,8 @@ struct LaneView: View {
                                         .fontWeight(.bold)
                                         .foregroundColor(l.laneState == .Mute ? Color.PureColor : Color.AccentColor)
                                 }
+                                .transition(.identity)
+                                .animation(.none, value: l.laneState)
                             }
                             .frame(height: 48)
                             
@@ -175,6 +178,8 @@ struct LaneView: View {
                                         .fontWeight(.bold)
                                         .foregroundColor(l.laneState == .Solo ? Color.PureColor : Color.AccentColor)
                                 }
+                                .transition(.identity)
+                                .animation(.none, value: l.laneState)
                             }
                             .frame(height: 48)
                         }

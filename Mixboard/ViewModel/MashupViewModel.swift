@@ -33,8 +33,6 @@ class MashupViewModel: ObservableObject {
     
     static let TOTAL_BEATS = 32
     
-    var mashupAudio: Audio?
-    
     @ObservedObject var audioManager = AudioManager.shared
     
     private var errorSubscriber: AnyCancellable?
@@ -161,14 +159,16 @@ class MashupViewModel: ObservableObject {
             layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Mute ? .Default : .Mute
         }
         
-        let regionsToMute = getRegionIds(with: .Mute)
-        
-        // Respect solo regions. Only if there are no soloed regions, handle mute
-        let soloRegions = getRegionIds(with: .Solo)
-        if soloRegions.count > 0 {
-            audioManager.handleSolo(regionIds: soloRegions)
-        } else {
-            audioManager.handleMute(regionIds: regionsToMute)
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            let regionsToMute = getRegionIds(with: .Mute)
+            
+            // Respect solo regions. Only if there are no soloed regions, handle mute
+            let soloRegions = getRegionIds(with: .Solo)
+            if soloRegions.count > 0 {
+                audioManager.handleSolo(regionIds: soloRegions)
+            } else {
+                audioManager.handleMute(regionIds: regionsToMute)
+            }
         }
     }
     
@@ -177,8 +177,10 @@ class MashupViewModel: ObservableObject {
             layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Solo ? .Default : .Solo
         }
         
-        let regionsToSolo = getRegionIds(with: .Solo)
-        audioManager.handleSolo(regionIds: regionsToSolo)
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            let regionsToSolo = getRegionIds(with: .Solo)
+            audioManager.handleSolo(regionIds: regionsToSolo)
+        }
     }
     
     func addRegion(region: Region, lane: Lane) {
@@ -231,9 +233,7 @@ class MashupViewModel: ObservableObject {
                     if region.id == id {
                         let posChanged = region.x != x
                         let lengthChanged = region.w != length
-                        if lengthChanged {
-                            readyToPlay = false
-                        }
+
                         
                         let prevPosition = self.layoutInfo.lane[lane.rawValue]!.layout[idx].x
                         self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = x
@@ -242,6 +242,7 @@ class MashupViewModel: ObservableObject {
                         let prevState = self.layoutInfo.lane[lane.rawValue]!.layout[idx].state
                         if lengthChanged {
                             self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = .New
+                            readyToPlay = false
 //                            let uuid = UUID().uuidString
 //                            generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
                         } else {
@@ -376,9 +377,6 @@ class MashupViewModel: ObservableObject {
         let uuid = history.id ?? UUID().uuidString
         
         generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false)
-        
-        
-        readyToPlay = (self.mashupAudio != nil)
     }
     
     

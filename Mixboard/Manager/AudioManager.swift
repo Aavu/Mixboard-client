@@ -35,6 +35,7 @@ class AudioManager: NSObject, ObservableObject {
     @Published var tempo: Double = 120 {
         didSet {
             timelineLengthSamples = MBMusic.getInSamples(value: MashupViewModel.TOTAL_BEATS, sampleRate: sampleRate, tempo: tempo)
+            print("tempo: \(tempo)")
         }
     }
     
