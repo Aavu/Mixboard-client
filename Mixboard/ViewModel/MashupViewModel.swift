@@ -280,6 +280,20 @@ class MashupViewModel: ObservableObject {
         region.state = state
     }
     
+    func setRegionState(regionId: UUID, state: Region.State) {
+        for lane in Lane.allCases {
+            if let lanes = self.layoutInfo.lane[lane.rawValue] {
+                for (idx, region) in lanes.layout.enumerated() {
+                    if region.id == regionId {
+                        self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = state
+                        print("region \(regionId) reset")
+                    }
+                }
+            }
+        }
+    }
+    
+    
     /// Updates region state of all regions in layout. This is useful to call after each generation so as to track user edits
     func updateRegionState(_ state: Region.State = .Ready) {
         for lane in Lane.allCases {

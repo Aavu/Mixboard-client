@@ -146,11 +146,11 @@ struct LaneView: View {
                     .padding([.bottom, .top], 1)
                 
                 VStack {
-                    Spacer()
+                    Spacer(minLength: 0)
                     Text(label).font(.subheadline).fontWeight(.bold).foregroundColor(.BgColor).padding(.all, 16)
                     
                     if let l = mashup.layoutInfo.lane[lane.rawValue] {
-                        Spacer()
+                        Spacer(minLength: 0)
                         
                         HStack(spacing:2) {
                             MBButton {
@@ -165,7 +165,7 @@ struct LaneView: View {
                                 .transition(.identity)
                                 .animation(.none, value: l.laneState)
                             }
-                            .frame(height: 48)
+                            .frame(minHeight: 24, maxHeight: 32)
                             
                             MBButton {
                                 mashup.handleSolo(lane: lane)
@@ -180,7 +180,7 @@ struct LaneView: View {
                                 .transition(.identity)
                                 .animation(.none, value: l.laneState)
                             }
-                            .frame(height: 48)
+                            .frame(minHeight: 24, maxHeight: 32)
                         }
                     }
                 }
@@ -216,6 +216,8 @@ struct RegionView: View {
     
     let lane: Lane
     let uuid: UUID
+    
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     init(lane:Lane, uuid: UUID, song: Song?, dragType: Binding<DragType>, startX: Binding<[UUID: CGFloat]>, endX: Binding<[UUID: CGFloat]>) {
         self.lane = lane
@@ -326,14 +328,42 @@ struct RegionView: View {
                 }
                 
                 if isSelected {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            mashup.removeRegion(lane: lane, id: uuid)
+                    HStack(spacing: 2) {
+                        MBButton {
+                            mashup.setRegionState(regionId: uuid, state: .New)
+                            mashup.readyToPlay = false
+                        } label: {
+                            ZStack {
+                                Color.BgColor.shadow(radius: 4).cornerRadius(4)
+                                if horizontalSizeClass == .compact {
+                                    Image(systemName: "shuffle").renderingMode(.template).foregroundColor(.AccentColor)
+                                } else {
+                                    HStack {
+                                        Image(systemName: "shuffle").renderingMode(.template).foregroundColor(.AccentColor)
+                                        Text("Shuffle").foregroundColor(.AccentColor)
+                                    }
+                                }
+                            }
                         }
-                    } label: {
-                        ZStack {
-                            Color.BgColor.shadow(radius: 4).cornerRadius(4)
-                            Text("Remove").foregroundColor(.AccentColor)
+
+                        
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                mashup.removeRegion(lane: lane, id: uuid)
+                            }
+                        } label: {
+                            ZStack {
+                                Color.BgColor.shadow(radius: 4).cornerRadius(4)
+                                if horizontalSizeClass == .compact {
+                                    Image(systemName: "xmark").renderingMode(.template).foregroundColor(.red)
+                                } else {
+                                    HStack {
+                                        Image(systemName: "xmark").renderingMode(.template).foregroundColor(.red)
+                                        Text("Remove").foregroundColor(.red)
+                                    }
+                                }
+                                
+                            }
                         }
                     }
                     .frame(width: width - pad, height: 32)

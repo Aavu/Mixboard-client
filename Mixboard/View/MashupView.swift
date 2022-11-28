@@ -15,6 +15,8 @@ struct MashupView: View {
     @StateObject var spotifyVM      = SpotifyViewModel()
     @StateObject var userInfoVM     = UserInfoViewModel()
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
     var body: some View {
         ZStack(alignment: .leading) {
             HomeView()
@@ -87,8 +89,9 @@ struct HomeView: View {
                             }
                             .padding([.horizontal], 4)
                     }
+
                     ToolbarView()
-                        .frame(height: horizontalSizeClass == .compact ? 32: 64)
+                        .frame(height: horizontalSizeClass == .compact ? 28: 64)
                 }
                 .disabled(backend.isGenerating)
                 .blur(radius: showProgress ? 8: 0)
@@ -139,7 +142,7 @@ struct HomeView: View {
                     }
                 })
             }
-            mashupVM.userLibCardWidth = 250
+            mashupVM.userLibCardWidth = horizontalSizeClass == .compact ? 150: 250
         }
         .ignoresSafeArea(.keyboard)
     }

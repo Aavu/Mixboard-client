@@ -22,7 +22,6 @@ struct ToolbarView: View {
                 // MARK: UserInfo Button
                 Button {
                     withAnimation {
-//                        mashupVM.userInfoViewVisibility = .doubleColumn
                         historyVM.showUserInfo = true
                     }
                 } label: {
@@ -32,7 +31,8 @@ struct ToolbarView: View {
                         .scaledToFit()
                         .foregroundColor(.AccentColor)
                         .frame(width: 24)
-                }.padding()
+                }
+                .padding(.horizontal, 8)
 
                 Spacer()
                 
@@ -41,7 +41,7 @@ struct ToolbarView: View {
                     mashupVM.surpriseMe(songs: userLibVM.songs)
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 136, height: 36)
+                        RoundedRectangle(cornerRadius: 4).frame(width: 136)
                             .foregroundColor(.BgColor)
                             .shadow(radius:  4)
 
@@ -49,10 +49,12 @@ struct ToolbarView: View {
                             Image(systemName: "shuffle").renderingMode(.template).foregroundColor(.SecondaryAccentColor)
                             Text("Surprise Me").foregroundColor(.SecondaryAccentColor)
                         }
-                    }.padding([.all], 8)
-                        .zIndex(1)
-                        .opacity(userLibVM.songs.count > 0 ? 1 : 0)
-                        .opacity(audioManager.isPlaying ? 0.5 : 1)
+                    }
+                    .padding([.horizontal], 8)
+                    .padding([.vertical], 2)
+                    .zIndex(1)
+                    .opacity(userLibVM.songs.count > 0 ? 1 : 0)
+                    .opacity(audioManager.isPlaying ? 0.5 : 1)
                     
                 }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0)
 
@@ -79,7 +81,7 @@ struct ToolbarView: View {
                         }
                     }
                     .disabled(mashupVM.isEmpty || backend.isGenerating)
-                    .padding([.leading, .trailing], 24)
+                    .padding(.horizontal, 24)
                     
                     // MARK: Forward 10 Button
                     Button {
@@ -96,12 +98,13 @@ struct ToolbarView: View {
                     mashupVM.clearCanvas()
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36)
+                        RoundedRectangle(cornerRadius: 4).frame(width: 120)
                             .foregroundColor(.BgColor)
                             .shadow(radius:  4)
                         Text("Clear Canvas").foregroundColor(.red)
                     }
-                    .padding([.all], 8)
+                    .padding([.horizontal], 8)
+                    .padding([.vertical], 2)
                     .zIndex(1)
                     .opacity(mashupVM.isEmpty ? 0: 1)
                 }
@@ -115,7 +118,7 @@ struct ToolbarView: View {
 //                } else {
 //                    Rectangle().fill(.clear).frame(width: 100)
 //                }
-            }.padding(.top, 4)
+            }.padding(.vertical, 4)
         }
     }
     
