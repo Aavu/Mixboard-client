@@ -71,7 +71,7 @@ struct TracksView: View {
                                                                 }
 
                                                                 dragType = .vertical
-                                                                withAnimation(.spring(blendDuration: 0.1)) {
+                                                                withAnimation(.easeInOut(duration: 0.1)) {
                                                                     yPos[region.id] = value.translation.height
                                                                 }
 
@@ -236,7 +236,7 @@ struct RegionView: View {
             GeometryReader { geometry in
                 SongCardView(song: song).frame(width: max(0, width - 2*pad)).background(.black)
                     .onTapGesture {
-                        withAnimation(.spring(blendDuration: 0.1)) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
                             mashup.unselectAllRegions()
                             if !isSelected {
                                 mashup.setSelected(uuid: uuid, isSelected: true)
@@ -244,7 +244,7 @@ struct RegionView: View {
                         }
                     }
                     .border(Color.NeutralColor, width: isSelected ? 4 : 0)
-                    .animation(.spring(blendDuration: 0.1), value: isSelected)
+                    .animation(.easeInOut(duration: 0.1), value: isSelected)
                     .transition(.opacity)
                     .offset(x: start)
                     .gesture(DragGesture(minimumDistance: 0)
@@ -253,7 +253,7 @@ struct RegionView: View {
                             let tempStartX = lastStartX + value.translation.width
                             let tempEndX = lastEndX + value.translation.width
                             if tempStartX >= 0 && tempEndX < geometry.size.width {
-                                withAnimation(.spring(blendDuration: 0.1)) {
+                                withAnimation(.easeInOut(duration: 0.1)) {
                                     startX[uuid] = round(tempStartX / conversion) * conversion
                                     endX[uuid] = round(tempEndX / conversion) * conversion
                                 }
@@ -262,7 +262,7 @@ struct RegionView: View {
                         })
                              
                         .onEnded({ value in
-                            withAnimation(.spring(blendDuration: 0.1)) {
+                            withAnimation(.easeInOut(duration: 0.1)) {
                                 startX[uuid] = round(start / conversion) * conversion
                                 endX[uuid] = round(end / conversion) * conversion
                             }
@@ -289,13 +289,13 @@ struct RegionView: View {
                                 dragType = .start
                                 let temp = max(0, lastStartX + value.translation.width)
                                 if (endX[uuid]! - temp) >= conversion {
-                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                    withAnimation(.easeInOut(duration: 0.1)) {
                                         startX[uuid] = round(temp / conversion) * conversion
                                     }
                                 }
                             })
                                 .onEnded({ value in
-                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                    withAnimation(.easeInOut(duration: 0.1)) {
                                         startX[uuid] = round(start / conversion) * conversion
                                     }
                                     handleDragEnded(geometry: geometry)
@@ -311,13 +311,13 @@ struct RegionView: View {
                                 dragType = .end
                                 let temp = min(geometry.size.width, lastEndX + value.translation.width)
                                 if (temp - startX[uuid]!) >= conversion {
-                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                    withAnimation(.easeInOut(duration: 0.1)) {
                                         endX[uuid] = round(temp / conversion) * conversion
                                     }
                                 }
                             })
                                 .onEnded({ value in
-                                    withAnimation(.spring(blendDuration: 0.1)) {
+                                    withAnimation(.easeInOut(duration: 0.1)) {
                                         endX[uuid] = round(end / conversion) * conversion
                                     }
                                     handleDragEnded(geometry: geometry)
@@ -327,7 +327,7 @@ struct RegionView: View {
                 
                 if isSelected {
                     Button {
-                        withAnimation(.spring()) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
                             mashup.removeRegion(lane: lane, id: uuid)
                         }
                     } label: {

@@ -41,6 +41,7 @@ class AudioManager: NSObject, ObservableObject {
     
     func setMashupLength(lengthInBars: Int) {
         audioLengthSamples = MBMusic.getInSamples(value: lengthInBars, sampleRate: sampleRate, tempo: tempo)
+        needsFilesScheduled = true
     }
     
     func getMashupLength() -> AVAudioFramePosition {

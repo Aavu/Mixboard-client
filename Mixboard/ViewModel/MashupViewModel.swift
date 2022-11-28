@@ -295,12 +295,13 @@ class MashupViewModel: ObservableObject {
         if let lanes = layoutInfo.lane[currentLane.rawValue] {
             for (idx, region) in lanes.layout.enumerated() {
                 if region.id == regionId {
-                    // If the region state is ready, it means it has generation. Change it to new to denote it is a new region and requires generation
-                    if region.state == .Ready {
-                        layoutInfo.lane[currentLane.rawValue]!.layout[idx].state = .New
-                    }
+                    var temp = region
+                    // Change it to new to denote it is a new region and requires generation
+                    temp.state = .New
                     layoutInfo.lane[currentLane.rawValue]!.layout.remove(at: idx)
-                    layoutInfo.lane[newLane.rawValue]?.layout.append(region)
+                    layoutInfo.lane[newLane.rawValue]?.layout.append(temp)
+                    
+                    
                     isEmpty = false
                     setSelected(uuid: region.id, isSelected: false)
                     readyToPlay = false
@@ -478,6 +479,9 @@ class MashupViewModel: ObservableObject {
             }
             return
         }
+        
+        print(regionIds)
+        print(self.layoutInfo)
         
         BackendManager.shared.sendGenerateRequest(uuid: uuid, lastSessionId: lastSessionId, layout: self.layoutInfo, regionIds: regionIds, statusCallback: { audio in
             if let audio = audio {

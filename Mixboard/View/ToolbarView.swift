@@ -137,7 +137,7 @@ struct ToolbarView: View {
         if mashupVM.readyToPlay {   // Play
             play()
         } else {                    // Generate
-            audioManager.reset()
+            audioManager.stop()
             let uuid = UUID().uuidString
             mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
                 play()
