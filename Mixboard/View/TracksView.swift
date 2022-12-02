@@ -21,6 +21,7 @@ struct TracksView: View {
     @EnvironmentObject var mashup: MashupViewModel
     @EnvironmentObject var library: LibraryViewModel
     @EnvironmentObject var spotify: SpotifyViewModel
+    @EnvironmentObject var userLib: UserLibraryViewModel
     
     @ObservedObject var audioManager = AudioManager.shared
 
@@ -65,6 +66,7 @@ struct TracksView: View {
                                                     }
                                                     .simultaneousGesture(DragGesture(coordinateSpace: .global)
                                                         .onChanged({ value in
+                                                            userLib.unselectAllSongs()
                                                             if dragType == .None || dragType == .horizontal || dragType == .vertical {
                                                                 if value.translation.height > 0 {
                                                                     dummyRegionView = RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
@@ -115,12 +117,14 @@ struct TracksView: View {
                         .offset(x: audioProgressPercentage * totalWidth)
                         .gesture(DragGesture(coordinateSpace: .local)
                             .onChanged({ value in
+                                userLib.unselectAllSongs()
                                 audioManager.setProgress(progress: min(max(0, value.location.x - mashup.trackLabelWidth), totalWidth) / totalWidth)
                             })
                         )
                 }
             }
             .onTapGesture {
+                userLib.unselectAllSongs()
                 mashup.unselectAllRegions()
             }
     }
@@ -166,6 +170,7 @@ struct LaneView: View {
                                 .animation(.none, value: l.laneState)
                             }
                             .frame(minHeight: 24, maxHeight: 32)
+                            .padding(.bottom, 1)
                             
                             MBButton {
                                 mashup.handleSolo(lane: lane)
@@ -181,6 +186,7 @@ struct LaneView: View {
                                 .animation(.none, value: l.laneState)
                             }
                             .frame(minHeight: 24, maxHeight: 32)
+                            .padding(.bottom, 1)
                         }
                     }
                 }
@@ -198,6 +204,7 @@ struct LaneView: View {
 struct RegionView: View {
     
     @EnvironmentObject var mashup: MashupViewModel
+    @EnvironmentObject var userLib: UserLibraryViewModel
     @ObservedObject var audioManager = AudioManager.shared
     
     let song: Song?
@@ -251,6 +258,7 @@ struct RegionView: View {
                     .offset(x: start)
                     .gesture(DragGesture(minimumDistance: 0)
                         .onChanged({ value in
+                            userLib.unselectAllSongs()
                             dragType = .horizontal
                             let tempStartX = lastStartX + value.translation.width
                             let tempEndX = lastEndX + value.translation.width
@@ -288,6 +296,7 @@ struct RegionView: View {
                         .offset(x: start)
                         .simultaneousGesture(DragGesture(minimumDistance: 0)
                             .onChanged({ value in
+                                userLib.unselectAllSongs()
                                 dragType = .start
                                 let temp = max(0, lastStartX + value.translation.width)
                                 if (endX[uuid]! - temp) >= conversion {
@@ -310,6 +319,7 @@ struct RegionView: View {
                         .offset(x: end - handleWidth - 2*pad)
                         .simultaneousGesture(DragGesture(minimumDistance: 0)
                             .onChanged({ value in
+                                userLib.unselectAllSongs()
                                 dragType = .end
                                 let temp = min(geometry.size.width, lastEndX + value.translation.width)
                                 if (temp - startX[uuid]!) >= conversion {

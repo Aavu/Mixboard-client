@@ -18,12 +18,12 @@ class MashupViewModel: ObservableObject {
     @Published var layoutInfo = Layout()
     
     @Published var isEmpty = true
+    
+    /// This is for the regions
     @Published var isSelected = Dictionary<UUID, Bool>()
     
     @Published var readyToPlay = false
     @Published var showGenerationProgress = true
-    
-    @Published var isFocuingSongs = false
     
     @Published var tracksViewLocation: CGPoint = .zero
     @Published var tracksViewSize: CGSize = .zero
@@ -198,7 +198,7 @@ class MashupViewModel: ObservableObject {
     }
     
     func unselectAllRegions() {
-        isSelected.keys.forEach{ isSelected[$0] = false }
+        isSelected.removeAll()
     }
     
     func getRegion(lane: Lane, id: UUID) -> Region? {

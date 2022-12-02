@@ -154,7 +154,7 @@ struct UserLibSongCardView: View {
                     if userLibVM.isSelected[songId] == nil {
                         userLibVM.isSelected[songId] = true
                     } else {
-                        userLibVM.isSelected[songId] = !userLibVM.isSelected[songId]!
+                        userLibVM.isSelected[songId] = nil
                     }
                     
                 }

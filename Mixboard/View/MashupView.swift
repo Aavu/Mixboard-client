@@ -74,20 +74,20 @@ struct HomeView: View {
                             .allowsHitTesting(!audioManager.isPlaying)
 
                         VStack {
-                            Spacer(minLength: 8)
+                            Spacer(minLength: 4)
                             TracksView()
-                                .cornerRadius(8)
-                            Spacer(minLength: 8)
+                                .cornerRadius(4)
+                            Spacer(minLength: 4)
 
-                        }.blur(radius: mashupVM.isFocuingSongs ? 4:0)
-                            .onTapGesture {
-                                if mashupVM.isFocuingSongs {
-                                    withAnimation {
-                                        mashupVM.isFocuingSongs = false
-                                    }
+                        }.blur(radius: userLibVM.isFocuingSongs ? 4:0)
+                        .onTapGesture {
+                            if userLibVM.isFocuingSongs {
+                                withAnimation {
+                                    userLibVM.unselectAllSongs()
                                 }
                             }
-                            .padding([.horizontal], 4)
+                        }
+                        .padding([.horizontal], 4)
                     }
 
                     ToolbarView()
@@ -99,11 +99,6 @@ struct HomeView: View {
                 .allowsHitTesting(!backend.isGenerating)
                 .environmentObject(libViewModel)
                 .environmentObject(spotifyVM)
-                .simultaneousGesture(TapGesture()
-                    .onEnded({
-                        mashupVM.userInfoViewVisibility = .detailOnly
-                    })
-                )
             }
             .environmentObject(userLibVM)
             .environmentObject(mashupVM)
@@ -142,7 +137,7 @@ struct HomeView: View {
                     }
                 })
             }
-            mashupVM.userLibCardWidth = horizontalSizeClass == .compact ? 150: 250
+            mashupVM.userLibCardWidth = horizontalSizeClass == .compact ? 125: 250
         }
         .ignoresSafeArea(.keyboard)
     }

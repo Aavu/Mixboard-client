@@ -82,7 +82,7 @@ struct UserLibraryView: View {
                                 .simultaneousGesture(TapGesture()
                                     .onEnded({ value in
                                         withAnimation {
-                                            mashup.isFocuingSongs.toggle()
+                                            mashup.unselectAllRegions()
                                         }
                                     })
                                 )
@@ -124,8 +124,8 @@ struct UserLibraryView: View {
         }
         .onTapGesture {
             withAnimation {
-                mashup.isFocuingSongs = false
-                userLib.isSelected.removeAll()
+                userLib.unselectAllSongs()
+                mashup.unselectAllRegions()
             }
         }
         .onChange(of: userLib.canRemoveSong) { newValue in
@@ -160,6 +160,7 @@ struct UserLibraryView: View {
     }
     
     func handleDragChanged(song: Song, value: DragGesture.Value) {
+        userLib.unselectAllSongs()
         dragLocation[song.id] = value.location
         isDragging[song.id] = true
         let lane = mashup.getLaneForLocation(location: dragLocation[song.id]!)

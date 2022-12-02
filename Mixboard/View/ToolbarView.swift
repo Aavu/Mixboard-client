@@ -120,6 +120,10 @@ struct ToolbarView: View {
 //                }
             }.padding(.vertical, 4)
         }
+        .onTapGesture {
+            userLibVM.unselectAllSongs()
+            mashupVM.unselectAllRegions()
+        }
     }
     
     func handlePlayBtn() {
@@ -140,7 +144,7 @@ struct ToolbarView: View {
         if mashupVM.readyToPlay {   // Play
             play()
         } else {                    // Generate
-            audioManager.stop()
+            audioManager.reset()
             let uuid = UUID().uuidString
             mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
                 play()

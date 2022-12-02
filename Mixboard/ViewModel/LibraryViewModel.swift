@@ -24,13 +24,27 @@ class LibraryViewModel: ObservableObject {
     
     func addSubscribers() {
         $searchText
-            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
+            .debounce(for: .seconds(0.25), scheduler: DispatchQueue.main)
             .map { (txt) -> [Song] in
                 guard !txt.isEmpty else {
                     return self.unfilteredSongs
                 }
                 
                 let lowerTxt = txt.lowercased().trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                
+//                let sortedSongs = self.unfilteredSongs.sorted { a, b in
+//                    var isAleB = LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.name?.lowercased()) < LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.name?.lowercased())
+//
+//                    isAleB = isAleB || LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.album?.lowercased()) < LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.album?.lowercased())
+//
+//                    isAleB = isAleB || LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.artist?.lowercased()) < LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.artist?.lowercased())
+//
+//                    print(a.name!, b.name!, LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.name?.lowercased()), LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.name?.lowercased()), a.album!, b.album!, LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.album?.lowercased()), LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.album?.lowercased()), a.artist!, b.artist!, LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.artist?.lowercased()), LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.artist?.lowercased()))
+//
+//                    return isAleB
+//                }
+//
+//                return sortedSongs
                 
                 return self.unfilteredSongs.filter { song in
                     return song.name?.lowercased().contains(lowerTxt) ?? false ||
@@ -42,6 +56,23 @@ class LibraryViewModel: ObservableObject {
                 self.songs = filteredSongs
             }
             .store(in: &cancellables)
+    }
+    
+    
+    static private func levenshteinDist(query: String, txt: String?) -> Int {
+        guard let txt = txt else { return Int.max }
+        
+        let empty = Array<Int>(repeating:0, count: query.count)
+        var last = [Int](0...query.count)
+        
+        for (i, testLetter) in txt.enumerated() {
+            var cur = [i + 1] + empty
+            for (j, queryLetter) in query.enumerated() {
+                cur[j + 1] = testLetter == queryLetter ? last[j] : min(last[j], last[j + 1], cur[j]) + 1
+            }
+            last = cur
+        }
+        return last.last!
     }
     
     func isSongInList(list: [Song], song: Song) -> Bool {
@@ -118,7 +149,7 @@ class LibraryViewModel: ObservableObject {
     }
     
     func getSong(songId: String) -> Song? {
-        guard let library = self.library else { return Song(id: songId) }
+        guard let library = self.library else { return nil }
         return library.items[songId]
     }
     

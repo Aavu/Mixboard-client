@@ -180,6 +180,9 @@ struct LibraryView: View {
                 selectedSongId[id] = songSource
             }
         }
+        
+        libraryVM.searchText = ""
+        spotifyVM.searchText = ""
     }
     
     func handleDoneBtn() {
@@ -308,6 +311,7 @@ struct LibContentView<T: View>: View {
                         content
                     }
                 }
+                .scrollDismissesKeyboard(.immediately)
             }.padding(.horizontal, 8)
         }
     }
@@ -356,7 +360,7 @@ struct TabBarView<T: View>: View {
                         } label: {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 8).foregroundColor(.NeutralColor)
-                                Text(selectedSongId.count > 0 ? ("Add \(selectedSongId.count) song\(selectedSongId.count == 1 ? "": "s")") : "Choose for Me!").foregroundColor(.AccentColor)
+                                Text(selectedSongId.count > 0 ? ("Add") : "Choose for Me!").foregroundColor(.AccentColor)
                             }.frame(width: 128, height: 36).shadow(radius: 2)
                         }.padding(8)
                     }
