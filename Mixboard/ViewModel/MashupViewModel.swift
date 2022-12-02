@@ -532,7 +532,7 @@ class MashupViewModel: ObservableObject {
             
             if addToHistory {
                 if let userLibVM = self.userLibVM, let userInfoVM = self.userInfoVM {
-                    let history = History(id: uuid, audio: nil, date: Date(), userLibrary: userLibVM.songs, layout: self.layoutInfo)
+                    let history = History(id: uuid, audio: nil, date: Date(), userLibrary: userLibVM.songs.values, layout: self.layoutInfo)
                     DispatchQueue.main.async {
                         userInfoVM.current = history
                     }

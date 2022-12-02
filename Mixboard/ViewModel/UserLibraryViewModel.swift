@@ -9,7 +9,8 @@ import Foundation
 import Combine
 
 class UserLibraryViewModel: ObservableObject {
-    @Published var songs = [Song]()
+//    @Published var songs = [Song]()
+    @Published var songs = MBOrderedDict<String, Song>()
     @Published var disableRemoveBtn = false
     
     /// This is for the songs
@@ -120,34 +121,30 @@ class UserLibraryViewModel: ObservableObject {
         if let song = lib?.getSong(songId: songId) {
             var placeHolderSong = song
             placeHolderSong.placeholder = true
-            self.songs.append(placeHolderSong)
+            self.songs.set(value: placeHolderSong, for: placeHolderSong.id)
             return
         }
         
         if let song = spotifyVM?.getSong(songId: songId) {
             var placeHolderSong = song
             placeHolderSong.placeholder = true
-            self.songs.append(placeHolderSong)
+            self.songs.set(value: placeHolderSong, for: placeHolderSong.id)
             return
         }
     }
     
     func removePlaceholderSongs() {
         for i in (0..<songs.count) {
-            if songs[i].placeholder {
-                self.songs.remove(at: i)
+            if let song = songs[i] {
+                if song.placeholder {
+                    self.songs.remove(at: i)
+                }
             }
         }
     }
     
     func replaceDummy(song:Song) -> Bool {
-        for i in (0..<songs.count) {
-            if songs[i].id == song.id {
-                songs[i] = song
-                return true
-            }
-        }
-        return false
+        return songs.update(value: song, for: song.id)
     }
     
     @discardableResult func addSongFromLib(songId: String) -> Bool {
@@ -164,8 +161,8 @@ class UserLibraryViewModel: ObservableObject {
     }
     
     func isSongInUserLibrary(songId: String) -> Bool {
-        for s in self.songs {
-            if s.id == songId && !s.placeholder {
+        if let song = songs.get(valueFor: songId) {
+            if !song.placeholder {
                 return true
             }
         }
@@ -216,9 +213,8 @@ class UserLibraryViewModel: ObservableObject {
                     print("Function: \(#function), line: \(#line),", err)
                     return
                 }
-                self.songs.removeAll { song in
-                    song.id == sId
-                }
+                
+                self.songs.remove(key: songId)
                 
                 if let complete = complete {
                     complete(nil)
@@ -242,7 +238,7 @@ class UserLibraryViewModel: ObservableObject {
     }
     
     func restoreFromHistory(history: History) {
-        songs = [Song]()
+        songs = MBOrderedDict<String, Song>()
         for song in history.userLibrary {
             addSong(songId: song.id)
         }

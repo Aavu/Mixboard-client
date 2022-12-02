@@ -38,7 +38,7 @@ struct ToolbarView: View {
                 
                 Button {
                     if audioManager.isPlaying { return }
-                    mashupVM.surpriseMe(songs: userLibVM.songs)
+                    mashupVM.surpriseMe(songs: userLibVM.songs.values)
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 4).frame(width: 136)

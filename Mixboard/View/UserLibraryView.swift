@@ -55,40 +55,41 @@ struct UserLibraryView: View {
                         .transition(.move(edge: .top))
                         .allowsHitTesting(!(removingSong || userLib.disableRemoveBtn))
                     }
-
                     
-                    ForEach(userLib.songs, id: \.self) { song in
-                        ZStack {
-                            if userLib.dragOffset[song.id]?.width ?? 0 > 0 {
+                    ForEach($userLib.songs, id: \.self) { songBinding in
+                        if let song = songBinding.wrappedValue {
+                            ZStack {
+                                if userLib.dragOffset[song.id]?.width ?? 0 > 0 {
+                                    UserLibSongCardView(song: song)
+                                        .frame(width: cardWidth)
+                                        .environmentObject(userLib)
+                                }
+                                
                                 UserLibSongCardView(song: song)
                                     .frame(width: cardWidth)
+                                    .frame(maxHeight: (isDragging[song.id] ?? false) ? mashup.tracksViewSize.height / 4 : nil)
+                                    .offset(userLib.dragOffset[song.id] ?? .zero)
                                     .environmentObject(userLib)
+                                    .gesture(DragGesture(coordinateSpace: .global)
+                                        .onChanged({ value in
+                                            handleDragChanged(song: song, value: value)
+                                        })
+                                             
+                                            .onEnded({ value in
+                                                handleDragEnded(song: song, value: value)
+                                            })
+                                    )
+                                    .simultaneousGesture(TapGesture()
+                                        .onEnded({ value in
+                                            withAnimation {
+                                                mashup.unselectAllRegions()
+                                            }
+                                        })
+                                    )
+                                    .onAppear {
+                                        userLib.dragOffset[song.id] = .zero
+                                    }
                             }
-
-                            UserLibSongCardView(song: song)
-                                .frame(width: cardWidth)
-                                .frame(maxHeight: (isDragging[song.id] ?? false) ? mashup.tracksViewSize.height / 4 : nil)
-                                .offset(userLib.dragOffset[song.id] ?? .zero)
-                                .environmentObject(userLib)
-                                .gesture(DragGesture(coordinateSpace: .global)
-                                    .onChanged({ value in
-                                        handleDragChanged(song: song, value: value)
-                                    })
-
-                                    .onEnded({ value in
-                                        handleDragEnded(song: song, value: value)
-                                    })
-                                )
-                                .simultaneousGesture(TapGesture()
-                                    .onEnded({ value in
-                                        withAnimation {
-                                            mashup.unselectAllRegions()
-                                        }
-                                    })
-                                )
-                                .onAppear {
-                                    userLib.dragOffset[song.id] = .zero
-                                }
                         }
                 }
 
@@ -114,7 +115,7 @@ struct UserLibraryView: View {
             }
             .padding([.vertical], 16)
         }.sheet(isPresented: $isPresented) {
-            LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
+            LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs.values) { results in
                 userLib.addSongs(songIds: results)
                 mashup.updateRegionState(.New)
             }
@@ -140,19 +141,21 @@ struct UserLibraryView: View {
         let numSongs = userLib.songs.count
         var removeCount = 0
         for song in userLib.songs {
-            userLib.removeSong(songId: song.id) { err in
-                if let err = err {
-                    print("Function: \(#function), line: \(#line),", "error removing song. \(err)")
-                    removingSong = false
-                }
-                
-                mashup.deleteRegionsFor(songId: song.id)
-                
-                removeCount += 1
-                
-                if removeCount == numSongs {
-                    removingSong = false
-                    mashup.isEmpty = true
+            if let s = song {
+                userLib.removeSong(songId: s.id) { err in
+                    if let err = err {
+                        print("Function: \(#function), line: \(#line),", "error removing song. \(err)")
+                        removingSong = false
+                    }
+                    
+                    mashup.deleteRegionsFor(songId: s.id)
+                    
+                    removeCount += 1
+                    
+                    if removeCount == numSongs {
+                        removingSong = false
+                        mashup.isEmpty = true
+                    }
                 }
             }
 

@@ -8,6 +8,101 @@
 import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
+import Swift
+
+class MBOrderedDict<T1: Hashable, T2>: RandomAccessCollection, MutableCollection {
+    subscript(position: Int) -> T2? {
+        get {
+            let key = self.indices[position]
+            return self._data[key]
+        }
+        set(newValue) {
+            if self.endIndex <= position {
+                let key = self.indices[position]
+                self._data[key] = newValue
+            }
+        }
+    }
+    
+    var startIndex: Int
+    
+    var endIndex: Int
+    
+    var indices = [T1]() {
+        didSet {
+            endIndex = Swift.max(0, self.indices.count - 1)
+        }
+    }
+    
+    var values = [T2]()
+    
+    private var _data = [T1: T2]() {
+        didSet {
+            values = Array(self._data.values)
+        }
+    }
+    
+    init(_ data: [T1 : T2] = [T1: T2]()) {
+        self.indices = Array(data.keys)
+        self._data = data
+        self.startIndex = 0
+        self.endIndex = Swift.max(0, data.count - 1)
+    }
+    
+    func index(_ i: Int, offsetBy distance: Int) -> Int {
+        return i + distance
+    }
+    
+    func distance(from start: Int, to end: Int) -> Int {
+        return end - start
+    }
+    
+    
+    func get(valueFor key: T1) -> T2? {
+        return self._data[key]
+    }
+    
+    func update(value: T2, for key: T1) -> Bool {
+        if get(valueFor: key) != nil {
+            self._data[key] = value
+            return true
+        }
+        return false
+    }
+    
+    func set(value: T2, for key: T1) {
+        self.indices.append(key)
+        self._data[key] = value
+    }
+    
+    func remove(key: T1) {
+        removeKeyFromIndices(key: key)
+        self._data[key] = nil
+    }
+    
+    func remove(at idx: Int) {
+        guard idx >= startIndex, idx <= endIndex else { return }
+        let key = self.indices[idx]
+        self.indices.remove(at: idx)
+        self._data[key] = nil
+    }
+    
+    private func removeKeyFromIndices(key: T1) {
+        for i in (0...endIndex) {
+            if self.indices[i] == key {
+                self.indices.remove(at: i)
+                return
+            }
+        }
+    }
+    
+    func removeAll() {
+        self._data = [T1: T2]()
+        self.indices = [T1]()
+    }
+    
+}
+
 
 extension String {
     

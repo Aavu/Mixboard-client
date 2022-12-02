@@ -14,7 +14,7 @@ struct NonSilentBounds: Codable, Hashable {
     let bass: Dictionary<String, [Float]>
 }
 
-struct Song: Codable, Hashable {
+struct Song: Codable, Hashable, Identifiable {
     var album: String?
     var artist: String?
     var external_url: String?
