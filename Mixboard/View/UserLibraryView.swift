@@ -41,7 +41,7 @@ struct UserLibraryView: View {
                                     RoundedRectangle(cornerRadius: 4).frame(height: 36)
                                         .foregroundColor(.BgColor)
                                         .shadow(radius:  4)
-                                    Text("Remove all Songs").foregroundColor(.red)
+                                    Text("Remove all").foregroundColor(.red)
                                 }
                                 .opacity(removingSong || userLib.disableRemoveBtn || audioManager.isPlaying ? 0.5: 1)
 

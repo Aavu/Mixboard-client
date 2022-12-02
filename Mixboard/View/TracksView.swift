@@ -32,13 +32,33 @@ struct TracksView: View {
     @State var dragType: DragType = .None
     @State var dummyRegionView: RegionView?
     
+    @State var barText = "long"
+    
     var body: some View {
             ZStack(alignment: .leading) {
                 VStack(spacing: 0.0) {
                     HStack(spacing: 0.0) {
-                        Rectangle().foregroundColor(.clear).frame(width: mashup.trackLabelWidth, height: 20)
+                        Button {
+                            if mashup.totalBeats == 16 {
+                                mashup.totalBeats = 32
+                                barText = "long"
+                            } else {
+                                mashup.totalBeats = 16
+                                barText = "short"
+                            }
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 4)
+                                HStack(spacing: 2) {
+                                    Text(barText).fontWeight(.bold)
+//                                    Text("bars").font(.caption)
+                                }
+                            }
+                            .frame(width: mashup.trackLabelWidth, height: 20)
+                        }
                         
-                        BarAxisView(width: 1, height: 22, numBeats: MashupViewModel.TOTAL_BEATS)
+                        BarAxisView(width: 1, height: 22)
+                            .environmentObject(mashup)
                     }
                     
                     GeometryReader { geo in
@@ -387,7 +407,7 @@ struct RegionView: View {
     }
     
     func updateFrame(geometry: GeometryProxy) {
-        conversion = geometry.frame(in: .local).width / CGFloat(MashupViewModel.TOTAL_BEATS)
+        conversion = geometry.frame(in: .local).width / CGFloat(mashup.totalBeats)
         if let region = mashup.getRegion(lane: lane, id: uuid) {
             let width = CGFloat(region.w) * conversion
             startX[uuid] = CGFloat(region.x) * conversion
@@ -402,7 +422,7 @@ struct RegionView: View {
         dragType = .None
         let tempx = Int(round(startX[uuid]! / conversion))
         let length = Int(round((endX[uuid]! - startX[uuid]!) / conversion))
-        let success = mashup.updateRegion(id: uuid, x: tempx, length: min(Int(MashupViewModel.TOTAL_BEATS) - tempx, length))
+        let success = mashup.updateRegion(id: uuid, x: tempx, length: min(Int(mashup.totalBeats) - tempx, length))
         if success {
             startX[uuid] = CGFloat(tempx) * conversion
             endX[uuid] = CGFloat(length + tempx) * conversion

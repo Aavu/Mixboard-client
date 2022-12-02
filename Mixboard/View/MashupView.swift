@@ -137,7 +137,7 @@ struct HomeView: View {
                     }
                 })
             }
-            mashupVM.userLibCardWidth = horizontalSizeClass == .compact ? 125: 250
+            mashupVM.userLibCardWidth = horizontalSizeClass == .compact ? 150: 250
         }
         .ignoresSafeArea(.keyboard)
     }

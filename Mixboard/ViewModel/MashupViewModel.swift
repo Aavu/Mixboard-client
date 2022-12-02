@@ -31,7 +31,13 @@ class MashupViewModel: ObservableObject {
     
     @Published var userLibCardWidth: CGFloat = 0
     
-    static let TOTAL_BEATS = 32
+    @Published var totalBeats = 32 {
+        didSet {
+            LuckyMeManager.shared.setTotalBeats(totalBeats)
+            audioManager.setTotalBeats(totalBeats)
+            clearCanvas()
+        }
+    }
     
     @ObservedObject var audioManager = AudioManager.shared
     
@@ -50,7 +56,7 @@ class MashupViewModel: ObservableObject {
             layoutInfo.lane[lane.rawValue] = Layout.Track()
         }
         self.addSubscriber()
-        LuckyMeManager.shared.loadTemplateFile()
+        LuckyMeManager.shared.loadTemplateFiles()
         
         self.loggedIn = (FirebaseManager.getCurrentUser() != nil)
         if loggedIn {
@@ -136,7 +142,7 @@ class MashupViewModel: ObservableObject {
                 }
             }
         }
-        return min(MashupViewModel.TOTAL_BEATS, lastBeatTemp)
+        return min(totalBeats, lastBeatTemp)
     }
     
     private func getRegionIds(with laneState: LaneState) -> [UUID] {
@@ -372,8 +378,8 @@ class MashupViewModel: ObservableObject {
     
     func handleDropRegion(songId: String, dropLocation: CGPoint) -> Bool {
         if let lane = getLaneForLocation(location: dropLocation) {
-            let conversion = (tracksViewSize.width - trackLabelWidth) / CGFloat(MashupViewModel.TOTAL_BEATS)
-            let x = min(max(0, Int(round((dropLocation.x - tracksViewLocation.x) / conversion) - 4)), MashupViewModel.TOTAL_BEATS - 8)
+            let conversion = (tracksViewSize.width - trackLabelWidth) / CGFloat(totalBeats)
+            let x = min(max(0, Int(round((dropLocation.x - tracksViewLocation.x) / conversion) - 4)), totalBeats - 8)
             addRegion(region: Region(x: Int(x), w: 8, item: Region.Item(id: songId), state: .New), lane: lane)
         }
         

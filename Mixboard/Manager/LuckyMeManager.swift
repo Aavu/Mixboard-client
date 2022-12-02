@@ -10,31 +10,41 @@ import Foundation
 class LuckyMeManager {
     static let shared = LuckyMeManager()
     
-    private var templates: LuckyMeTemplates?
+    private var templates = [Int: LuckyMeTemplates]()
     
     var appError: AppError?
     
-    func loadTemplateFile() {
-        guard let url = Bundle.main.url(forResource: "LuckyMeTemplates\(MashupViewModel.TOTAL_BEATS)", withExtension: "json")
-        else {
-            appError = AppError(description: "LuckyMe templates JSON file not found")
-            print("Function: \(#function), line: \(#line),", "LuckyMe templates JSON file not found")
-            return
+    private var totalBeats: Int = 32
+    
+    private let bars = [16, 32]
+    
+    func loadTemplateFiles() {
+        for bar in bars {
+            guard let url = Bundle.main.url(forResource: "LuckyMeTemplates\(bar)", withExtension: "json")
+            else {
+                appError = AppError(description: "LuckyMe templates JSON file not found")
+                print("Function: \(#function), line: \(#line),", "LuckyMe templates JSON file not found")
+                return
+            }
+            
+            do {
+                let data = try Data(contentsOf: url)
+                self.templates[bar] = try JSONDecoder().decode(LuckyMeTemplates.self, from: data)
+            } catch let e {
+                print("Function: \(#function), line: \(#line),", e)
+                appError = AppError(description: e.localizedDescription)
+                return
+            }
         }
-        
-        do {
-            let data = try Data(contentsOf: url)
-            self.templates = try JSONDecoder().decode(LuckyMeTemplates.self, from: data)
-        } catch let e {
-            print("Function: \(#function), line: \(#line),", e)
-            appError = AppError(description: e.localizedDescription)
-            return
-        }
+    }
+    
+    func setTotalBeats(_ beats: Int) {
+        totalBeats = beats
     }
     
     func surpriseMe(songs: [Song]) -> Layout? {
         var layout = Layout()
-        guard let templates = templates else { return nil }
+        guard let templates = self.templates[totalBeats] else { return nil }
         guard let tracks = templates.tracks[songs.count] else { return nil }
         let shuffledSongs = songs.shuffled()
         let templateNum = tracks.count - 1

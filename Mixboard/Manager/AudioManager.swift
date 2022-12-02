@@ -30,13 +30,24 @@ class AudioManager: NSObject, ObservableObject {
     @Published var audioLengthSamples: AVAudioFramePosition = 0
     @Published var timelineLengthSamples: AVAudioFramePosition = 0
     
+    private var totalBeats:Int = 32 {
+        didSet {
+            timelineLengthSamples = MBMusic.getInSamples(value: totalBeats, sampleRate: sampleRate, tempo: tempo)
+            print("totalBeats: \(totalBeats)")
+        }
+    }
+    
     private var sampleRate: Double = 44100
     
     @Published var tempo: Double = 120 {
         didSet {
-            timelineLengthSamples = MBMusic.getInSamples(value: MashupViewModel.TOTAL_BEATS, sampleRate: sampleRate, tempo: tempo)
+            timelineLengthSamples = MBMusic.getInSamples(value: totalBeats, sampleRate: sampleRate, tempo: tempo)
             print("tempo: \(tempo)")
         }
+    }
+    
+    func setTotalBeats(_ beats: Int) {
+        totalBeats = beats
     }
     
     func setMashupLength(lengthInBars: Int) {
