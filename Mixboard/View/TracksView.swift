@@ -24,7 +24,8 @@ struct TracksView: View {
     @EnvironmentObject var userLib: UserLibraryViewModel
     
     @ObservedObject var audioManager = AudioManager.shared
-
+    @ObservedObject var backend = BackendManager.shared
+    
     @State var startX = Dictionary<UUID, CGFloat>()
     @State var endX = Dictionary<UUID, CGFloat>()
     @State var yPos = Dictionary<UUID, CGFloat>()
@@ -33,6 +34,8 @@ struct TracksView: View {
     @State var dummyRegionView: RegionView?
     
     @State var barText = "long"
+    
+    @State var playHeadPosition: CGFloat = .zero
     
     var body: some View {
             ZStack(alignment: .leading) {
@@ -56,6 +59,9 @@ struct TracksView: View {
                             }
                             .frame(width: mashup.trackLabelWidth, height: 20)
                         }
+                        .disabled(audioManager.isPlaying || backend.isGenerating)
+                        
+                        
                         
                         BarAxisView(width: 1, height: 22)
                             .environmentObject(mashup)
@@ -133,14 +139,21 @@ struct TracksView: View {
                     let totalWidth = geo.frame(in: .local).width - mashup.trackLabelWidth
                     let audioProgressPercentage = audioManager.timelineLengthSamples > 0 ? (CGFloat(audioManager.currentPosition) / CGFloat(audioManager.timelineLengthSamples)) : 0
                     PlayHeadView()
+                    // For better touch response
+                        .overlay(content: {
+                            Rectangle().fill(.clear).frame(width: 24)
+                        })
                         .offset(x: mashup.trackLabelWidth - 10)
                         .offset(x: audioProgressPercentage * totalWidth)
-                        .gesture(DragGesture(coordinateSpace: .local)
+                        .simultaneousGesture(DragGesture(coordinateSpace: .local)
                             .onChanged({ value in
                                 userLib.unselectAllSongs()
-                                audioManager.setProgress(progress: min(max(0, value.location.x - mashup.trackLabelWidth), totalWidth) / totalWidth)
+                                playHeadPosition = min(max(0, value.location.x - mashup.trackLabelWidth), totalWidth) / totalWidth
                             })
                         )
+                        .onChange(of: playHeadPosition) { newValue in
+                            audioManager.setProgress(progress: playHeadPosition)
+                        }
                 }
             }
             .onTapGesture {
@@ -182,14 +195,15 @@ struct LaneView: View {
                             } label: {
                                 ZStack {
                                     Rectangle().fill(l.laneState == .Mute ? Color.red : Color.SecondaryBgColor)
-                                    Text("M")
-                                        .fontWeight(.bold)
+                                    Image(systemName: "speaker.slash.fill")
+                                        .renderingMode(.template).resizable().scaledToFit()
                                         .foregroundColor(l.laneState == .Mute ? Color.PureColor : Color.AccentColor)
+                                        .padding(.all, 6)
                                 }
                                 .transition(.identity)
                                 .animation(.none, value: l.laneState)
                             }
-                            .frame(minHeight: 24, maxHeight: 32)
+                            .frame(minHeight: 20, maxHeight: 32)
                             .padding(.bottom, 1)
                             
                             MBButton {
@@ -198,15 +212,17 @@ struct LaneView: View {
                                 ZStack {
                                     Rectangle()
                                         .fill(l.laneState == .Solo ? Color.green : Color.SecondaryBgColor)
-                                    Text("S")
-                                        .fontWeight(.bold)
+                                    Image(systemName: "headphones")
+                                        .renderingMode(.template).resizable().scaledToFit()
                                         .foregroundColor(l.laneState == .Solo ? Color.PureColor : Color.AccentColor)
+                                        .padding(.all, 6)
                                 }
                                 .transition(.identity)
                                 .animation(.none, value: l.laneState)
                             }
-                            .frame(minHeight: 24, maxHeight: 32)
+                            .frame(minHeight: 20, maxHeight: 32)
                             .padding(.bottom, 1)
+                            
                         }
                     }
                 }

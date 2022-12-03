@@ -110,39 +110,15 @@ class BackendManager: ObservableObject {
                 if data.valid {
                     completion(data, nil)
                 } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        self.fetchRegion(regionId: regionId, tryNum: tryNum, completion: completion) // Recursive call
+                    if tryNum >= 50 {
+                        print("Region fetch failed with region id \(regionId)")
+                        completion(nil, NSError(domain: "RegionFetchFailed", code: 543))
+                    } else {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            self.fetchRegion(regionId: regionId, tryNum: tryNum + 1, completion: completion) // Recursive call
+                        }
                     }
                 }
-                
-                //                if let stat = RequestStatus(rawValue: resp["requestStatus"] as! String) {
-                //                    switch stat {
-                //                    case .Progress:
-                //                        let result = try JSONDecoder().decode(TaskData.self, from: data)
-                //                        DispatchQueue.main.async {
-                //                            statusCallback(result.task_result)
-                //                            self.updateRegionData(regionId: regionId, statusCallback: statusCallback, completion: completion)  //  Recursive call
-                //                        }
-                //                        return
-                //                    case .Pending:
-                //                        let result = try JSONDecoder().decode(TaskData.self, from: data)
-                //                        DispatchQueue.main.async {
-                //                            statusCallback(result.task_result)
-                //                            self.updateRegionData(regionId: regionId, statusCallback: statusCallback, completion: completion)  //  Recursive call
-                //                        }
-                //
-                //                        return
-                //                    case .Success:
-                //                        DispatchQueue.main.async {
-                //                            completion(nil)
-                //                        }
-                //                    case .Failure:
-                //                        DispatchQueue.main.async {
-                //                            completion(NSError(domain: "This song cannot be downloaded. Please choose a different song or version", code: 151))
-                //                        }
-                //                        return
-                //                    }
-                //                }
             } catch let e {
                 DispatchQueue.main.async {
                     if tryNum < 3 {

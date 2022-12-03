@@ -14,15 +14,20 @@ struct SongCardView: View {
     let minFrameWidthForText: CGFloat = 100
     
     @ObservedObject var imageVM: ImageViewModel
+    @EnvironmentObject var libVM: LibraryViewModel
     
-    init(spotifySong: Spotify.Track?) {
+    private let hasRemoveBtn: Bool
+    
+    init(spotifySong: Spotify.Track?, hasRemoveBtn: Bool = false) {
         self.spotifySong = spotifySong
         self.imageVM = ImageViewModel(imageUrl: spotifySong?.album.images[0].url)
+        self.hasRemoveBtn = hasRemoveBtn
     }
     
-    init(song: Song?) {
+    init(song: Song?, hasRemoveBtn: Bool = false) {
         self.song = song
         self.imageVM = ImageViewModel(imageUrl: song?.img_url)
+        self.hasRemoveBtn = hasRemoveBtn
     }
     
     var body: some View {
@@ -89,11 +94,11 @@ struct UserLibSongCardView: View {
                                 StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
                             }
                             
-                            Spacer()
+                            Spacer(minLength: 0)
                             
-                            ImageView(image: $imageVM.image).frame(width: geo.size.width / 2).shadow(radius: 4)
+                            ImageView(image: $imageVM.image).shadow(radius: 4)
                             
-                        }.padding([.all], 8)
+                        }.padding([.all], 4)
                     }
                     
                     

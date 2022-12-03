@@ -162,54 +162,54 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     
-    @discardableResult func scheduleMusic(at position: AVAudioFramePosition? = nil) -> Bool {
+    func scheduleMusic(at position: AVAudioFramePosition? = nil) {
         guard let music = self.currentMusic else {
             print("Current Music is nil. Not scheduling")
-            return false
+            return
         }
         
         let position = position ?? currentPosition
         
         stop()
         
-
-        if audioLengthSamples > AVAudioFrameCount(position) {
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: .init(standardFormatWithSampleRate: sampleRate, channels: 1)!, frameCapacity: AVAudioFrameCount(audioLengthSamples - position)) else { return false }
-            let _time = AVAudioTime(sampleTime: position, atRate: sampleRate)
-            currentSilentBufferPosition = position
-            silencePlayer.scheduleBuffer(buffer, at: _time)
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            if audioLengthSamples > AVAudioFrameCount(position) {
+                guard let buffer = AVAudioPCMBuffer(pcmFormat: .init(standardFormatWithSampleRate: sampleRate, channels: 1)!, frameCapacity: AVAudioFrameCount(audioLengthSamples - position)) else { return }
+                let _time = AVAudioTime(sampleTime: position, atRate: sampleRate)
+                currentSilentBufferPosition = position
+                silencePlayer.scheduleBuffer(buffer, at: _time)
+                
+            } else {
+                print("illegal capacity: \(position), \(audioLengthSamples)")
+                return
+            }
             
-        } else {
-            print("illegal capacity: \(position), \(audioLengthSamples)")
-            return false
-        }
-        
-        for (id, audio) in music.audios {
-            if let player = players[id] {
-                do {
-                    let file = try AVAudioFile(forReading: audio.file)
-                    let fmt = file.processingFormat
-                    sampleRate = fmt.sampleRate
-                    let diffTime = audio.position - position
-                    if diffTime >= 0 {  // Region is in the future
-                        let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
-                        player.scheduleFile(file, at: _time)
-                    } else {
-                        if position < audio.position + file.length {  // Region under playhead
-                            let startingFrame = AVAudioFramePosition(position - audio.position)
-                            let frameCount = AVAudioFrameCount(file.length - startingFrame)
-                            player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
+            for (id, audio) in music.audios {
+                if let player = players[id] {
+                    do {
+                        let file = try AVAudioFile(forReading: audio.file)
+                        let fmt = file.processingFormat
+                        sampleRate = fmt.sampleRate
+                        let diffTime = audio.position - position
+                        if diffTime >= 0 {  // Region is in the future
+                            let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
+                            player.scheduleFile(file, at: _time)
+                        } else {
+                            if position < audio.position + file.length {  // Region under playhead
+                                let startingFrame = AVAudioFramePosition(position - audio.position)
+                                let frameCount = AVAudioFrameCount(file.length - startingFrame)
+                                player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
+                            }
                         }
+                    } catch (let e) {
+                        print(e)
+                        return
                     }
-                } catch (let e) {
-                    print(e)
-                    return false
                 }
             }
+            
+            needsFilesScheduled = false
         }
-        
-        needsFilesScheduled = false
-        return true
     }
     
     private func resetPlayers() {
@@ -245,7 +245,8 @@ class AudioManager: NSObject, ObservableObject {
         
         do {
             try engine.start()
-            return scheduleMusic()
+            scheduleMusic()
+            return true
         } catch {
             print("Error starting the player: \(error.localizedDescription)")
             return false
@@ -275,7 +276,6 @@ class AudioManager: NSObject, ObservableObject {
     func setCurrentPosition(position: AVAudioFramePosition) {
         currentPosition = max(min(position, timelineLengthSamples), 0)
         let wasPlaying = isPlaying
-        stop()
         let _ = scheduleMusic(at: currentPosition)
         
         if wasPlaying {

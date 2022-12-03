@@ -15,8 +15,6 @@ struct MashupView: View {
     @StateObject var spotifyVM      = SpotifyViewModel()
     @StateObject var userInfoVM     = UserInfoViewModel()
     
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
     var body: some View {
         ZStack(alignment: .leading) {
             HomeView()
@@ -59,87 +57,92 @@ struct HomeView: View {
     
     @ObservedObject var backend = BackendManager.shared
     
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
     var body: some View {
         let showProgress = backend.isGenerating && mashupVM.showGenerationProgress
         ZStack {
-            Color.BgColor.ignoresSafeArea()
-
-            ZStack(alignment: .trailing) {
-                VStack{
-                    HStack(alignment: .center, spacing: 0) {
-                        UserLibraryView(numSongs: 4, cardWidth: mashupVM.userLibCardWidth)
-                            .zIndex(2)
-                            .allowsHitTesting(!audioManager.isPlaying)
-
-                        VStack {
-                            Spacer(minLength: 4)
-                            TracksView()
-                                .cornerRadius(4)
-                            Spacer(minLength: 4)
-
-                        }.blur(radius: userLibVM.isFocuingSongs ? 4:0)
-                        .onTapGesture {
-                            if userLibVM.isFocuingSongs {
-                                withAnimation {
-                                    userLibVM.unselectAllSongs()
-                                }
+            GeometryReader { geo in
+                ZStack {
+                    Color.BgColor.ignoresSafeArea()
+                    
+                    ZStack(alignment: .trailing) {
+                        VStack{
+                            HStack(alignment: .center, spacing: 0) {
+                                UserLibraryView(numSongs: 4, cardWidth: mashupVM.userLibCardWidth)
+                                    .zIndex(2)
+                                    .allowsHitTesting(!audioManager.isPlaying)
+                                
+                                VStack {
+                                    Spacer(minLength: 4)
+                                    TracksView()
+                                        .cornerRadius(4)
+                                    Spacer(minLength: 4)
+                                    
+                                }.blur(radius: userLibVM.isFocuingSongs ? 4:0)
+                                    .onTapGesture {
+                                        if userLibVM.isFocuingSongs {
+                                            withAnimation {
+                                                userLibVM.unselectAllSongs()
+                                            }
+                                        }
+                                    }
+                                    .padding([.horizontal], 4)
                             }
+                            ToolbarView()
+                                .frame(height: max(36, min(64, 0.075 * geo.size.height)))
                         }
-                        .padding([.horizontal], 4)
+                        .disabled(backend.isGenerating)
+                        .blur(radius: showProgress ? 8: 0)
+                        .overlay(showProgress ? .black.opacity(0.5) : .clear)
+                        .allowsHitTesting(!backend.isGenerating)
+                        .environmentObject(libViewModel)
+                        .environmentObject(spotifyVM)
                     }
-
-                    ToolbarView()
-                        .frame(height: horizontalSizeClass == .compact ? 28: 64)
-                }
-                .disabled(backend.isGenerating)
-                .blur(radius: showProgress ? 8: 0)
-                .overlay(showProgress ? .black.opacity(0.5) : .clear)
-                .allowsHitTesting(!backend.isGenerating)
-                .environmentObject(libViewModel)
-                .environmentObject(spotifyVM)
-            }
-            .environmentObject(userLibVM)
-            .environmentObject(mashupVM)
-            
-            
-            if showProgress {
-                if let status = backend.generationStatus {
-                    ProgressView(status.description ?? "Generating Mashup", value: CGFloat(status.progress), total: 100).padding()
-                        .foregroundColor(.white)
-                        .progressViewStyle(LinearProgressViewStyle(tint: .white))
-                }
-            }
-        }
-        .alert(isPresented: $mashupVM.showError, error: mashupVM.appError, actions: {
-            Button("Ok") {
-                mashupVM.appError = nil
-            }
-        })
-        .alert(isPresented: $userLibVM.showError, error: userLibVM.appError, actions: {
-            Button("Ok") {
-                userLibVM.appError = nil
-            }
-        })
-        .onAppear {
-            if mashupVM.loggedIn {
-                libViewModel.update(didUpdate: { err in
-                    if let err = err {
-                        if err._code == -1011 {
-                            mashupVM.appError = AppError(description: "Server not responding. Please try again later")
-                            mashupVM.appFailed = true
-                        } else {
-                            mashupVM.appError = AppError(description: err.localizedDescription)
-                            print("Function: \(#function), line: \(#line),", err)
+                    .environmentObject(userLibVM)
+                    .environmentObject(mashupVM)
+                    
+                    
+                    if showProgress {
+                        if let status = backend.generationStatus {
+                            ProgressView(status.description ?? "Generating Mashup", value: CGFloat(status.progress), total: 100).padding()
+                                .foregroundColor(.white)
+                                .progressViewStyle(LinearProgressViewStyle(tint: .white))
                         }
-
+                    }
+                }
+                
+                .alert(isPresented: $mashupVM.showError, error: mashupVM.appError, actions: {
+                    Button("Ok") {
+                        mashupVM.appError = nil
                     }
                 })
+                .alert(isPresented: $userLibVM.showError, error: userLibVM.appError, actions: {
+                    Button("Ok") {
+                        userLibVM.appError = nil
+                    }
+                })
+                .onAppear {
+                    if mashupVM.loggedIn {
+                        libViewModel.update(didUpdate: { err in
+                            if let err = err {
+                                if err._code == -1011 {
+                                    mashupVM.appError = AppError(description: "Server not responding. Please try again later")
+                                    mashupVM.appFailed = true
+                                } else {
+                                    mashupVM.appError = AppError(description: err.localizedDescription)
+                                    print("Function: \(#function), line: \(#line),", err)
+                                }
+                                
+                            }
+                        })
+                    }
+                    mashupVM.userLibCardWidth = 0.22 * geo.size.width
+                }
+                .onChange(of: geo.size, perform: { newValue in
+                    mashupVM.userLibCardWidth = 0.22 * geo.size.width
+                })
+                .ignoresSafeArea(.keyboard)
             }
-            mashupVM.userLibCardWidth = horizontalSizeClass == .compact ? 150: 250
         }
-        .ignoresSafeArea(.keyboard)
     }
 }
 

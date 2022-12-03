@@ -226,6 +226,7 @@ class MashupViewModel: ObservableObject {
                     layoutInfo.lane[lane.rawValue]!.layout.remove(at: idx)
                     isEmpty = isCanvasEmpty()
                     audioManager.currentMusic?.remove(id: region.id)
+                    audioManager.setCurrentPosition(position: 0)
                     audioManager.scheduleMusic()
                     return
                 }
@@ -267,6 +268,7 @@ class MashupViewModel: ObservableObject {
                                             return false
                                         }
                                         
+                                        audioManager.setCurrentPosition(position: 0)
                                         audioManager.scheduleMusic()
                                     }
                                 }

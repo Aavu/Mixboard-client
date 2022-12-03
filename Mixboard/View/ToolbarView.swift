@@ -31,8 +31,10 @@ struct ToolbarView: View {
                         .scaledToFit()
                         .foregroundColor(.AccentColor)
                         .frame(width: 24)
+                        .padding(.all, 6)
+                        .padding(.leading, 10)
                 }
-                .padding(.horizontal, 8)
+                
 
                 Spacer()
                 
@@ -50,8 +52,7 @@ struct ToolbarView: View {
                             Text("Surprise Me").foregroundColor(.SecondaryAccentColor)
                         }
                     }
-                    .padding([.horizontal], 8)
-                    .padding([.vertical], 2)
+                    .padding(.all, 6)
                     .zIndex(1)
                     .opacity(userLibVM.songs.count > 0 ? 1 : 0)
                     .opacity(audioManager.isPlaying ? 0.5 : 1)
@@ -66,6 +67,7 @@ struct ToolbarView: View {
                         audioManager.setCurrentPosition(position: audioManager.currentPosition - (44100 * 10))
                     } label: {
                         Image(systemName: "gobackward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
+                            .padding(.all, 6)
                     }
                     .disabled(!mashupVM.readyToPlay || mashupVM.isEmpty)
                     
@@ -78,16 +80,18 @@ struct ToolbarView: View {
                         } else {
                             Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
                                 .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
+                                .padding(.all, 6)
                         }
                     }
                     .disabled(mashupVM.isEmpty || backend.isGenerating)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 12)
                     
                     // MARK: Forward 10 Button
                     Button {
                         audioManager.setCurrentPosition(position: audioManager.currentPosition + (44100 * 10))
                     } label: {
                         Image(systemName: "goforward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
+                            .padding(.all, 6)
                     }
                     .disabled(!mashupVM.readyToPlay || mashupVM.isEmpty)
                 }
@@ -103,8 +107,7 @@ struct ToolbarView: View {
                             .shadow(radius:  4)
                         Text("Clear Canvas").foregroundColor(.red)
                     }
-                    .padding([.horizontal], 8)
-                    .padding([.vertical], 2)
+                    .padding(.all, 6)
                     .zIndex(1)
                     .opacity(mashupVM.isEmpty ? 0: 1)
                 }
@@ -118,7 +121,7 @@ struct ToolbarView: View {
 //                } else {
 //                    Rectangle().fill(.clear).frame(width: 100)
 //                }
-            }.padding(.vertical, 4)
+            }
         }
         .onTapGesture {
             userLibVM.unselectAllSongs()

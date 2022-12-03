@@ -28,17 +28,17 @@ struct UserLibraryView: View {
     var body: some View {
             ZStack {
                 RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 16).opacity(0.5)
-                    .frame(width: cardWidth + 6)
+                    .frame(width: cardWidth + 4)
                     .ignoresSafeArea(edges: [.vertical])
                 
-                VStack {
+                VStack(spacing: 4) {
                     if userLib.songs.count > 0 {
                         Button {
                             handleRemoveAllSongs()
                         } label: {
                             ZStack {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 4).frame(height: 36)
+                                    RoundedRectangle(cornerRadius: 4).frame(height: 32)
                                         .foregroundColor(.BgColor)
                                         .shadow(radius:  4)
                                     Text("Remove all").foregroundColor(.red)
