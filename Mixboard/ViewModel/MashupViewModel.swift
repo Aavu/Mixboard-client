@@ -182,6 +182,42 @@ class MashupViewModel: ObservableObject {
             layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Mute ? .Default : .Mute
         }
         
+        muteAudios()
+    }
+    
+    func handleSolo(lane: Lane) {
+        if let l = layoutInfo.lane[lane.rawValue] {
+            layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Solo ? .Default : .Solo
+        }
+        
+        soloAudios()
+    }
+    
+    func getMutedLanes() -> [Lane] {
+        var mutedLanes = [Lane]()
+        for lane in Lane.allCases {
+            if let l = layoutInfo.lane[lane.rawValue] {
+                if l.laneState == .Mute {
+                    mutedLanes.append(lane)
+                }
+            }
+        }
+        return mutedLanes
+    }
+    
+    func getSoloLanes() -> [Lane] {
+        var soloLanes = [Lane]()
+        for lane in Lane.allCases {
+            if let l = layoutInfo.lane[lane.rawValue] {
+                if l.laneState == .Solo {
+                    soloLanes.append(lane)
+                }
+            }
+        }
+        return soloLanes
+    }
+    
+    func muteAudios() {
         DispatchQueue.global(qos: .userInitiated).async { [self] in
             let regionsToMute = getRegionIds(with: .Mute)
             
@@ -195,11 +231,7 @@ class MashupViewModel: ObservableObject {
         }
     }
     
-    func handleSolo(lane: Lane) {
-        if let l = layoutInfo.lane[lane.rawValue] {
-            layoutInfo.lane[lane.rawValue]!.laneState = l.laneState == .Solo ? .Default : .Solo
-        }
-        
+    func soloAudios() {
         DispatchQueue.global(qos: .userInitiated).async { [self] in
             let regionsToSolo = getRegionIds(with: .Solo)
             audioManager.handleSolo(regionIds: regionsToSolo)
@@ -245,6 +277,8 @@ class MashupViewModel: ObservableObject {
                     audioManager.currentMusic?.remove(id: region.id)
                     audioManager.setCurrentPosition(position: 0)
                     audioManager.scheduleMusic()
+                    muteAudios()
+                    soloAudios()
                     return
                 }
             }
@@ -287,6 +321,8 @@ class MashupViewModel: ObservableObject {
                                         
                                         audioManager.setCurrentPosition(position: 0)
                                         audioManager.scheduleMusic()
+                                        muteAudios()
+                                        soloAudios()
                                     }
                                 }
                             }
@@ -518,9 +554,6 @@ class MashupViewModel: ObservableObject {
             }
             return
         }
-        
-        print(regionIds)
-        print(self.layoutInfo)
         
         BackendManager.shared.sendGenerateRequest(uuid: uuid, lastSessionId: lastSessionId, layout: self.layoutInfo, regionIds: regionIds, statusCallback: { audio in
             if let audio = audio {
