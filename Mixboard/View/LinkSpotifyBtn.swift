@@ -37,13 +37,13 @@ struct LinkSpotifyBtn: View {
                         spotifyOAuth.exchangeAccessToken(forCode: code) { accessToken in
                             if let _ = accessToken {
                                 SpotifyManager.shared.isLinked = true
-                                
-                                showWebView = false
                             }
                         }
                     }
                 }
+                showWebView = false
             }
+            .ignoresSafeArea()
         }
     }
 }
