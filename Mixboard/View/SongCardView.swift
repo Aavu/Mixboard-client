@@ -82,45 +82,48 @@ struct UserLibSongCardView: View {
         let artist = song.artist ?? "Artist"
         let songId = song.id
         
-        ZStack(alignment: .topLeading) {
-            Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
-            ZStack(alignment: .bottom) {
-                VStack {
-                    GeometryReader { geo in
-                        HStack {
-                            VStack(alignment: .leading) {    // Title and subtitle
-                                StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
-                                StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
-                                StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
+                ZStack(alignment: .bottom) {
+                    VStack {
+                        GeometryReader { geo in
+                            HStack {
+                                VStack(alignment: .leading) {    // Title and subtitle
+                                    StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
+                                    StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
+                                    StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
+                                }
+                                
+                                Spacer(minLength: 0)
+                                
+                                ImageView(image: $imageVM.image).shadow(radius: 4)
+                                
+                            }.padding([.all], 4)
+                        }
+                        
+                        
+                        if let status = backend.downloadStatus[songId] {
+                            if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
+                                Rectangle().fill(.black).opacity(0.5).frame(height: 4)
                             }
-                            
-                            Spacer(minLength: 0)
-                            
-                            ImageView(image: $imageVM.image).shadow(radius: 4)
-                            
-                        }.padding([.all], 4)
+                        }
                     }
                     
                     
                     if let status = backend.downloadStatus[songId] {
                         if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
-                            Rectangle().fill(.black).opacity(0.5).frame(height: 8)
+                            ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
+                                if geo.size.height > 100 {
+                                    StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
+                                }
+                            }
                         }
                     }
                 }
                 
-                
-                if let status = backend.downloadStatus[songId] {
-                    if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
-                        ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
-                            StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
-                        }
-                    }
-                }
-            }
-            
-            Button {
-                withAnimation {
+                Button {
+                    withAnimation {
                         userLibVM.removeSong(songId: song.id ) { err in
                             userLibVM.dragOffset[song.id ] = nil
                             if err != nil {
@@ -129,28 +132,29 @@ struct UserLibSongCardView: View {
                             }
                             mashupVM.deleteRegionsFor(songId: song.id )
                         }
+                    }
+                } label: {
+                    ZStack {
+                        Color.BgColor.shadow(radius: 4).cornerRadius(4)
+                        Text("Remove").foregroundColor(.AccentColor)
+                    }
                 }
-            } label: {
-                ZStack {
-                    Color.BgColor.shadow(radius: 4).cornerRadius(4)
-                    Text("Remove").foregroundColor(.AccentColor)
-                }
+                .frame(height: 32)
+                .opacity((userLibVM.isSelected[songId] ?? false) ? 1 : 0)
+                .disabled(!(userLibVM.isSelected[songId] ?? false))
+                .animation(.spring(), value: userLibVM.isSelected[songId])
+                .transition(.opacity)
             }
-            .frame(height: 32)
-            .opacity((userLibVM.isSelected[songId] ?? false) ? 1 : 0)
-            .disabled(!(userLibVM.isSelected[songId] ?? false))
-            .animation(.spring(), value: userLibVM.isSelected[songId])
-            .transition(.opacity)
+            .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) ? 4 : 0)
+            .overlay(content: {
+                if let txt = userLibVM.silenceOverlayText[songId] {
+                    ZStack(alignment: .top) {
+                        Color.red.opacity(0.5)
+                        Text(txt).foregroundColor(.AccentColor).font(.headline).padding(.top, 4)
+                    }
+                }
+            })
         }
-        .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) ? 4 : 0)
-        .overlay(content: {
-            if let txt = userLibVM.silenceOverlayText[songId] {
-                ZStack(alignment: .top) {
-                    Color.red.opacity(0.5)
-                    Text(txt).foregroundColor(.AccentColor).font(.headline).padding(.top, 4)
-                }
-            }
-        })
         .frame(maxHeight: 150)
         .simultaneousGesture(TapGesture()
             .onEnded({

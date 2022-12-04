@@ -12,9 +12,9 @@ struct LibraryView: View {
     
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
-    @ObservedObject var spotifyManager = SpotifyManager.shared
+    @EnvironmentObject var userLibVM: UserLibraryViewModel
     
-    @Binding var userLibSongs: [Song]
+    @ObservedObject var spotifyManager = SpotifyManager.shared
     
     @State var selectedSongId = [String: SongSource]()
     @State var canRandomize = true
@@ -31,10 +31,9 @@ struct LibraryView: View {
     
     let gridItem = [GridItem(.adaptive(minimum: 250))]
     
-    init(isPresented: Binding<Bool>,userLibSongs: Binding<[Song]>, didSelectSongs: @escaping ([String: SongSource]) -> ()) {
+    init(isPresented: Binding<Bool>, didSelectSongs: @escaping ([String: SongSource]) -> ()) {
         self._isPresented = isPresented
         self.didSelectSongs = didSelectSongs
-        self._userLibSongs = userLibSongs
     }
     
     var body: some View {
@@ -104,7 +103,7 @@ struct LibraryView: View {
                                 .frame(width: geo.frame(in: .global).width)
                                 .opacity(selectedTab == 0 ? 1 : 0)
                                 .onAppear {
-                                    libraryVM.filterUserLibSongs(songs: userLibSongs)
+                                    libraryVM.filterUserLibSongs(songs: userLibVM.songs)
                                 }
                                 .animation(.spring(), value: selectedSongId.count > 0)
                                 .transition(.move(edge: .bottom))
@@ -178,7 +177,7 @@ struct LibraryView: View {
                 }
                 
                 selectedSongId = [:]
-                for song in userLibSongs {
+                for song in userLibVM.songs {
                     selectedSongId[song.id] = .Library
                 }
             }
@@ -186,8 +185,19 @@ struct LibraryView: View {
     }
     
     func handleTapGesture(id: String, songSource: SongSource) {
-        if selectedSongId[id] != nil {
+        if let ss = selectedSongId[id] {
             selectedSongId[id] = nil
+            if userLibVM.contains(songId: id) {
+                userLibVM.removeSong(songId: id) { err in
+                    if let err = err {
+                        print(err)
+                        selectedSongId[id] = ss
+                        return
+                    }
+                    
+                    
+                }
+            }
         } else {
             if (selectedSongId.count < 4) {
                 selectedSongId[id] = songSource
@@ -215,7 +225,8 @@ struct LibraryView: View {
 struct SelectionView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
-        
+    @EnvironmentObject var userLibVM: UserLibraryViewModel
+    
     @Binding var selectedSongs: [String: SongSource]
     
     @State var libSongs = [Song]()
@@ -238,6 +249,14 @@ struct SelectionView: View {
                             if showOverlay[song.id] != nil {
                                 Button {
                                     selectedSongs.removeValue(forKey: song.id)
+                                    
+                                    if userLibVM.contains(songId: song.id) {
+                                        userLibVM.removeSong(songId: song.id) { err in
+                                            if let err = err {
+                                                print(err)
+                                            }
+                                        }
+                                    }
                                 } label: {
                                     ZStack {
                                         Color.BgColor.shadow(radius: 4).cornerRadius(4)
@@ -298,6 +317,7 @@ struct SelectionView: View {
     }
     
     func populateSongs() {
+        showOverlay = [:]
         var newSongs = [String: SongSource]()
         var isNew = [String: Bool]()
         
@@ -347,8 +367,6 @@ struct SelectionView: View {
                 }
             }
         }
-        
-        print("")
     }
 }
 

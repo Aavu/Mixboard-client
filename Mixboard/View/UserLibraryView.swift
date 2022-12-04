@@ -114,7 +114,7 @@ struct UserLibraryView: View {
             }
             .padding([.vertical], 16)
         }.sheet(isPresented: $isPresented) {
-            LibraryView(isPresented: $isPresented, userLibSongs: $userLib.songs) { results in
+            LibraryView(isPresented: $isPresented) { results in
                 userLib.addSongs(songIds: results)
                 mashup.updateRegionState(.New)
             }

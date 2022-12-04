@@ -77,8 +77,11 @@ struct ToolbarView: View {
                     } label: {
                         if backend.isGenerating {
                             ProgressView(value: CGFloat(backend.generationStatus?.progress ?? 50), total: 100).progressViewStyle(.circular)
+                                .frame(width: 32)
+                                .padding(.all, 6)
                         } else {
                             Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                                .frame(width: 32)
                                 .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
                                 .padding(.all, 6)
                         }

@@ -62,6 +62,16 @@ class UserLibraryViewModel: ObservableObject {
         return lib?.getSong(songId: songId) != nil
     }
     
+    func contains(songId: String) -> Bool {
+        for song in songs {
+            if song.id == songId {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
     func addSongs(songIds: [String: SongSource]) {
         for (id, src) in songIds {
             addSong(songId: id, songSource: src)
@@ -216,10 +226,22 @@ class UserLibraryViewModel: ObservableObject {
                     print("Function: \(#function), line: \(#line),", err)
                     return
                 }
-                self.songs.removeAll { song in
-                    song.id == sId
+                
+                var temp = [Song]()
+                for song in self.songs {
+                    if song.id != sId {
+                        temp.append(song)
+                    } else {
+                        if song.placeholder {
+                            if let complete = complete {
+                                complete(NSError(domain: "Place holder song cannot be removed.", code: 533))
+                                temp.append(song)
+                            }
+                        }
+                    }
                 }
                 
+                self.songs = temp
                 if let complete = complete {
                     complete(nil)
                 }

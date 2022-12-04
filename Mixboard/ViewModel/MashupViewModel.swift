@@ -35,7 +35,7 @@ class MashupViewModel: ObservableObject {
         didSet {
             LuckyMeManager.shared.setTotalBeats(totalBeats)
             audioManager.setTotalBeats(totalBeats)
-            clearCanvas()
+            trimLayout()
         }
     }
     
@@ -113,6 +113,23 @@ class MashupViewModel: ObservableObject {
         AudioManager.shared.reset()
         readyToPlay = false
         isEmpty = true
+    }
+    
+    func trimLayout() {
+        for lane in Lane.allCases {
+            if let lanes = layoutInfo.lane[lane.rawValue] {
+                for region in lanes.layout {
+                    if region.x >= totalBeats {
+                        removeRegion(lane: lane, id: region.id)
+                    } else if region.x + region.w > totalBeats {
+                        let success = updateRegion(id: region.id, x: region.x, length: totalBeats - region.x)
+                        if !success {
+                            print("Error updating region \(region.id)")
+                        }
+                    }
+                }
+            }
+        }
     }
     
     func updateRegions(lane: Lane, regions: [Region]) {

@@ -54,7 +54,6 @@ struct TracksView: View {
                                 RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 4)
                                 HStack(spacing: 2) {
                                     Text(barText).fontWeight(.bold)
-//                                    Text("bars").font(.caption)
                                 }
                             }
                             .frame(width: mashup.trackLabelWidth, height: 20)
@@ -90,6 +89,7 @@ struct TracksView: View {
                                                     .onAppear {
                                                         yPos[region.id] = 0
                                                     }
+                                                    .zIndex(mashup.isSelected[region.id] ?? false ? 10 : 0)
                                                     .simultaneousGesture(DragGesture(coordinateSpace: .global)
                                                         .onChanged({ value in
                                                             userLib.unselectAllSongs()
@@ -260,8 +260,6 @@ struct RegionView: View {
     let lane: Lane
     let uuid: UUID
     
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
     init(lane:Lane, uuid: UUID, song: Song?, dragType: Binding<DragType>, startX: Binding<[UUID: CGFloat]>, endX: Binding<[UUID: CGFloat]>) {
         self.lane = lane
         self.uuid = uuid
@@ -319,6 +317,9 @@ struct RegionView: View {
                         updateFrame(geometry: geometry)
                     }
                     .onChange(of: geometry.size) { _ in
+                        updateFrame(geometry: geometry)
+                    }
+                    .onChange(of: mashup.totalBeats) { _ in
                         updateFrame(geometry: geometry)
                     }
                 
@@ -381,11 +382,9 @@ struct RegionView: View {
                         } label: {
                             ZStack {
                                 Color.BgColor.shadow(radius: 4).cornerRadius(4)
-                                if horizontalSizeClass == .compact {
+                                HStack {
                                     Image(systemName: "shuffle").renderingMode(.template).foregroundColor(.AccentColor)
-                                } else {
-                                    HStack {
-                                        Image(systemName: "shuffle").renderingMode(.template).foregroundColor(.AccentColor)
+                                    if width > 200 {
                                         Text("Shuffle").foregroundColor(.AccentColor)
                                     }
                                 }
@@ -400,15 +399,12 @@ struct RegionView: View {
                         } label: {
                             ZStack {
                                 Color.BgColor.shadow(radius: 4).cornerRadius(4)
-                                if horizontalSizeClass == .compact {
+                                HStack {
                                     Image(systemName: "xmark").renderingMode(.template).foregroundColor(.red)
-                                } else {
-                                    HStack {
-                                        Image(systemName: "xmark").renderingMode(.template).foregroundColor(.red)
+                                    if width > 200 {
                                         Text("Remove").foregroundColor(.red)
                                     }
                                 }
-                                
                             }
                         }
                     }
