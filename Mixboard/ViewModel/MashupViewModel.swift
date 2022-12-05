@@ -456,7 +456,14 @@ class MashupViewModel: ObservableObject {
         
         let uuid = history.id ?? UUID().uuidString
         
-        generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false)
+        generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false) {
+            guard let music = self.audioManager.currentMusic else {
+                print("Function: \(#function), line: \(#line),", "No Audio file available")
+                return
+            }
+            
+            self.audioManager.prepareForPlay(music: music, lengthInBars: self.getLastBeat())
+        }
     }
     
     

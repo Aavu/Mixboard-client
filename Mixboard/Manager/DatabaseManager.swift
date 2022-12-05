@@ -100,7 +100,7 @@ class DatabaseManager: ObservableObject {
                 completion(err)
             }
         } else {
-            print("userRef is nil for id: \(userId)")
+            print("userRef is nil for id: \(String(describing: userId))")
             completion(NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -135,7 +135,7 @@ class DatabaseManager: ObservableObject {
                 
             }
         } else {
-            print("userRef is nil for id: \(userId)")
+            print("userRef is nil for id: \(String(describing: userId))")
             completion(nil, NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -144,7 +144,7 @@ class DatabaseManager: ObservableObject {
         if let userRef = userRef {
             userRef.updateData(["spotifyAuthCode": code], completion: completion)
         } else {
-            print("userRef is nil for id: \(userId)")
+            print("userRef is nil for id: \(String(describing: userId))")
             completion(NSError(domain: "userRef is nil", code: 350))
         }
     }

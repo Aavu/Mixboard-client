@@ -76,7 +76,6 @@ struct UserInfoView: View {
                         return
                     }
                     userInfoVM.dbManager.getHistories(completion: { histories in
-                        print(histories.count)
                         userInfoVM.histories = histories
                     })
                 }
