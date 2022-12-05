@@ -74,10 +74,8 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     func prepareForPlay(music: MBMusic, lengthInBars: Int) {
-//        let residual = music.getCommon(music: self.currentMusic)
         setMashupLength(lengthInBars: lengthInBars)
 
-//        if needsFilesScheduled || (residual != self.currentMusic)  {
         self.set(music: music)
         
         let success = configEngine()
@@ -88,7 +86,6 @@ class AudioManager: NSObject, ObservableObject {
         setCurrentPosition(position: 0) // Also schedules music
         setupDisplayLink()
         needsFilesScheduled = false
-//        }
     }
     
     func set(music: MBMusic) {
@@ -161,12 +158,12 @@ class AudioManager: NSObject, ObservableObject {
     
     private func playBackCompleteCallback() {
         if isPlaying {
-            currentPosition = 0
             DispatchQueue.main.async {
-                self.reset()
+                self.stop()
                 print("playback complete")
+                self.setCurrentPosition(position: 0)
+                self.scheduleMusic() // prep for next playback
             }
-            let _ = self.scheduleMusic(at: 0) // prep for next playback
         }
     }
     
