@@ -46,12 +46,10 @@ struct UserInfoView: View {
                 Button {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         FirebaseManager.signOut()
-                        
-                        @AppStorage("email") var currentEmail: String?
-                        
                         withAnimation {
-                            currentEmail = nil
-                            mashupVM.loggedIn = false
+                            userInfoVM.showUserInfo = false
+                            mashupVM.currentEmail = nil
+                            userInfoVM.histories = []
                         }
                     }
                     
@@ -70,6 +68,21 @@ struct UserInfoView: View {
                 
             }
         }
+        .onAppear {
+            if let email = mashupVM.currentEmail {
+                userInfoVM.dbManager.updateUserId(userId: email) { err in
+                    if let err = err {
+                        print(err)
+                        return
+                    }
+                    userInfoVM.dbManager.getHistories(completion: { histories in
+                        print(histories.count)
+                        userInfoVM.histories = histories
+                    })
+                }
+                
+            }
+        }
     }
     
     func handleTap(history: History) {
@@ -78,7 +91,9 @@ struct UserInfoView: View {
         
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            userInfoVM.showUserInfo = false
+            withAnimation {
+                userInfoVM.showUserInfo = false
+            }
         }
     }
 }

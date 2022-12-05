@@ -17,12 +17,11 @@ class SpotifyAuthBase {
     
     var clientIdSecret: Spotify.ClientIdSecret
     
-    fileprivate var db: DatabaseManager!
+    fileprivate var db = DatabaseManager.shared
     
     let OAUTH_TOKEN_URL = URL(string: "https://accounts.spotify.com/api/token")!
     
-    init(database: DatabaseManager, clientIdSecret: Spotify.ClientIdSecret) {
-        self.db = database
+    init(clientIdSecret: Spotify.ClientIdSecret) {
         self.clientIdSecret = clientIdSecret
     }
     
@@ -80,8 +79,8 @@ class SpotifyAuthBase {
 class SpotifyClientCredential: SpotifyAuthBase {
     var credential: Spotify.Credential?
     
-    override init(database: DatabaseManager, clientIdSecret: Spotify.ClientIdSecret) {
-        super.init(database: database, clientIdSecret: clientIdSecret)
+    override init(clientIdSecret: Spotify.ClientIdSecret) {
+        super.init(clientIdSecret: clientIdSecret)
         
         self.db.getSpotifyAuthCredential(for: .client) { cred, err in
             if let err = err {
@@ -148,11 +147,11 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
     
     @Published var isLinked = false
     
-    init(database: DatabaseManager, clientIdSecret: Spotify.ClientIdSecret, redirectUri: String, scopes: [String], showDialog: Bool = true) {
+    init(clientIdSecret: Spotify.ClientIdSecret, redirectUri: String, scopes: [String], showDialog: Bool = true) {
         self.showDialog = showDialog
         self.scopes = scopes
         self.redirectUri = redirectUri
-        super.init(database: database, clientIdSecret: clientIdSecret)
+        super.init(clientIdSecret: clientIdSecret)
         
         self.db.getSpotifyAuthCredential(for: .code) { cred, err in
             if let err = err {
@@ -180,7 +179,10 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
             if let refreshToken = credential.refresh_token {
                 print("Function: \(#function), line: \(#line),", "Refreshing Token")
                 refreshAccessToken(refreshToken: refreshToken, completion: completion)
-            } else { completion(nil) }
+            } else {
+                print("Refresh token not found")
+                completion(nil)
+            }
         } else { completion(credential) }
     }
     
@@ -230,15 +232,13 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
             strongSelf.code = code
             strongSelf.credential = strongSelf.addCreationTime(credential: credentials)
             strongSelf.credential = strongSelf.addCodeAndToken(credential: strongSelf.credential)
-            completion(strongSelf.credential?.access_token)
+            strongSelf.isLinked = (strongSelf.credential != nil)
             if let cred = strongSelf.credential {
                 strongSelf.updateDb(with: cred, type: .code) { err in
                     if let err = err { print(err) }
                     completion(cred.access_token)
                 }
             } else { completion(nil) }
-            
-            strongSelf.isLinked = (strongSelf.credential != nil)
         }
         
     }
@@ -257,7 +257,9 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
     private func addCodeAndToken(credential: Spotify.Credential?, refreshToken: String? = nil) -> Spotify.Credential? {
         var temp = credential
         temp?.code = self.code
-        temp?.refresh_token = refreshToken
+        if let refreshToken = refreshToken {
+            temp?.refresh_token = refreshToken
+        }
         return temp
     }
 }

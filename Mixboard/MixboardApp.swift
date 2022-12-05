@@ -30,6 +30,7 @@ struct MixboardApp: App {
             ZStack {
                 MashupView()
                     .blur(radius: mashupVM.loggedIn ? 0 : 64)
+                    .allowsHitTesting(mashupVM.loggedIn)
 
                 if !mashupVM.loggedIn {
                     LoginView()

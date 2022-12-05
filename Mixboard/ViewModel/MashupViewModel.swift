@@ -10,7 +10,15 @@ import Combine
 import SwiftUI
 
 class MashupViewModel: ObservableObject {
-    @AppStorage("email") var currentEmail: String?
+    @AppStorage("email") var currentEmail: String? {
+        didSet {
+            if let email = currentEmail {
+                DatabaseManager.shared.updateUserId(userId: email)
+            } else {
+                loggedIn = false
+            }
+        }
+    }
     
     @Published var loggedIn = false
         
@@ -218,24 +226,19 @@ class MashupViewModel: ObservableObject {
     }
     
     func muteAudios() {
-        DispatchQueue.global(qos: .userInitiated).async { [self] in
-            let regionsToMute = getRegionIds(with: .Mute)
-            
-            // Respect solo regions. Only if there are no soloed regions, handle mute
-            let soloRegions = getRegionIds(with: .Solo)
-            if soloRegions.count > 0 {
-                audioManager.handleSolo(regionIds: soloRegions)
-            } else {
-                audioManager.handleMute(regionIds: regionsToMute)
-            }
+        let regionsToMute = getRegionIds(with: .Mute)
+        // Respect solo regions. Only if there are no soloed regions, handle mute
+        let soloRegions = getRegionIds(with: .Solo)
+        if soloRegions.count > 0 {
+            audioManager.handleSolo(regionIds: soloRegions)
+        } else {
+            audioManager.handleMute(regionIds: regionsToMute)
         }
     }
     
     func soloAudios() {
-        DispatchQueue.global(qos: .userInitiated).async { [self] in
-            let regionsToSolo = getRegionIds(with: .Solo)
-            audioManager.handleSolo(regionIds: regionsToSolo)
-        }
+        let regionsToSolo = getRegionIds(with: .Solo)
+        audioManager.handleSolo(regionIds: regionsToSolo)
     }
     
     func addRegion(region: Region, lane: Lane) {

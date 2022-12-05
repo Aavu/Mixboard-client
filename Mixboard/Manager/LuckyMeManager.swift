@@ -46,23 +46,48 @@ class LuckyMeManager {
         var layout = Layout()
         guard let templates = self.templates[totalBeats] else { return nil }
         guard let tracks = templates.tracks[songs.count] else { return nil }
-        let shuffledSongs = songs.shuffled()
-        let templateNum = tracks.count - 1
         
-        let luck = tracks[Int.random(in: 0...templateNum)]
+        let chosenTemplate = tracks[Int.random(in: 0..<tracks.count)]
         
         for lane in Lane.allCases {
             layout.lane[lane.rawValue] = Layout.Track()
-            let laneVars = luck.lane[Int(lane.rawValue)!]!
+            let laneVars = chosenTemplate.lane[Int(lane.rawValue)!]!
             
             for j in 0..<laneVars.blocks.count {
                 let block = laneVars.blocks[j]
                 let startPos = block[0]
                 let width = block[1] - startPos
                 
-                let trackId = determineTrack(trackId: laneVars.tracks[j])
+                let filteredSongs = songs.filter { s in
+                    guard let nsb = s.non_silent_bounds else { return false }
+                    
+                    var bounds = Dictionary<String, [Float]>()
+                    switch lane {
+                    case .Vocals:
+                        bounds = nsb.vocals
+                    case .Other:
+                        bounds = nsb.other
+                    case .Bass:
+                        bounds = nsb.bass
+                    case .Drums:
+                        bounds = nsb.other
+                    }
+                    
+                    for (_, b) in bounds {
+                        if b.count > 0 {
+                            return true
+                        }
+                    }
+                    return false
+                }
+                
+                if filteredSongs.isEmpty {
+                    continue
+                }
+                
+                let trackId = max(min(determineTrack(trackId: laneVars.tracks[j]), filteredSongs.count - 1), 0)
+                let shuffledSongs = filteredSongs.shuffled()
                 let song = shuffledSongs[trackId]
-
                 let region = Region(x: startPos, w: width, item: Region.Item(id: song.id), state: .New)
                 layout.lane[lane.rawValue]!.layout.append(region)
             }

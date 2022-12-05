@@ -137,23 +137,29 @@ struct ToolbarView: View {
             if audioManager.isPlaying {
                 audioManager.playOrPause()
             } else {
-                guard let music = audioManager.currentMusic else {
-                    print("Function: \(#function), line: \(#line),", "No Audio file available")
-                    return
-                }
-                
-                audioManager.setMashupLength(lengthInBars: mashupVM.getLastBeat())
-                audioManager.playOrPause(music: music)
+                audioManager.playOrPause()
             }
         }
         
         if mashupVM.readyToPlay {   // Play
-            play()
+            if !audioManager.isPlaying {
+                mashupVM.soloAudios()
+                mashupVM.muteAudios()
+            }
+            audioManager.playOrPause()
         } else {                    // Generate
             audioManager.reset()
             let uuid = UUID().uuidString
             mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
-                play()
+                guard let music = audioManager.currentMusic else {
+                    print("Function: \(#function), line: \(#line),", "No Audio file available")
+                    return
+                }
+                audioManager.prepareForPlay(music: music, lengthInBars: mashupVM.getLastBeat())
+                
+                mashupVM.soloAudios()
+                mashupVM.muteAudios()
+                audioManager.playOrPause()
             }
         }
     }

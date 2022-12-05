@@ -28,15 +28,18 @@ struct MashupView: View {
                     }
                 }
             
-            UserInfoView() { history in
-                userLibVM.restoreFromHistory(history: history)
-                mashupVM.restoreFromHistory(history: history)
+            ZStack {
+                if userInfoVM.showUserInfo {
+                    UserInfoView() { history in
+                        userLibVM.restoreFromHistory(history: history)
+                        mashupVM.restoreFromHistory(history: history)
+                    }
+                    .frame(width: 300)
+                    .transition(.move(edge: .leading))
+                    .ignoresSafeArea()
+                    .shadow(radius: 8)
+                }
             }
-            .frame(width: 300)
-            .offset(x: userInfoVM.showUserInfo ? 0 : -300)
-            .transition(.move(edge: .leading))
-            .ignoresSafeArea()
-            .shadow(radius: 8)
         }
         .environmentObject(mashupVM)
         .environmentObject(userLibVM)

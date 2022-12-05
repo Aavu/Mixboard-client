@@ -9,18 +9,55 @@ import Foundation
 import Firebase
 
 class DatabaseManager: ObservableObject {
+    static var shared = DatabaseManager()
     
     private var historyRef: CollectionReference?
-    private var spotifyRef: DocumentReference?
+    private var spotifyRef: DocumentReference = Firestore.firestore().collection("spotify").document("credentials")
     private var userRef: DocumentReference?
+    private var userId: String?
     
-    init(userId: String? = nil) {
-        let db = Firestore.firestore()
-        if let userId = userId {
-            historyRef = db.collection("users").document(userId).collection("history")
-            userRef = db.collection("users").document(userId)
+    func updateUserId(userId: String, completion: ((Error?) -> ())? = nil) {
+        self.userId = userId
+        userRef = Firestore.firestore().collection("users").document(userId)
+        if let userRef = userRef {
+            addCreationTime() { err in
+                if let err = err {
+                    if let completion = completion {
+                        completion(err)
+                    }
+                    return
+                }
+                
+                self.historyRef = userRef.collection("history")
+                if let completion = completion {
+                    completion(nil)
+                }
+            }
+        } else {
+            if let completion = completion {
+                completion(NSError(domain: "userRef is nil", code: 350))
+            }
         }
-        spotifyRef = db.collection("spotify").document("credentials")
+    }
+    
+    private func addCreationTime(completion: ((Error?) -> ())? = nil) {
+        userRef?.getDocument(completion: { snapshot, err in
+            if let err = err {
+                if let completion = completion {
+                    completion(err)
+                }
+                return
+            }
+            
+            if let _ = snapshot?.get("CreationTime") {
+            } else {
+                self.userRef?.setData(["CreationTime": Date()])
+            }
+            
+            if let completion = completion {
+                completion(nil)
+            }
+        })
     }
     
     func removeSpotifyCredential() {
@@ -32,27 +69,24 @@ class DatabaseManager: ObservableObject {
     }
     
     func getSpotifyClient(completion: @escaping (Spotify.ClientIdSecret) -> ()) {
-        if let spotifyRef = spotifyRef {
-            spotifyRef.addSnapshotListener({ snapshot, err in
-                if let err = err {
-                    print("Function: \(#function), line: \(#line),", err)
-                    return
+        spotifyRef.addSnapshotListener({ snapshot, err in
+            if let err = err {
+                print("Function: \(#function), line: \(#line),", err)
+                return
+            }
+            
+            if let snapshot = snapshot {
+                do {
+                    let client = try snapshot.data(as: Spotify.ClientIdSecret.self)
+                    completion(client)
+                } catch (let e) {
+                    print("Function: \(#function), line: \(#line),", e)
                 }
-                
-                if let snapshot = snapshot {
-                    do {
-                        let client = try snapshot.data(as: Spotify.ClientIdSecret.self)
-                        completion(client)
-                    } catch (let e) {
-                        print("Function: \(#function), line: \(#line),", e)
-                    }
-                } else {
-                    print("Function: \(#function), line: \(#line),", "snapshot is nil")
-                }
-            })
-        } else {
-            print("Function: \(#function), line: \(#line),", "spotify ref is nil")
-        }
+            } else {
+                print("Function: \(#function), line: \(#line),", "snapshot is nil")
+            }
+        })
+
     }
     
     func setSpotifyAuthCredential(cred: Spotify.Credential, type: Spotify.GrantType, completion: @escaping (Error?) -> ()) {
@@ -66,6 +100,7 @@ class DatabaseManager: ObservableObject {
                 completion(err)
             }
         } else {
+            print("userRef is nil for id: \(userId)")
             completion(NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -100,6 +135,7 @@ class DatabaseManager: ObservableObject {
                 
             }
         } else {
+            print("userRef is nil for id: \(userId)")
             completion(nil, NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -107,8 +143,8 @@ class DatabaseManager: ObservableObject {
     func setSpotifyAuthCode(code: String, completion: @escaping (Error?) -> ()) {
         if let userRef = userRef {
             userRef.updateData(["spotifyAuthCode": code], completion: completion)
-            return
         } else {
+            print("userRef is nil for id: \(userId)")
             completion(NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -146,6 +182,7 @@ class DatabaseManager: ObservableObject {
             historyRef.addSnapshotListener({ snapshot, err in
                 if let err = err {
                     print("Function: \(#function), line: \(#line),", err)
+                    completion([])
                     return
                 }
                 
@@ -169,15 +206,14 @@ class DatabaseManager: ObservableObject {
                     }
                     
                     completion(histories)
-                    return
                 } else {
                     print("Function: \(#function), line: \(#line),", "snapshot is nil")
+                    completion([])
                 }
             })
         } else {
             print("Function: \(#function), line: \(#line),", "History ref is nil")
+            completion([])
         }
-        
-        completion([])
     }
 }

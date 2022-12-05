@@ -219,6 +219,11 @@ class UserLibraryViewModel: ObservableObject {
     func removeSong(songId: String, notifyServer: Bool = true, completion: @escaping (Error?) -> ()) {
         guard let lib = self.lib else { return }
         
+        if let canRemove = canRemoveSong[songId], !canRemove {
+            completion(NSError(domain: "SongStillDownloadingError", code: 600))
+            return
+        }
+        
         func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
             lib.update(didUpdate: { err in
                 if let err = err {

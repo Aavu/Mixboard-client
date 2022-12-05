@@ -15,7 +15,7 @@ class UserInfoViewModel: ObservableObject {
     
     @AppStorage("email") var currentEmail: String?
     
-    private var dbManager: DatabaseManager?
+    @Published var dbManager = DatabaseManager.shared
     let formatter = DateFormatter()
     
     var lastSessionId: String?
@@ -23,13 +23,6 @@ class UserInfoViewModel: ObservableObject {
     init() {
         formatter.timeStyle = .medium
         formatter.dateStyle = .medium
-        
-        if let email = currentEmail {
-            dbManager = DatabaseManager(userId: email)
-            dbManager?.getHistories(completion: { histories in
-                self.histories = histories
-            })
-        }
     }
     
     func add(history: History) {
@@ -37,7 +30,7 @@ class UserInfoViewModel: ObservableObject {
             return
         }
 
-        dbManager?.add(history: history)
+        dbManager.add(history: history)
         
         self.histories.append(history)
         print("Function: \(#function), line: \(#line),", "History for '\(String(describing: history.id))' saved!")
@@ -58,7 +51,7 @@ class UserInfoViewModel: ObservableObject {
     func removeHistory(at idx: Int) {
         let h = histories[idx]
         histories.remove(at: idx)
-        dbManager?.remove(history: h)
+        dbManager.remove(history: h)
         print("Function: \(#function), line: \(#line),", "History for '\(String(describing: h.id))' removed!")
         lastSessionId = nil
     }

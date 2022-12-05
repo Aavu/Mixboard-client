@@ -13,6 +13,7 @@ struct LibraryView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
     @EnvironmentObject var userLibVM: UserLibraryViewModel
+    @EnvironmentObject var mashupVM: MashupViewModel
     
     @ObservedObject var spotifyManager = SpotifyManager.shared
     
@@ -195,7 +196,7 @@ struct LibraryView: View {
                         return
                     }
                     
-                    
+                    mashupVM.deleteRegionsFor(songId: id)
                 }
             }
         } else {
@@ -226,6 +227,7 @@ struct SelectionView: View {
     @EnvironmentObject var spotifyVM: SpotifyViewModel
     @EnvironmentObject var libraryVM: LibraryViewModel
     @EnvironmentObject var userLibVM: UserLibraryViewModel
+    @EnvironmentObject var mashupVM: MashupViewModel
     
     @Binding var selectedSongs: [String: SongSource]
     
@@ -254,7 +256,9 @@ struct SelectionView: View {
                                         userLibVM.removeSong(songId: song.id) { err in
                                             if let err = err {
                                                 print(err)
+                                                return
                                             }
+                                            mashupVM.deleteRegionsFor(songId: song.id)
                                         }
                                     }
                                 } label: {

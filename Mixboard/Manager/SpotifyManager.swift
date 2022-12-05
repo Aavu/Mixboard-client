@@ -15,9 +15,15 @@ class SpotifyManager: ObservableObject {
     let redirectUrl = "mixboard-app://spotify-login-callback"
     let scopes = ["user-top-read", "user-read-email"]
     
-    @AppStorage("email") var currentEmail: String?
+    @AppStorage("email") var currentEmail: String? {
+        didSet {
+            if let email = currentEmail {
+                dbManager.updateUserId(userId: email)
+            }
+        }
+    }
     
-    private var dbManager: DatabaseManager!
+    private var dbManager = DatabaseManager.shared
     var spotifyOAuth: SpotifyOAuth?
     var spotifyClientAuth: SpotifyClientCredential?
     
@@ -38,13 +44,11 @@ class SpotifyManager: ObservableObject {
     }
     
     init() {
-        dbManager = DatabaseManager(userId: currentEmail)
-        
         if clientIdSecret == nil {
             getClientIdAndSecret() { idSecret in
                 if let idSecret = idSecret {
-                    self.spotifyClientAuth = SpotifyClientCredential(database: self.dbManager, clientIdSecret: idSecret)
-                    self.spotifyOAuth = SpotifyOAuth(database: self.dbManager, clientIdSecret: idSecret, redirectUri: self.redirectUrl, scopes: self.scopes)
+                    self.spotifyClientAuth = SpotifyClientCredential(clientIdSecret: idSecret)
+                    self.spotifyOAuth = SpotifyOAuth(clientIdSecret: idSecret, redirectUri: self.redirectUrl, scopes: self.scopes)
                     
                     self.addSubscriber()
                 }
