@@ -41,24 +41,29 @@ struct TracksView: View {
             ZStack(alignment: .leading) {
                 VStack(spacing: 0.0) {
                     HStack(spacing: 0.0) {
-                        Button {
-                            if mashup.totalBeats == 16 {
-                                mashup.totalBeats = 32
-                                barText = "long"
-                            } else {
-                                mashup.totalBeats = 16
-                                barText = "short"
-                            }
-                        } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 4)
-                                HStack(spacing: 2) {
-                                    Text(barText).fontWeight(.bold)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 4).foregroundColor(.SecondaryBgColor).shadow(radius: 4)
+                            Button {
+                                if mashup.totalBeats == 16 {
+                                    mashup.setTotalBeats(beats: 32)
+                                    barText = "long"
+                                } else {
+                                    mashup.setTotalBeats(beats: 16)
+                                    barText = "short"
                                 }
+                            } label: {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 4).foregroundColor(.clear).shadow(radius: 4)
+                                    HStack(spacing: 2) {
+                                        Text(barText).fontWeight(.bold)
+                                    }
+                                }
+                                
                             }
-                            .frame(width: mashup.trackLabelWidth, height: 20)
+                            .disabled(audioManager.isPlaying || backend.isGenerating)
                         }
-                        .disabled(audioManager.isPlaying || backend.isGenerating)
+                        .frame(width: mashup.trackLabelWidth - 32, height: 20)
+                        .padding(.trailing, 32)
                         
                         
                         

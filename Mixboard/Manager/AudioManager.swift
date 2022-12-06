@@ -184,7 +184,7 @@ class AudioManager: NSObject, ObservableObject {
             let _time = AVAudioTime(sampleTime: position, atRate: sampleRate)
             currentSilentBufferPosition = position
             silencePlayer.scheduleBuffer(buffer, at: _time)
-            
+            silencePlayer.prepare(withFrameCount: buffer.frameLength)
         } else {
             print("illegal capacity: \(position), \(audioLengthSamples)")
             return
@@ -200,11 +200,13 @@ class AudioManager: NSObject, ObservableObject {
                     if diffTime >= 0 {  // Region is in the future
                         let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
                         player.scheduleFile(file, at: _time)
+                        player.prepare(withFrameCount: AVAudioFrameCount(file.length))
                     } else {
                         if position < audio.position + file.length {  // Region under playhead
                             let startingFrame = AVAudioFramePosition(position - audio.position)
                             let frameCount = AVAudioFrameCount(file.length - startingFrame)
                             player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
+                            player.prepare(withFrameCount: frameCount)
                         }
                     }
                 } catch (let e) {

@@ -24,6 +24,7 @@ class MashupViewModel: ObservableObject {
         
     @Published var appFailed = false
     @Published var layoutInfo = Layout()
+    private var lastLayout: Layout? = nil
     
     @Published var isEmpty = true
     
@@ -39,13 +40,7 @@ class MashupViewModel: ObservableObject {
     
     @Published var userLibCardWidth: CGFloat = 0
     
-    @Published var totalBeats = 32 {
-        didSet {
-            LuckyMeManager.shared.setTotalBeats(totalBeats)
-            audioManager.setTotalBeats(totalBeats)
-            trimLayout()
-        }
-    }
+    @Published var totalBeats = 32
     
     @ObservedObject var audioManager = AudioManager.shared
     
@@ -128,9 +123,9 @@ class MashupViewModel: ObservableObject {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for region in lanes.layout {
                     if region.x >= totalBeats {
-                        removeRegion(lane: lane, id: region.id)
+                        removeRegion(lane: lane, id: region.id, resetLastLayout: false)
                     } else if region.x + region.w > totalBeats {
-                        let success = updateRegion(id: region.id, x: region.x, length: totalBeats - region.x)
+                        let success = updateRegion(id: region.id, x: region.x, length: totalBeats - region.x, resetLastLayout: false)
                         if !success {
                             print("Error updating region \(region.id)")
                         }
@@ -140,10 +135,26 @@ class MashupViewModel: ObservableObject {
         }
     }
     
+    func setTotalBeats(beats: Int) {
+        self.totalBeats = beats
+        LuckyMeManager.shared.setTotalBeats(totalBeats)
+        audioManager.setTotalBeats(totalBeats)
+        if let lastLayout = lastLayout {
+            layoutInfo = lastLayout
+            self.lastLayout = nil
+        } else {
+            lastLayout = layoutInfo
+            trimLayout()
+        }
+        isEmpty = isCanvasEmpty()
+        readyToPlay = false
+    }
+    
     func updateRegions(lane: Lane, regions: [Region]) {
         layoutInfo.lane[lane.rawValue]?.layout = regions
         
         isEmpty = isCanvasEmpty()
+        lastLayout = nil
     }
     
     func isCanvasEmpty() -> Bool {
@@ -246,7 +257,7 @@ class MashupViewModel: ObservableObject {
         isEmpty = false
         setSelected(uuid: region.id, isSelected: false)
         readyToPlay = false
-        
+        lastLayout = nil
 //        let uuid = UUID().uuidString
 //        generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
     }
@@ -271,12 +282,15 @@ class MashupViewModel: ObservableObject {
         return nil
     }
     
-    func removeRegion(lane: Lane, id: UUID) {
+    func removeRegion(lane: Lane, id: UUID, resetLastLayout: Bool = true) {
         if let lanes = layoutInfo.lane[lane.rawValue] {
             for (idx, region) in lanes.layout.enumerated() {
                 if region.id == id {
                     layoutInfo.lane[lane.rawValue]!.layout.remove(at: idx)
                     isEmpty = isCanvasEmpty()
+                    if resetLastLayout {
+                        lastLayout = nil
+                    }
                     audioManager.currentMusic?.remove(id: region.id)
                     audioManager.setCurrentPosition(position: 0)
                     audioManager.scheduleMusic()
@@ -288,7 +302,7 @@ class MashupViewModel: ObservableObject {
         }
     }
     
-    func updateRegion(id: UUID, x: Int, length: Int) -> Bool {
+    func updateRegion(id: UUID, x: Int, length: Int, resetLastLayout: Bool = true) -> Bool {
         for lane in Lane.allCases {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for (idx, region) in lanes.layout.enumerated() {
@@ -330,7 +344,9 @@ class MashupViewModel: ObservableObject {
                                 }
                             }
                         }
-                        
+                        if resetLastLayout {
+                            lastLayout = nil
+                        }
                         return true
                     }
                 }
@@ -383,7 +399,7 @@ class MashupViewModel: ObservableObject {
                     isEmpty = false
                     setSelected(uuid: region.id, isSelected: false)
                     readyToPlay = false
-                    
+                    lastLayout = nil
 //                    let uuid = UUID().uuidString
 //                    generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
                     
@@ -409,6 +425,7 @@ class MashupViewModel: ObservableObject {
         
         if didRemove {
             updateRegionState(.New)
+            lastLayout = nil
         }
     }
     
@@ -483,6 +500,7 @@ class MashupViewModel: ObservableObject {
             isEmpty = isCanvasEmpty()
             readyToPlay = false
             userInfoVM?.lastSessionId = nil
+            lastLayout = nil
         } else {
             self.appError = AppError(description: "Error creating luckyme template")
         }
@@ -548,7 +566,7 @@ class MashupViewModel: ObservableObject {
     func generateMashup(uuid: String, lastSessionId: String?, addToHistory: Bool = true, completion: (() -> ())? = nil) {
         showGenerationProgress = lastSessionId == nil
         readyToPlay = false
-        
+        lastLayout = nil
         if lastSessionId == nil {
             audioManager.currentMusic = MBMusic()
             updateRegionState(.New)
