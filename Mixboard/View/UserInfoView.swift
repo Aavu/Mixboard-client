@@ -72,7 +72,7 @@ struct UserInfoView: View {
             if let email = mashupVM.currentEmail {
                 userInfoVM.dbManager.updateUserId(userId: email) { err in
                     if let err = err {
-                        print(err)
+                        Log.error(err)
                         return
                     }
                     userInfoVM.dbManager.getHistories(completion: { histories in

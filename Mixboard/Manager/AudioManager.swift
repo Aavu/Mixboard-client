@@ -10,7 +10,7 @@ import AVKit
 import Combine
 import SwiftUI
 
-class AudioManager: NSObject, ObservableObject {
+class AudioManager: ObservableObject {
     static let shared = AudioManager()
     
     @Published var currentMusic: MBMusic?
@@ -30,10 +30,19 @@ class AudioManager: NSObject, ObservableObject {
     @Published var audioLengthSamples: AVAudioFramePosition = 0
     @Published var timelineLengthSamples: AVAudioFramePosition = 0
     
+    init() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+        } catch {
+            Log.error("Unable to set audio category")
+        }
+    }
+    
+    
     private var totalBeats:Int = 32 {
         didSet {
             timelineLengthSamples = MBMusic.getInSamples(value: totalBeats, sampleRate: sampleRate, tempo: tempo)
-            print("totalBeats: \(totalBeats)")
+            Log.debug("totalBeats: \(totalBeats)")
         }
     }
     
@@ -42,7 +51,7 @@ class AudioManager: NSObject, ObservableObject {
     @Published var tempo: Double = 120 {
         didSet {
             timelineLengthSamples = MBMusic.getInSamples(value: totalBeats, sampleRate: sampleRate, tempo: tempo)
-            print("tempo: \(tempo)")
+            Log.debug("tempo: \(tempo)")
         }
     }
     
@@ -62,7 +71,7 @@ class AudioManager: NSObject, ObservableObject {
     
     func playOrPause() {
         if needsFilesScheduled {
-            print("Not ready to play")
+            Log.debug("Not ready to play")
             return
         }
         
@@ -80,7 +89,7 @@ class AudioManager: NSObject, ObservableObject {
         
         let success = configEngine()
         if !success {
-            print("Unable to configure engine.")
+            Log.critical("Unable to configure engine.")
             return
         }
         setCurrentPosition(position: 0) // Also schedules music
@@ -160,7 +169,7 @@ class AudioManager: NSObject, ObservableObject {
         if isPlaying {
             DispatchQueue.main.async {
                 self.stop()
-                print("playback complete")
+                Log.debug("playback complete")
                 self.setCurrentPosition(position: 0)
                 self.scheduleMusic() // prep for next playback
             }
@@ -170,7 +179,7 @@ class AudioManager: NSObject, ObservableObject {
     
     func scheduleMusic(at position: AVAudioFramePosition? = nil) {
         guard let music = self.currentMusic else {
-            print("Current Music is nil. Not scheduling")
+            Log.debug("Current Music is nil. Not scheduling")
             return
         }
         
@@ -186,7 +195,7 @@ class AudioManager: NSObject, ObservableObject {
             silencePlayer.scheduleBuffer(buffer, at: _time)
             silencePlayer.prepare(withFrameCount: buffer.frameLength)
         } else {
-            print("illegal capacity: \(position), \(audioLengthSamples)")
+            Log.debug("illegal capacity: \(position), \(audioLengthSamples)")
             return
         }
         
@@ -210,7 +219,7 @@ class AudioManager: NSObject, ObservableObject {
                         }
                     }
                 } catch (let e) {
-                    print(e)
+                    Log.error(e)
                     return
                 }
             }
@@ -254,7 +263,7 @@ class AudioManager: NSObject, ObservableObject {
             try engine.start()
             return true
         } catch {
-            print("Error starting the player: \(error.localizedDescription)")
+            Log.critical("Error starting the player: \(error.localizedDescription)")
             return false
         }
     }

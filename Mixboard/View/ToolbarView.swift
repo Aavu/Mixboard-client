@@ -152,7 +152,7 @@ struct ToolbarView: View {
             let uuid = UUID().uuidString
             mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
                 guard let music = audioManager.currentMusic else {
-                    print("Function: \(#function), line: \(#line),", "No Audio file available")
+                    Log.error("No Music available")
                     return
                 }
                 audioManager.prepareForPlay(music: music, lengthInBars: mashupVM.getLastBeat())

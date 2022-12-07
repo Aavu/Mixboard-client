@@ -14,7 +14,7 @@ class MashupFileManager {
             try data.write(to: path)
             return path
         } catch let err {
-            print("Function: \(#function), line: \(#line),", err)
+            Log.error(err)
         }
         
         return nil

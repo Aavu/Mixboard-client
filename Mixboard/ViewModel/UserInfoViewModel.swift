@@ -33,7 +33,7 @@ class UserInfoViewModel: ObservableObject {
         dbManager.add(history: history)
         
         self.histories.append(history)
-        print("Function: \(#function), line: \(#line),", "History for '\(String(describing: history.id))' saved!")
+        Log.info("History for '\(String(describing: history.id))' saved!")
         lastSessionId = history.id
     }
     
@@ -52,7 +52,7 @@ class UserInfoViewModel: ObservableObject {
         let h = histories[idx]
         histories.remove(at: idx)
         dbManager.remove(history: h)
-        print("Function: \(#function), line: \(#line),", "History for '\(String(describing: h.id))' removed!")
+        Log.info("History for '\(String(describing: h.id))' removed!")
         lastSessionId = nil
     }
     

@@ -127,7 +127,7 @@ struct UserLibSongCardView: View {
                         userLibVM.removeSong(songId: song.id ) { err in
                             userLibVM.dragOffset[song.id ] = nil
                             if err != nil {
-                                print(err!)
+                                Log.error(err)
                                 return
                             }
                             mashupVM.deleteRegionsFor(songId: song.id )

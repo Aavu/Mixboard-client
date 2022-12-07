@@ -87,7 +87,7 @@ class MashupViewModel: ObservableObject {
         if !loggedIn { return }
         
         guard let email = currentEmail else {
-            print("Function: \(#function), line: \(#line),", "Please signin before creating session")
+            Log.warn("Please signin before creating session")
             return
         }
         
@@ -99,11 +99,11 @@ class MashupViewModel: ObservableObject {
             case .finished:
                 break
             case .failure(let e):
-                print("Function: \(#function), line: \(#line),", e)
+                Log.error(e)
                 self.appError = AppError(description: "Server not responding. Please try again later...")
             }
         } completion: { (data:[String:Int]?) in
-            print("Fetched Library")
+            Log.info("Fetched Library")
         }
     }
     
@@ -127,7 +127,7 @@ class MashupViewModel: ObservableObject {
                     } else if region.x + region.w > totalBeats {
                         let success = updateRegion(id: region.id, x: region.x, length: totalBeats - region.x, resetLastLayout: false)
                         if !success {
-                            print("Error updating region \(region.id)")
+                            Log.error("Error updating region \(region.id)")
                         }
                     }
                 }
@@ -332,7 +332,7 @@ class MashupViewModel: ObservableObject {
                                             self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = prevState
                                             self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = prevPosition
                                             appError = AppError(description: "Cannot update position for this region")
-                                            print(err)
+                                            Log.error(err)
                                             return false
                                         }
                                         
@@ -366,7 +366,7 @@ class MashupViewModel: ObservableObject {
                 for (idx, region) in lanes.layout.enumerated() {
                     if region.id == regionId {
                         self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = state
-                        print("region \(regionId) reset")
+                        Log.debug("region \(regionId) reset")
                     }
                 }
             }
@@ -475,7 +475,7 @@ class MashupViewModel: ObservableObject {
         
         generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false) {
             guard let music = self.audioManager.currentMusic else {
-                print("Function: \(#function), line: \(#line),", "No Audio file available")
+                Log.error("No Music available")
                 return
             }
             
@@ -518,7 +518,7 @@ class MashupViewModel: ObservableObject {
             self.layoutInfo = try JSONDecoder().decode(Layout.self, from: data)
         } catch let e {
             self.appError = AppError(description: e.localizedDescription)
-            print("Function: \(#function), line: \(#line),", e)
+            Log.error(e)
             return false
         }
         
@@ -600,7 +600,7 @@ class MashupViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.appError = AppError(description: err.localizedDescription)
                 }
-                print("Function: \(#function), line: \(#line),", err)
+                Log.error(err)
             }
             
             if let layout = layout {
@@ -609,7 +609,7 @@ class MashupViewModel: ObservableObject {
                     self.updateRegionState(.Ready)
                 }
             } else {
-                print("Function: \(#function), line: \(#line),", "Warning: Layout is nil")
+                Log.warn("Layout is nil")
             }
             
             DispatchQueue.main.async {
@@ -624,7 +624,7 @@ class MashupViewModel: ObservableObject {
                     }
                     
 
-                    print("adding to history")
+                    Log.debug("adding to history")
                     userInfoVM.add(history: history)
                 }
             }

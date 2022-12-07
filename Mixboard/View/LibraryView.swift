@@ -163,7 +163,7 @@ struct LibraryView: View {
                 }
             }
             .onChange(of: spotifyManager.isLinked) { newValue in
-                print("spotify linked: \(spotifyManager.isLinked)")
+                Log.info("spotify linked: \(spotifyManager.isLinked)")
                 spotifyManager.getRecommendations(numTracks: 50, forUser: spotifyManager.isLinked) { spotifyTracks in
                     if let tracks = spotifyTracks {
                         spotifyVM.songs = tracks
@@ -191,7 +191,7 @@ struct LibraryView: View {
             if userLibVM.contains(songId: id) {
                 userLibVM.removeSong(songId: id) { err in
                     if let err = err {
-                        print(err)
+                        Log.error(err)
                         selectedSongId[id] = ss
                         return
                     }
@@ -255,7 +255,7 @@ struct SelectionView: View {
                                     if userLibVM.contains(songId: song.id) {
                                         userLibVM.removeSong(songId: song.id) { err in
                                             if let err = err {
-                                                print(err)
+                                                Log.error(err)
                                                 return
                                             }
                                             mashupVM.deleteRegionsFor(songId: song.id)

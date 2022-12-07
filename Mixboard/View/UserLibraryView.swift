@@ -142,7 +142,7 @@ struct UserLibraryView: View {
         for song in userLib.songs {
             userLib.removeSong(songId: song.id) { err in
                 if let err = err {
-                    print("Function: \(#function), line: \(#line),", "error removing song. \(err)")
+                    Log.error("Unable to remove song with id: \(song.id). \(err)")
                     removingSong = false
                 }
                 

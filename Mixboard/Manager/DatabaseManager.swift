@@ -71,7 +71,7 @@ class DatabaseManager: ObservableObject {
     func getSpotifyClient(completion: @escaping (Spotify.ClientIdSecret) -> ()) {
         spotifyRef.addSnapshotListener({ snapshot, err in
             if let err = err {
-                print("Function: \(#function), line: \(#line),", err)
+                Log.error(err)
                 return
             }
             
@@ -80,10 +80,10 @@ class DatabaseManager: ObservableObject {
                     let client = try snapshot.data(as: Spotify.ClientIdSecret.self)
                     completion(client)
                 } catch (let e) {
-                    print("Function: \(#function), line: \(#line),", e)
+                    Log.error(e)
                 }
             } else {
-                print("Function: \(#function), line: \(#line),", "snapshot is nil")
+                Log.error("snapshot is nil")
             }
         })
 
@@ -100,7 +100,7 @@ class DatabaseManager: ObservableObject {
                 completion(err)
             }
         } else {
-            print("userRef is nil for id: \(String(describing: userId))")
+            Log.error("userRef is nil for id: \(String(describing: userId))")
             completion(NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -128,14 +128,14 @@ class DatabaseManager: ObservableObject {
                     completion(cred, nil)
                     return
                 } catch (let e) {
-                    print("Function: \(#function), line: \(#line),", e)
+                    Log.error(e)
                     completion(nil, e)
                     return
                 }
                 
             }
         } else {
-            print("userRef is nil for id: \(String(describing: userId))")
+            Log.error("userRef is nil for id: \(String(describing: userId))")
             completion(nil, NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -144,7 +144,7 @@ class DatabaseManager: ObservableObject {
         if let userRef = userRef {
             userRef.updateData(["spotifyAuthCode": code], completion: completion)
         } else {
-            print("userRef is nil for id: \(String(describing: userId))")
+            Log.error("userRef is nil for id: \(String(describing: userId))")
             completion(NSError(domain: "userRef is nil", code: 350))
         }
     }
@@ -167,7 +167,7 @@ class DatabaseManager: ObservableObject {
                 let _ = try historyRef?.document(uuid).setData(from: history)
             }
         } catch (let err) {
-            print("Function: \(#function), line: \(#line),", err)
+            Log.error(err)
         }
     }
     
@@ -181,7 +181,7 @@ class DatabaseManager: ObservableObject {
         if let historyRef = historyRef {
             historyRef.addSnapshotListener({ snapshot, err in
                 if let err = err {
-                    print("Function: \(#function), line: \(#line),", err)
+                    Log.error(err)
                     completion([])
                     return
                 }
@@ -199,7 +199,7 @@ class DatabaseManager: ObservableObject {
                             }
                             return history
                         } catch (let e) {
-                            print("Function: \(#function), line: \(#line),", e)
+                            Log.error(e)
                         }
                         
                         return nil
@@ -207,12 +207,12 @@ class DatabaseManager: ObservableObject {
                     
                     completion(histories)
                 } else {
-                    print("Function: \(#function), line: \(#line),", "snapshot is nil")
+                    Log.error("snapshot is nil")
                     completion([])
                 }
             })
         } else {
-            print("Function: \(#function), line: \(#line),", "History ref is nil")
+            Log.error("History ref is nil")
             completion([])
         }
     }

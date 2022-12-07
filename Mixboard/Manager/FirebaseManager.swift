@@ -26,7 +26,7 @@ class FirebaseManager {
                 
                 if nsErr.code == 17007 {
                     linking = true
-                    print("User already has an account.")
+                    Log.warn("User already has an account.")
                     completion(dataResult?.user, err)
                 }
             }
@@ -38,12 +38,6 @@ class FirebaseManager {
     }
     
     static func signInWithEmail(email: String, password: String, completion: @escaping (User?, Error?) -> ()) {
-//        guard let passwd = passwd else {
-//            print("Error: No password provided!")
-//            completion(nil, NSError(domain: "NoPasswordFound", code: 100) as Error)
-//            return
-//        }
-        
         Auth.auth().signIn(withEmail: email, password: password) { dataResult, err in
             completion(dataResult?.user, err)
         }
@@ -53,14 +47,14 @@ class FirebaseManager {
         Auth.auth().signIn(with: credential) { dataResult, err in
             var retErr = err
             if let err = err {
-                print(err)
+                Log.error(err)
             }
             
             if shouldLink {
                 let cred = EmailAuthProvider.credential(withEmail: email, password: passwd)
                 linkAccount(credential: cred) { user, err in
                     if let _ = user {
-                        print("Successfully linked accounts")
+                        Log.info("Successfully linked accounts")
                     }
                     
                     retErr = err
@@ -85,18 +79,18 @@ class FirebaseManager {
         do {
             try Auth.auth().signOut()
         } catch (let e) {
-            print("Function: \(#function), line: \(#line),", e)
+            Log.error(e)
         }
     }
     
     static func linkAccount(credential: AuthCredential, completion:@escaping (User?, Error?) -> ()) {
         Auth.auth().currentUser?.link(with: credential) { result, err in
             if result?.user != nil {
-                print("Successfully linked user")
+                Log.info("Successfully linked user")
             }
             
             if let err = err as? NSError {
-                print(err)
+                Log.error(err)
             }
             
             

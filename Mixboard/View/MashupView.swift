@@ -132,7 +132,7 @@ struct HomeView: View {
                                     mashupVM.appFailed = true
                                 } else {
                                     mashupVM.appError = AppError(description: err.localizedDescription)
-                                    print("Function: \(#function), line: \(#line),", err)
+                                    Log.error(err)
                                 }
                                 
                             }

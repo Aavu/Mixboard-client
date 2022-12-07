@@ -34,7 +34,7 @@ class BackendManager: ObservableObject {
         NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId, "email": email])) { completion in
             switch completion {
             case .failure(let e):
-                print("Function: \(#function), line: \(#line),", e)
+                Log.error(e)
                 onCompletion(e)
             case .finished:
                 break
@@ -67,7 +67,7 @@ class BackendManager: ObservableObject {
         NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId, "email": email])) { completion in
             switch completion {
             case .failure(let e):
-                print("Function: \(#function), line: \(#line),", e)
+                Log.error(e)
                 onCompletion(e)
             case .finished:
                 break
@@ -87,17 +87,17 @@ class BackendManager: ObservableObject {
         URLSession.shared.dataTask(with: request) {data, response, err in
             guard let data = data, err == nil else {
                 if let err = err {
-                    print("Function: \(#function), line: \(#line),", err)
+                    Log.error(err)
                     if err._code == -1001 {
                         if tryNum < 100 {
-                            print("Function: \(#function), line: \(#line),", "Request timeout: trying again...")
+                            Log.warn("Request timeout: trying again...")
                             self.fetchRegion(regionId: regionId, tryNum: tryNum + 1, completion: completion)
                             return
                         }
                     }
                     
                     DispatchQueue.main.async {
-                        print("Function: \(#function), line: \(#line),", err as Any)
+                        Log.error(err)
                         completion(nil, err)
                         return
                     }
@@ -110,12 +110,14 @@ class BackendManager: ObservableObject {
                 if data.valid {
                     completion(data, nil)
                 } else {
+                    Log.debug("try num: \(tryNum)")
                     if tryNum >= 50 {
-                        print("Region fetch failed with region id \(regionId)")
+                        Log.critical("Region fetch failed with region id \(regionId)")
                         completion(nil, NSError(domain: "RegionFetchFailed", code: 543))
                     } else {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            self.fetchRegion(regionId: regionId, tryNum: tryNum + 1, completion: completion) // Recursive call
+                            let num = self.isDownloading ? tryNum : tryNum + 1
+                            self.fetchRegion(regionId: regionId, tryNum: num, completion: completion) // Recursive call
                         }
                     }
                 }
@@ -124,7 +126,7 @@ class BackendManager: ObservableObject {
                     if tryNum < 3 {
                         self.fetchRegion(regionId: regionId, tryNum: tryNum + 1, completion: completion)  //  Recursive call
                     } else {
-                        print("Function: \(#function), line: \(#line),", e)
+                        Log.error(e)
                         completion(nil, NSError(domain: "The region cannot be downloaded.", code: 152))
                     }
                 }
@@ -137,7 +139,7 @@ class BackendManager: ObservableObject {
         for regionId in regionIds {
             fetchRegion(regionId: regionId) { data, err in
                 if let err = err {
-                    print("Function: \(#function), line: \(#line),", err)
+                    Log.error(err)
                     completion(err)
                     return
                 }
@@ -145,11 +147,15 @@ class BackendManager: ObservableObject {
                 if let data = data {
                     self.fetchRegionsQueue.sync {
                         self.numRegionsFetched += 1
+                        DispatchQueue.main.async {
+                            self.generationStatus?.description = "Fetched \(self.numRegionsFetched) regions"
+                            self.generationStatus?.progress = (self.numRegionsFetched / regionIds.count) * 100
+                        }
                     }
                     statusCallback(data)
                 }
                 
-                print("Num regions fetched: \(self.numRegionsFetched), out of \(regionIds.count)")
+                Log.info("Num regions fetched: \(self.numRegionsFetched), out of \(regionIds.count)")
                 
                 var temp = 0
                 self.fetchRegionsQueue.sync {
@@ -179,17 +185,17 @@ class BackendManager: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 if let err = err {
-                    print("Function: \(#function), line: \(#line),", err)
+                    Log.error(err)
                     if err._code == -1001 {
                         if tryNum < 100 {
-                            print("Function: \(#function), line: \(#line),", "Request timeout: trying again...")
+                            Log.warn("Request timeout: trying again...")
                             self.updateStatus(taskId: taskId, status: status, tryNum: tryNum + 1, statusCallback: statusCallback, completion: completion)
                             return
                         }
                     }
                     
                     DispatchQueue.main.async {
-                        print("Function: \(#function), line: \(#line),", err as Any)
+                        Log.error(err)
                         completion(nil, err)
                         return
                     }
@@ -232,7 +238,7 @@ class BackendManager: ObservableObject {
                     if tryNum < 3 {
                         self.updateStatus(taskId: taskId, status: status, tryNum: tryNum + 1, statusCallback: statusCallback, completion: completion)  //  Recursive call
                     } else {
-                        print("Function: \(#function), line: \(#line),", e)
+                        Log.error(e)
                         completion(nil, NSError(domain: "This song cannot be downloaded. Please choose a different song or version", code: 151))
                     }
                 }
@@ -258,7 +264,7 @@ class BackendManager: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let _ = data, err == nil else {
-                print("Function: \(#function), line: \(#line),", err as Any)
+                Log.error(err)
                 self.isGenerating = false
                 onCompletion(nil, err)
                 return
@@ -269,7 +275,7 @@ class BackendManager: ObservableObject {
             }
             
             self.updateRegionData(regionIds: regionIds) { mbData in
-                print("fetched: \(mbData.id)")
+                Log.debug("fetched: \(mbData.id)")
                 
                 guard let audioData = Data(base64Encoded: mbData.snd) else {
                     onCompletion(nil, NSError(domain: "Audio data cannot be decoded", code: 110))
@@ -298,7 +304,7 @@ class BackendManager: ObservableObject {
 ////                let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, String>
 //
 //            } catch let e {
-//                print("Function: \(#function), line: \(#line),", e)
+//                Log.error(e)
 //                self.isGenerating = false
 //                onCompletion(nil, err)
 //            }
@@ -318,7 +324,7 @@ class BackendManager: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
-                print("Function: \(#function), line: \(#line),", err as Any)
+                Log.error(err)
                 onCompletion(nil, err)
                 return
             }
@@ -346,7 +352,7 @@ class BackendManager: ObservableObject {
                     if tryNum < 3 {
                         self.fetchMashup(uuid: uuid, tryNum: tryNum + 1, onCompletion: onCompletion)  //  Recursive call
                     } else {
-                        print("Function: \(#function), line: \(#line),", e)
+                        Log.error(e)
                         onCompletion(nil, e)
                     }
                 }

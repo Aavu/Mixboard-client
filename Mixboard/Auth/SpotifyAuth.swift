@@ -84,7 +84,7 @@ class SpotifyClientCredential: SpotifyAuthBase {
         
         self.db.getSpotifyAuthCredential(for: .client) { cred, err in
             if let err = err {
-                print(err)
+                Log.error(err)
                 return
             }
             self.credential = cred
@@ -100,9 +100,9 @@ class SpotifyClientCredential: SpotifyAuthBase {
                 completion(credential.access_token)
                 return
             }
-            print("Function: \(#function), line: \(#line),", "Token Expired")
+            Log.info("Token Expired")
         }
-        print("Function: \(#function), line: \(#line),", "Requesting New Token")
+        Log.info("Requesting New Token")
         requestAccessToken { cred in
             completion(cred?.access_token)
         }
@@ -114,7 +114,7 @@ class SpotifyClientCredential: SpotifyAuthBase {
         let authHeader = getAuthHeader()
         let body = ["grant_type": "client_credentials"]
         
-        print("Sending post request to \(OAUTH_TOKEN_URL) with body \(body)")
+        Log.debug("Sending post request to \(OAUTH_TOKEN_URL) with body \(body)")
         
         NetworkManager.request(url: OAUTH_TOKEN_URL, type: .POST, httpbody: NetworkManager.getAsHttpBody(body: body), contentType: .FORM, headers: [authHeader]) { [weak self] (credentials) in
             guard let strongSelf = self else {
@@ -124,7 +124,7 @@ class SpotifyClientCredential: SpotifyAuthBase {
             strongSelf.credential = strongSelf.addCreationTime(credential: credentials)
             if let cred = strongSelf.credential {
                 strongSelf.updateDb(with: cred, type: .client) { err in
-                    if let err = err { print(err) }
+                    if let err = err { Log.error(err) }
                     completion(cred)
                 }
             } else { completion(nil) }
@@ -155,7 +155,7 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
         
         self.db.getSpotifyAuthCredential(for: .code) { cred, err in
             if let err = err {
-                print(err)
+                Log.error(err)
                 return
             }
             self.credential = cred
@@ -175,12 +175,12 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
     
     func validate(credential: Spotify.Credential, completion: @escaping (Spotify.Credential?) -> ()) {
         if isTokenExpired(credential: credential) {
-            print("Function: \(#function), line: \(#line),", "Token Expired")
+            Log.info("Token Expired. Acquiring a new one")
             if let refreshToken = credential.refresh_token {
-                print("Function: \(#function), line: \(#line),", "Refreshing Token")
+                Log.debug("Refreshing Token")
                 refreshAccessToken(refreshToken: refreshToken, completion: completion)
             } else {
-                print("Refresh token not found")
+                Log.critical("Refresh token not found")
                 completion(nil)
             }
         } else { completion(credential) }
@@ -192,7 +192,7 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
         let body = ["refresh_token": refreshToken,
                     "grant_type": "refresh_token"]
         
-        print("Sending post request to \(OAUTH_TOKEN_URL) with body \(body)")
+        Log.debug("Sending post request to \(OAUTH_TOKEN_URL) with body \(body)")
         
         NetworkManager.request(url: OAUTH_TOKEN_URL, type: .POST, httpbody: NetworkManager.getAsHttpBody(body: body), contentType: .FORM, headers: [authHeader]) { [weak self] (credentials) in
             guard let strongSelf = self else { return }
@@ -200,7 +200,7 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
             strongSelf.credential = strongSelf.addCodeAndToken(credential: strongSelf.credential, refreshToken: refreshToken)
             if let cred = strongSelf.credential {
                 strongSelf.updateDb(with: cred, type: .code) { err in
-                    if let err = err { print(err) }
+                    if let err = err { Log.error(err) }
                     completion(cred)
                 }
             } else { completion(nil) }
@@ -225,7 +225,7 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
                     "code": code,
                     "grant_type": "authorization_code"]
         
-        print("Sending post request to \(OAUTH_TOKEN_URL) with body \(body)")
+        Log.debug("Sending post request to \(OAUTH_TOKEN_URL) with body \(body)")
         
         NetworkManager.request(url: OAUTH_TOKEN_URL, type: .POST, httpbody: NetworkManager.getAsHttpBody(body: body), contentType: .FORM, headers: [authHeader]) { [weak self] (credentials) in
             guard let strongSelf = self else { return }
@@ -235,7 +235,7 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
             strongSelf.isLinked = (strongSelf.credential != nil)
             if let cred = strongSelf.credential {
                 strongSelf.updateDb(with: cred, type: .code) { err in
-                    if let err = err { print(err) }
+                    if let err = err { Log.error(err) }
                     completion(cred.access_token)
                 }
             } else { completion(nil) }
@@ -249,7 +249,7 @@ class SpotifyOAuth: SpotifyAuthBase, ObservableObject {
                 completion(cred?.access_token)
             }
         } else {
-            print("no credential found")
+            Log.error("no credential found")
             completion(nil)
         }
     }

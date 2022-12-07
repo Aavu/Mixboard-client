@@ -81,7 +81,7 @@ class UserLibraryViewModel: ObservableObject {
     // TODO: Add songsource so that it doesnt call spotify api even if the song is in local library
     func addSong(songId: String, songSource: SongSource = .Library) {
         if isSongInUserLibrary(songId: songId) {
-            print("Function: \(#function), line: \(#line),", "Info: Song already in library")
+            Log.info("Song already in library")
             return
         }
         
@@ -90,7 +90,7 @@ class UserLibraryViewModel: ObservableObject {
         
         BackendManager.shared.addSong(songId: songId) { err in
             if let err = err {
-                print("Function: \(#function), line: \(#line), Error:", err)
+                Log.error(err)
                 self.appError = AppError(description: err.localizedDescription)
                 return
             }
@@ -101,13 +101,13 @@ class UserLibraryViewModel: ObservableObject {
                     self.isSelected[songId] = nil
                 } else {
                     self.removeSong(songId: songId) { err in
-                        print("Function: \(#function), line: \(#line),", err as Any)
+                        Log.error(err)
                     }
                 }
             } else {
                 self.spotifyVM?.getSpotifySong(songId: songId, completion: {spotifyTrack in
                     guard let spotifyTrack = spotifyTrack else {
-                        print("Function: \(#function), line: \(#line),", "spotify track empty for id : \(songId)")
+                        Log.error("spotify track empty for id : \(songId)")
                         return
                     }
                     
@@ -163,7 +163,7 @@ class UserLibraryViewModel: ObservableObject {
     @discardableResult func addSongFromLib(songId: String) -> Bool {
         if let song = lib?.getSong(songId: songId) {
             if !isSongInUserLibrary(songId: songId) {
-                print("Function: \(#function), line: \(#line),", "Adding \(song.name ?? "song") to library")
+                Log.info("Adding \(song.name ?? "song") to library")
                 if self.replaceDummy(song: song) {
                     return true
                 }
@@ -228,7 +228,7 @@ class UserLibraryViewModel: ObservableObject {
             lib.update(didUpdate: { err in
                 if let err = err {
                     self.appError = AppError(description: err.localizedDescription)
-                    print("Function: \(#function), line: \(#line),", err)
+                    Log.error(err)
                     return
                 }
                 
@@ -256,7 +256,7 @@ class UserLibraryViewModel: ObservableObject {
         if notifyServer {
             BackendManager.shared.removeSong(songId: songId) { err in
                 if let err = err {
-                    print("Function: \(#function), line: \(#line),", err)
+                    Log.error(err)
                     self.appError = AppError(description: err.localizedDescription)
                     return
                 }
