@@ -14,9 +14,13 @@ class MashupFileManager {
             try data.write(to: path)
             return path
         } catch let err {
-            print(err)
+            Logger.error(err)
         }
         
         return nil
+    }
+    
+    static func exists(file: URL) -> Bool {
+        return FileManager.default.fileExists(atPath: file.absoluteString)
     }
 }

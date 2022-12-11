@@ -70,6 +70,8 @@ extension Color {
     public static let NeutralColor = Color("NeutralColor")
     public static let SecondaryAccentColor = Color("SecondaryAccentColor")
     public static let AccentColor = Color("AccentColor")
+    public static let PureColor = Color("PureColor")
+    public static let InvertedPureColor = Color("InvertedPureColor")
 }
 
 extension UIApplication {

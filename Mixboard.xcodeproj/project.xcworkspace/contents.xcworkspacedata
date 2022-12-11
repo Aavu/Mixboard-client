@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:/Users/violinsimma/Documents/Xcode Projects/Mashup/Mixboard.xcodeproj">
+      location = "self:">
    </FileRef>
 </Workspace>

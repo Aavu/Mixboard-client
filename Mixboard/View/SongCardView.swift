@@ -14,15 +14,20 @@ struct SongCardView: View {
     let minFrameWidthForText: CGFloat = 100
     
     @ObservedObject var imageVM: ImageViewModel
+    @EnvironmentObject var libVM: LibraryViewModel
     
-    init(spotifySong: Spotify.Track?) {
+    private let hasRemoveBtn: Bool
+    
+    init(spotifySong: Spotify.Track?, hasRemoveBtn: Bool = false) {
         self.spotifySong = spotifySong
         self.imageVM = ImageViewModel(imageUrl: spotifySong?.album.images[0].url)
+        self.hasRemoveBtn = hasRemoveBtn
     }
     
-    init(song: Song?) {
+    init(song: Song?, hasRemoveBtn: Bool = false) {
         self.song = song
         self.imageVM = ImageViewModel(imageUrl: song?.img_url)
+        self.hasRemoveBtn = hasRemoveBtn
     }
     
     var body: some View {
@@ -58,73 +63,74 @@ struct SongCardView: View {
 }
 
 struct UserLibSongCardView: View {
-    var song: Song?
+    private var song: Song
     
     @ObservedObject var imageVM: ImageViewModel
     @ObservedObject var audioManager = AudioManager.shared
+    @ObservedObject var backend = BackendManager.shared
     
     @EnvironmentObject var userLibVM: UserLibraryViewModel
     @EnvironmentObject var mashupVM: MashupViewModel
     
-    private let canShowOverlay: Bool
-    
-    init(song: Song?, canShowOverlay: Bool = true) {
+    init(song: Song) {
         self.song = song
-        self.imageVM = ImageViewModel(imageUrl: song?.img_url)
-        self.canShowOverlay = canShowOverlay
+        self.imageVM = ImageViewModel(imageUrl: song.img_url)
     }
     
     var body: some View {
-        let title = song?.name ?? "Song"
-        let artist = song?.artist ?? "Artist"
-        let songId = song?.id ?? ""
+        let title = song.name ?? "Name"
+        let artist = song.artist ?? "Artist"
+        let songId = song.id
         
-        ZStack(alignment: .topLeading) {
-            Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
-            ZStack(alignment: .bottom) {
-                VStack {
-                    GeometryReader { geo in
-                        HStack {
-                            VStack(alignment: .leading) {    // Title and subtitle
-                                StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
-                                StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
-                                StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                Rectangle().foregroundColor(imageVM.averageColor).shadow(radius: 4)
+                ZStack(alignment: .bottom) {
+                    VStack {
+                        GeometryReader { geo in
+                            HStack {
+                                VStack(alignment: .leading) {    // Title and subtitle
+                                    StrokeText(text: title, width: 0.25, color: .black).font(.subheadline)
+                                    StrokeText(text: "", width: 0.25, color: .clear).font(.caption) // dummy
+                                    StrokeText(text: artist, width: 0.25, color: .black).font(.caption)
+                                }
+                                
+                                Spacer(minLength: 0)
+                                
+                                ImageView(image: $imageVM.image).shadow(radius: 4)
+                                
+                            }.padding([.all], 4)
+                        }
+                        
+                        
+                        if let status = backend.downloadStatus[songId] {
+                            if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
+                                Rectangle().fill(.black).opacity(0.5).frame(height: 4)
                             }
-                            
-                            Spacer()
-                            
-                            ImageView(image: $imageVM.image).frame(width: geo.size.width / 2).shadow(radius: 4)
-                            
-                        }.padding([.all], 8)
+                        }
                     }
                     
                     
-                    if let status = userLibVM.downloadProgress[songId] {
+                    if let status = backend.downloadStatus[songId] {
                         if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
-                            Rectangle().fill(.clear).frame(height: 8)
+                            ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
+                                if geo.size.height > 100 {
+                                    StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
+                                }
+                            }
                         }
                     }
                 }
                 
-                
-                if let status = userLibVM.downloadProgress[songId] {
-                    if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
-                        ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
-                            StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
-                        }
-                    }
-                }
-            }
-            
-            if userLibVM.isSelected[songId] ?? false {
                 Button {
                     withAnimation {
-                        if let songId = song?.id {
-                            userLibVM.removeSong(songId: songId) { err in
-                                userLibVM.dragOffset[songId] = nil
-                                if err != nil { return }
-                                mashupVM.deleteRegionsFor(songId: songId)
+                        userLibVM.removeSong(songId: song.id ) { err in
+                            userLibVM.dragOffset[song.id ] = nil
+                            if err != nil {
+                                Logger.error(err)
+                                return
                             }
+                            mashupVM.deleteRegionsFor(songId: song.id )
                         }
                     }
                 } label: {
@@ -134,17 +140,21 @@ struct UserLibSongCardView: View {
                     }
                 }
                 .frame(height: 32)
+                .opacity((userLibVM.isSelected[songId] ?? false) ? 1 : 0)
+                .disabled(!(userLibVM.isSelected[songId] ?? false))
+                .animation(.spring(), value: userLibVM.isSelected[songId])
+                .transition(.opacity)
             }
-        }
-        .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) ? 4 : 0)
-        .overlay(content: {
-            if let txt = userLibVM.silenceOverlayText[songId] {
-                ZStack(alignment: .top) {
-                    Color.red.opacity(0.5)
-                    Text(txt).foregroundColor(.AccentColor).font(.headline).padding(.top, 4)
+            .blur(radius: (userLibVM.silenceOverlayText[songId] != nil) ? 4 : 0)
+            .overlay(content: {
+                if let txt = userLibVM.silenceOverlayText[songId] {
+                    ZStack(alignment: .top) {
+                        Color.red.opacity(0.5)
+                        Text(txt).foregroundColor(.AccentColor).font(.headline).padding(.top, 4)
+                    }
                 }
-            }
-        })
+            })
+        }
         .frame(maxHeight: 150)
         .simultaneousGesture(TapGesture()
             .onEnded({
@@ -153,7 +163,7 @@ struct UserLibSongCardView: View {
                     if userLibVM.isSelected[songId] == nil {
                         userLibVM.isSelected[songId] = true
                     } else {
-                        userLibVM.isSelected[songId] = !userLibVM.isSelected[songId]!
+                        userLibVM.isSelected[songId] = nil
                     }
                     
                 }

@@ -8,6 +8,12 @@
 import Foundation
 
 struct Region: Hashable, Codable, Identifiable {
+    enum State: String, Codable {
+        case New
+        case Moved
+        case Ready
+    }
+    
     struct Item: Hashable, Codable {
         let id: String
         var name: String? = nil
@@ -44,8 +50,9 @@ struct Region: Hashable, Codable, Identifiable {
     var del: Bool? = nil
     var Class: [String]? = nil
     var item: Item
-    var moved: Bool? = nil
+    var state: State
     let id = UUID()
+    var audioPosition: Int64?
     
     private enum CodingKeys: String, CodingKey {
         case x       = "x"
@@ -56,9 +63,16 @@ struct Region: Hashable, Codable, Identifiable {
         case del     = "del"
         case Class   = "class"
         case item    = "item"
-        case moved   = "moved"
         case id      = "id"
+        case state   = "state"
+        case audioPosition   = "audioPosition"
     }
+}
+
+enum LaneState: Hashable, Codable {
+    case Mute
+    case Solo
+    case Default
 }
 
 struct Layout: Hashable, Codable {
@@ -68,7 +82,15 @@ struct Layout: Hashable, Codable {
         var id: String? = nil
         var mouseover: Bool? = nil
         var layout = [Region]()
+        var laneState: LaneState = .Default
     }
     
     var lane = Dictionary<String, Track>()
+}
+
+struct GenerateRequest: Hashable, Codable {
+    let data: Dictionary<String, Layout.Track>
+    let email: String
+    let sessionId: String
+    var lastSessionId: String? = nil
 }

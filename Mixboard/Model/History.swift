@@ -6,11 +6,16 @@
 //
 
 import Foundation
+import FirebaseFirestoreSwift
 
-struct History: Identifiable, Hashable, Equatable {
-    let id: UUID
-    let audio: Audio
+struct History: Identifiable, Equatable, Codable {
+    @DocumentID var id = UUID().uuidString
+    var audio: Audio?
     let date: Date
     let userLibrary: [Song]
     let layout: Layout
+    
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.id == rhs.id
+    }
 }

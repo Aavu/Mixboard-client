@@ -10,12 +10,21 @@ import Combine
 
 class UserLibraryViewModel: ObservableObject {
     @Published var songs = [Song]()
-    @Published var downloadProgress = Dictionary<String, TaskStatus.Status>()
-    @Published var downloadingSong = false
-    private var downloadFailure = false
-    @Published var isSelected = Dictionary<String, Bool>()
+    @Published var disableRemoveBtn = false
+    
+    /// This is for the songs
+    @Published var isSelected = Dictionary<String, Bool>() {
+        didSet {
+            isFocuingSongs = isSelected.count > 0
+        }
+    }
+    
     @Published var silenceOverlayText = Dictionary<String, String>()
     @Published var dragOffset = Dictionary<String, CGSize>()
+    
+    @Published var isFocuingSongs = false
+    
+    @Published var canRemoveSong = [String:Bool]()
     
     static let TOTAL_PROGRESS = 100
     
@@ -36,6 +45,10 @@ class UserLibraryViewModel: ObservableObject {
         }
     }
     
+    func unselectAllSongs() {
+        isSelected.removeAll()
+    }
+    
     func attachViewModels(library: LibraryViewModel, spotifyViewModel: SpotifyViewModel) {
         self.lib = library
         self.spotifyVM = spotifyViewModel
@@ -49,84 +62,9 @@ class UserLibraryViewModel: ObservableObject {
         return lib?.getSong(songId: songId) != nil
     }
     
-    func addSongs(songIds: [String: SongSource]) {
-        
-        // First add local songs
-        for (id, src) in songIds {
-            if src == .Library {
-                addSong(songId: id)
-            }
-        }
-        
-        // Then add spotify songs
-        for (id, src) in songIds {
-            if src == .Spotify {
-                addSong(songId: id)
-            }
-        }
-    }
-    
-    func addSong(songId: String) {
-        guard let lib = self.lib else { return }
-        
-        for song in self.songs {
+    func contains(songId: String) -> Bool {
+        for song in songs {
             if song.id == songId {
-                print("Song already in library")
-                return
-            }
-        }
-        
-        let url = URL(string: Config.SERVER + HttpRequests.ADD_SONG)!
-        downloadingSong = true
-        var subscription: AnyCancellable?
-        subscription = NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId]))
-            .decode(type: Dictionary<String, String>.self, decoder: JSONDecoder())
-            .sink(receiveCompletion: NetworkManager.handleCompletion) {[weak self] (response) in
-                self?.spotifyVM?.getSpotifySong(songId: songId, completion: { spotifyTrack in
-                    guard let spotifyTrack = spotifyTrack else {
-                        print("spotify track empty for id : \(songId)")
-                        return
-                    }
-                    if lib.addSong(spotifySong: spotifyTrack) {
-                        self?.addSongFromLib(songId: songId)
-                    } else {
-                        self?.appError = AppError(description: "Error adding \(spotifyTrack.name) to library")
-                    }
-                })
-                
-                guard let taskId = response["task_id"] else { return }
-                self?.updateStatus(taskId: taskId, songId: songId)
-                
-                subscription?.cancel()
-            }
-        
-        addSongFromLib(songId: songId)
-    }
-    
-    func setIsDownloading() {
-        for (_, status) in downloadProgress {
-            if status.progress != 100 {
-                downloadingSong = true
-                return
-            }
-        }
-        
-        downloadingSong = false
-    }
-    
-    func addSongFromLib(songId: String) {
-        if let song = lib?.getSong(songId: songId) {
-            if !isSongInLib(songId: songId) {
-                print("Adding \(String(describing: song.name)) to library")
-                self.songs.append(song)
-                self.isSelected[songId] = false
-            }
-        }
-    }
-    
-    func isSongInLib(songId: String) -> Bool {
-        for s in self.songs {
-            if s.id == songId {
                 return true
             }
         }
@@ -134,13 +72,115 @@ class UserLibraryViewModel: ObservableObject {
         return false
     }
     
-    func replaceDummy(song: Song) {
+    func addSongs(songIds: [String: SongSource]) {
+        for (id, src) in songIds {
+            addSong(songId: id, songSource: src)
+        }
+    }
+    
+    // TODO: Add songsource so that it doesnt call spotify api even if the song is in local library
+    func addSong(songId: String, songSource: SongSource = .Library) {
+        if isSongInUserLibrary(songId: songId) {
+            Logger.info("Song already in library")
+            return
+        }
+        
+        canRemoveSong[songId] = false
+        addPlaceholderSong(songId: songId)
+        
+        BackendManager.shared.addSong(songId: songId) { err in
+            if let err = err {
+                Logger.error(err)
+                self.appError = AppError(description: err.localizedDescription)
+                return
+            }
+            
+            if songSource == .Library {
+                if self.addSongFromLib(songId: songId) {
+                    self.canRemoveSong[songId] = true
+                    self.isSelected[songId] = nil
+                } else {
+                    self.removeSong(songId: songId) { err in
+                        Logger.error(err)
+                    }
+                }
+            } else {
+                self.spotifyVM?.getSpotifySong(songId: songId, completion: {spotifyTrack in
+                    guard let spotifyTrack = spotifyTrack else {
+                        Logger.error("spotify track empty for id : \(songId)")
+                        return
+                    }
+                    
+                    if let lib = self.lib {
+                        if lib.addSong(spotifySong: spotifyTrack) {
+                            self.addSongFromLib(songId: songId)
+                        } else {
+                            self.appError = AppError(description: "Error adding \(spotifyTrack.name) to library")
+                            self.removePlaceholderSongs()
+                        }
+                        self.canRemoveSong[songId] = true
+                        self.isSelected[songId] = nil
+                    }
+                })
+            }
+        }
+    }
+    
+    func addPlaceholderSong(songId: String) {
+        if let song = lib?.getSong(songId: songId) {
+            var placeHolderSong = song
+            placeHolderSong.placeholder = true
+            self.songs.append(placeHolderSong)
+            return
+        }
+        
+        if let song = spotifyVM?.getSong(songId: songId) {
+            var placeHolderSong = song
+            placeHolderSong.placeholder = true
+            self.songs.append(placeHolderSong)
+            return
+        }
+    }
+    
+    func removePlaceholderSongs() {
+        for i in (0..<songs.count) {
+            if songs[i].placeholder {
+                self.songs.remove(at: i)
+            }
+        }
+    }
+    
+    func replaceDummy(song:Song) -> Bool {
         for i in (0..<songs.count) {
             if songs[i].id == song.id {
                 songs[i] = song
-                return
+                return true
             }
         }
+        return false
+    }
+    
+    @discardableResult func addSongFromLib(songId: String) -> Bool {
+        if let song = lib?.getSong(songId: songId) {
+            if !isSongInUserLibrary(songId: songId) {
+                Logger.info("Adding \(song.name ?? "song") to library")
+                if self.replaceDummy(song: song) {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
+    func isSongInUserLibrary(songId: String) -> Bool {
+        for s in self.songs {
+            if s.id == songId && !s.placeholder {
+                return true
+            }
+        }
+        
+        return false
     }
     
     func hasNonSilentBoundsFor(song: Song, lane: Lane) -> Bool {
@@ -176,19 +216,37 @@ class UserLibraryViewModel: ObservableObject {
         return false
     }
     
-    func removeSong(songId: String, notifyServer: Bool = true, completion: ((Error?) -> ())? = nil) {
+    func removeSong(songId: String, notifyServer: Bool = true, completion: @escaping (Error?) -> ()) {
         guard let lib = self.lib else { return }
+        
+        if let canRemove = canRemoveSong[songId], !canRemove {
+            completion(MBError.SongStillDownloading)
+            return
+        }
         
         func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
             lib.update(didUpdate: { err in
-                if err != nil {
-                    self.appError = AppError(description: err?.localizedDescription)
+                if let err = err {
+                    self.appError = AppError(description: err.localizedDescription)
+                    Logger.error(err)
                     return
                 }
-                self.songs.removeAll { song in
-                    song.id == sId
+                
+                var temp = [Song]()
+                for song in self.songs {
+                    if song.id != sId {
+                        temp.append(song)
+                    } else {
+                        if song.placeholder {
+                            if let complete = complete {
+                                complete(MBError.RemoveError)
+                                temp.append(song)
+                            }
+                        }
+                    }
                 }
                 
+                self.songs = temp
                 if let complete = complete {
                     complete(nil)
                 }
@@ -196,25 +254,15 @@ class UserLibraryViewModel: ObservableObject {
         }
         
         if notifyServer {
-            let url = URL(string: Config.SERVER + HttpRequests.REMOVE_SONG)!
-            
-            var subscription: AnyCancellable?
-            subscription = NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId]))
-                .decode(type: Dictionary<String, String>.self, decoder: JSONDecoder())
-                .sink(receiveCompletion: { fail in
-                    switch fail {
-                    case .failure(let e):
-                        self.appError = AppError(description: e.localizedDescription)
-                        if let completion = completion {
-                            completion(e)
-                        }
-                    case .finished:
-                        break
-                    }
-                }, receiveValue: { (response) in
-                    removeSongfromLib(sId: songId, complete: completion)
-                    subscription?.cancel()
-                })
+            BackendManager.shared.removeSong(songId: songId) { err in
+                if let err = err {
+                    Logger.error(err)
+                    self.appError = AppError(description: err.localizedDescription)
+                    return
+                }
+                
+                removeSongfromLib(sId: songId, complete: completion)
+            }
         } else {
             removeSongfromLib(sId: songId, complete: completion)
         }
@@ -227,98 +275,13 @@ class UserLibraryViewModel: ObservableObject {
         }
     }
     
-    func updateStatus(taskId: String, songId: String, tryNum: Int = 0) {
-        if self.downloadProgress[songId]?.progress == 100 { return }
-        
-        if self.downloadProgress[songId] == nil {
-            self.downloadProgress[songId] = TaskStatus.Status(progress: 10, description: "Waiting in queue")
+    func shouldDisableRemove() -> Bool {
+        for (_, canRemove) in canRemoveSong {
+            if !canRemove {
+                return true
+            }
         }
         
-        let url = URL(string: Config.SERVER + HttpRequests.STATUS + "/" + taskId)!
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
-
-        URLSession.shared.dataTask(with: request) { data, response, err in
-            guard let data = data, err == nil else {
-                if let err = err {
-                    if err._code == -1001 {
-                        if tryNum < 100 {
-                            print("Request timeout: trying again...")
-                            self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)
-                            return
-                        }
-                    }
-                }
-                DispatchQueue.main.async {
-                    self.appError = AppError(description: err?.localizedDescription)
-                    self.downloadProgress[songId] = nil
-                    self.removeSong(songId: songId)
-                }
-                return
-            }
-            
-            do {
-                let resp = try JSONSerialization.jsonObject(with: data) as! Dictionary<String, Any>
-                if let stat = RequestStatus(rawValue: resp["requestStatus"] as! String) {
-                    switch stat {
-                    case .Progress:
-                        let result = try JSONDecoder().decode(TaskStatus.self, from: data)
-                        DispatchQueue.main.async {
-                            self.downloadProgress[songId] = result.task_result
-                            self.updateStatus(taskId: taskId, songId: songId)  //  Recursive call
-                        }
-                        
-                    case .Success:
-                        DispatchQueue.main.async {
-                            self.downloadProgress[songId]?.progress = 100
-                            if let str = resp["task_result"] as? String, let err = Int(str) {
-                                // If song download fails
-                                if err != 0 {
-                                    self.appError = AppError(description: "This song cannot be downloaded. Please choose a different song or version")
-                                    
-                                    self.removeSong(songId: songId, notifyServer: false)
-                                    return
-                                }
-                            }
-                        }
-                        
-                        if let lib = self.lib {
-                            lib.update(didUpdate: { err in
-                                if err != nil {
-                                    self.appError = AppError(description: err?.localizedDescription)
-                                    return
-                                }
-                                if let song = lib.getSong(songId: songId) {
-                                    self.replaceDummy(song: song)
-                                }
-                            })
-                        }
-                        
-                        DispatchQueue.main.async {
-                            self.setIsDownloading()
-                        }
-                        
-                    default:
-                        print("Request Status: \(stat.rawValue)")
-                    }
-                }
-                
-            } catch let err {
-                print("Error decoding task status: ", err)
-                print("trying again...")
-                DispatchQueue.main.async {
-                    if tryNum < 3 {
-                        self.updateStatus(taskId: taskId, songId: songId, tryNum: tryNum + 1)  //  Recursive call
-                    } else {
-                        self.appError = AppError(description: err.localizedDescription)
-                        self.downloadProgress[songId] = nil
-                        self.removeSong(songId: songId)
-                    }
-                }
-            }
-            
-        }.resume()
+        return false
     }
 }

@@ -8,6 +8,15 @@
 import Foundation
 
 class Spotify {
+    enum GrantType: String, Codable, CaseIterable {
+        case code
+        case client
+    }
+    
+    struct ClientIdSecret: Codable {
+        let clientId: String
+        let clientSecret: String
+    }
     
     struct Artist: Codable, Hashable {
         let external_urls : ExternalURL
@@ -74,7 +83,7 @@ class Spotify {
     }
     
     struct Library: Codable {
-        let seeds: [Seed]
+        let seeds: [Seed]?
         let tracks: [Track]
     }
     
@@ -93,10 +102,39 @@ class Spotify {
         
     }
     
-    struct Credentials: Codable {
+    struct Credential: Codable, Hashable {
         let access_token: String
         let expires_in: Int
         let token_type: String
+        var scope: String?
+        var refresh_token: String?
+        var creationTime: Date?
+        var code: String?
+    }
+    
+    struct UserInfo: Codable, Identifiable {
+        struct ExplicitContent: Codable {
+            let filter_enabled: Bool
+            let filter_locked: Bool
+        }
+        
+        struct Followers: Codable {
+            let href: String?
+            let total: Int
+        }
+        
+        let country: String?
+        let display_name: String?
+        let email: String?
+        let explicit_content: ExplicitContent?
+        let external_urls: ExternalURL
+        let followers: Followers
+        let href: String
+        let id: String
+        let images: [Image]
+        let product: String?
+        let type: String
+        let uri: String
     }
     
 }

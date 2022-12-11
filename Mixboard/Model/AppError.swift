@@ -13,6 +13,6 @@ struct AppError: Identifiable, LocalizedError {
     
     init(description: String?) {
         self.errorDescription = description
-        print("AppError: \(self.errorDescription ?? "")")
+//        Log.error("AppError: \(self.errorDescription ?? "")")
     }
 }

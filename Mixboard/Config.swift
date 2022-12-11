@@ -21,4 +21,5 @@ struct HttpRequests {
     static let TRACK_LIST = "/requestTrackList"
     static let STATUS = "/requestStatus"
     static let RESULT = "/requestResult"
+    static let REGION = "/requestRegion"
 }

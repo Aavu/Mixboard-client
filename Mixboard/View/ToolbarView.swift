@@ -10,20 +10,31 @@ import SwiftUI
 struct ToolbarView: View {
     @EnvironmentObject var mashupVM: MashupViewModel
     @EnvironmentObject var userLibVM: UserLibraryViewModel
-    @EnvironmentObject var historyVM: HistoryViewModel
+    @EnvironmentObject var historyVM: UserInfoViewModel
     
     @ObservedObject var audioManager = AudioManager.shared
-    
-    @Binding var presentHistoryView: Bool
+    @ObservedObject var backend = BackendManager.shared
     
     var body: some View {
         ZStack(alignment: .top) {
             Rectangle().foregroundColor(.BgColor).shadow(radius: 8)
             HStack {
-                if let audio = audioManager.currentAudio {
-                    ShareLink(item: audio, preview: SharePreview("Share"))
-                        .padding([.all], 16)
+                // MARK: UserInfo Button
+                Button {
+                    withAnimation {
+                        historyVM.showUserInfo = true
+                    }
+                } label: {
+                    Image(systemName: "person.crop.circle")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.AccentColor)
+                        .frame(width: 24)
+                        .padding(.all, 6)
+                        .padding(.leading, 10)
                 }
+                
 
                 Spacer()
                 
@@ -32,7 +43,7 @@ struct ToolbarView: View {
                     mashupVM.surpriseMe(songs: userLibVM.songs)
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 136, height: 36)
+                        RoundedRectangle(cornerRadius: 4).frame(width: 136)
                             .foregroundColor(.BgColor)
                             .shadow(radius:  4)
 
@@ -40,126 +51,137 @@ struct ToolbarView: View {
                             Image(systemName: "shuffle").renderingMode(.template).foregroundColor(.SecondaryAccentColor)
                             Text("Surprise Me").foregroundColor(.SecondaryAccentColor)
                         }
-                    }.padding([.all], 8)
-                        .zIndex(1)
-                        .opacity(userLibVM.songs.count > 0 ? 1 : 0)
-                        .opacity(audioManager.isPlaying ? 0.5 : 1)
-                    
-                }.disabled(mashupVM.isGenerating || audioManager.isPlaying)
-                
-                
-                Button {
-                    mashupVM.clearCanvas()
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36)
-                            .foregroundColor(.BgColor)
-                            .shadow(radius:  4)
-                        Text("Clear Canvas").foregroundColor(.red)
                     }
-                    .padding([.all], 8)
+                    .padding(.all, 6)
                     .zIndex(1)
-                    .opacity(mashupVM.isEmpty ? 0: 1)
-                }
+                    .opacity(userLibVM.songs.count > 0 ? 1 : 0)
+                    .opacity(audioManager.isPlaying ? 0.5 : 1)
+                    
+                }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0)
 
                 Spacer()
 
                 HStack {
                     // MARK: Backward 10 Button
                     Button {
-                        audioManager.setProgress(progress: max(0, audioManager.progress - 0.1))
+                        audioManager.setCurrentPosition(position: audioManager.currentPosition - (44100 * 10))
                     } label: {
                         Image(systemName: "gobackward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
+                            .padding(.all, 6)
                     }
-                    .disabled(!mashupVM.readyToPlay)
+                    .disabled(!mashupVM.readyToPlay || mashupVM.isEmpty)
                     
                     // MARK: Play Button
                     Button {
                         handlePlayBtn()
                     } label: {
-                        Image(systemName: audioManager.player?.isPlaying ?? false ? "pause.fill" : "play.fill")
-                            .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
+                        if backend.isGenerating {
+                            ProgressView(value: CGFloat(backend.generationStatus?.progress ?? 50), total: 100).progressViewStyle(.circular)
+                                .frame(width: 32)
+                                .padding(.all, 6)
+                        } else {
+                            Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                                .frame(width: 32)
+                                .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
+                                .padding(.all, 6)
+                        }
                     }
-                    .disabled(mashupVM.isEmpty)
-                    .padding([.leading, .trailing], 24)
+                    .disabled(mashupVM.isEmpty || backend.isGenerating)
+                    .padding(.horizontal, 12)
                     
                     // MARK: Forward 10 Button
                     Button {
-                        audioManager.setProgress(progress: min(1, audioManager.progress + 0.1))
+                        audioManager.setCurrentPosition(position: audioManager.currentPosition + (44100 * 10))
                     } label: {
                         Image(systemName: "goforward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
+                            .padding(.all, 6)
                     }
-                    .disabled(!mashupVM.readyToPlay)
+                    .disabled(!mashupVM.readyToPlay || mashupVM.isEmpty)
                 }
                 
                 Spacer()
                 
-//                let generateBtnDisabled = mashupVM.isGenerating || mashupVM.isEmpty || audioManager.isPlaying
-//                // MARK: Generate Button
-//                Button {
-//                    audioManager.reset()
-//                    let uuid = UUID()
-//                    mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
-//                        guard let audio = audio else { return }
-//                        let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
-//                        historyVM.current = history
-//                        historyVM.add(history: history)
-//                    }
-//                } label: {
-//                    ZStack {
-//                        RoundedRectangle(cornerRadius: 4).frame(width: 120, height: 36).foregroundColor(mashupVM.isEmpty ? .clear : generateBtnDisabled ? .NeutralColor : .SecondaryAccentColor).shadow(radius:  4)
-//                        Text("Generate").foregroundColor(.BgColor)
-//                    }.offset(y: mashupVM.isEmpty ? 100.0 : 0.0)
-//                        .animation(.spring(), value: mashupVM.isEmpty)
-//                        .opacity(generateBtnDisabled ? 0.5 : 1)
-//                }.disabled(generateBtnDisabled)
-//                    .padding(.trailing, 4)
+                Button {
+                    mashupVM.clearCanvas()
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4).frame(width: 120)
+                            .foregroundColor(.BgColor)
+                            .shadow(radius:  4)
+                        Text("Clear Canvas").foregroundColor(.red)
+                    }
+                    .padding(.all, 6)
+                    .zIndex(1)
+                    .opacity(mashupVM.isEmpty ? 0: 1)
+                }
                 
                 Spacer()
                 
-                // MARK: History Button
-                Button {
-                    withAnimation {
-                        presentHistoryView = true
+                Menu {
+                    Button {
+                    } label: {
+                        Text("Share Audio")
                     }
+                    
+                    Button {
+                        DatabaseManager.shared.saveLogsToDatabase(shouldClear: true)
+                    } label: {
+                        Text("Share Logs")
+                    }
+
+                    
                 } label: {
-                    Image("History")
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundColor(historyVM.isEmpty() ? .SecondaryBgColor : .AccentColor)
-                        .frame(width: 24)
-                }.padding()
-                    .disabled(historyVM.isEmpty())
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4).frame(width: 120)
+                            .foregroundColor(.BgColor)
+                            .shadow(radius:  4)
+                        Image(systemName: "square.and.arrow.up").renderingMode(.template).foregroundColor(.AccentColor)
+                    }
+                    .padding(.all, 6)
+                }
                 
-            }.padding(.top, 4)
+//                if let music = audioManager.currentMusic {
+//                    ShareLink(item: audio, preview: SharePreview("Share"))
+//                        .padding([.all], 16)
+//                } else {
+//                    Rectangle().fill(.clear).frame(width: 100)
+//                }
+            }
+        }
+        .onTapGesture {
+            userLibVM.unselectAllSongs()
+            mashupVM.unselectAllRegions()
         }
     }
     
     func handlePlayBtn() {
         func play() {
             if audioManager.isPlaying {
-                audioManager.stop()
+                audioManager.playOrPause()
             } else {
-                guard let audio = mashupVM.mashupAudio else {
-                    print("No Audio file available")
-                    return
-                }
-                audioManager.play(audio: audio)
+                audioManager.playOrPause()
             }
         }
         
         if mashupVM.readyToPlay {   // Play
-            play()
+            if !audioManager.isPlaying {
+                mashupVM.soloAudios()
+                mashupVM.muteAudios()
+            }
+            audioManager.playOrPause()
         } else {                    // Generate
             audioManager.reset()
-            let uuid = UUID()
-            mashupVM.sendGenerateRequest(uuid: uuid) { audio, layout in
-                guard let audio = audio else { return }
-                let history = History(id: uuid, audio: audio, date: Date(), userLibrary: userLibVM.songs, layout: layout)
-                historyVM.current = history
-                historyVM.add(history: history)
-                play()
+            let uuid = UUID().uuidString
+            mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
+                guard let music = audioManager.currentMusic else {
+                    Logger.error("No Music available")
+                    return
+                }
+                audioManager.prepareForPlay(music: music, lengthInBars: mashupVM.getLastBeat())
+                
+                mashupVM.soloAudios()
+                mashupVM.muteAudios()
+                audioManager.playOrPause()
             }
         }
     }
