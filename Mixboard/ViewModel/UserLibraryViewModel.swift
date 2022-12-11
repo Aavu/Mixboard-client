@@ -73,8 +73,8 @@ class UserLibraryViewModel: ObservableObject {
     }
     
     func addSongs(songIds: [String: SongSource]) {
-        for (id, src) in songIds {
-            addSong(songId: id, songSource: src) { err in
+        for (id, _) in songIds {
+            addSong(songId: id) { err in
                 if let err = err {
                     self.appError = AppError(description: err.localizedDescription)
                     self.removePlaceholderSongs()
@@ -83,7 +83,7 @@ class UserLibraryViewModel: ObservableObject {
         }
     }
     
-    func addSong(songId: String, songSource: SongSource = .Library, completion: ((Error?) -> ())? = nil) {
+    func addSong(songId: String, completion: ((Error?) -> ())? = nil) {
         if isSongInUserLibrary(songId: songId) {
             Logger.info("Song already in library")
             return
@@ -142,7 +142,6 @@ class UserLibraryViewModel: ObservableObject {
             var placeHolderSong = song
             placeHolderSong.placeholder = true
             self.songs.append(placeHolderSong)
-            return
         }
     }
     

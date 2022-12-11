@@ -31,26 +31,35 @@ class BackendManager: ObservableObject {
     func addSong(songId: String, onCompletion:@escaping (Error?) -> ()) {
         let url = URL(string: Config.SERVER + HttpRequests.ADD_SONG)!
         
+        self.isDownloading = true
+        if self.downloadStatus[songId] == nil {
+            self.downloadStatus[songId] = TaskStatus.Status(progress: 5, description: "Waiting in queue")
+        }
+        
         NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId, "email": email])) { completion in
             switch completion {
             case .failure(let e):
                 Logger.error(e)
-                onCompletion(e)
+                DispatchQueue.main.async {
+                    self.isDownloading = false
+                    self.downloadStatus.removeValue(forKey: songId)
+                    onCompletion(e)
+                }
             case .finished:
                 break
             }
         } completion: { (response:Dictionary<String, String>?) in
             guard let response = response else {
-                onCompletion(BackendError.ResponseEmpty)
+                DispatchQueue.main.async {
+                    self.isDownloading = false
+                    self.downloadStatus.removeValue(forKey: songId)
+                    onCompletion(BackendError.ResponseEmpty)
+                }
+                
                 return
             }
             
             if let taskId = response["task_id"] {
-                self.isDownloading = true
-                if self.downloadStatus[songId] == nil {
-                    self.downloadStatus[songId] = TaskStatus.Status(progress: 5, description: "Waiting in queue")
-                }
-                
                 self.updateStatus(taskId: taskId, status: self.downloadStatus[songId]!) { status in
                     self.downloadStatus[songId] = status
                 } completion: { status, err in
@@ -61,7 +70,11 @@ class BackendManager: ObservableObject {
                     }
                 }
             } else {
-                onCompletion(BackendError.TaskIdEmpty)
+                DispatchQueue.main.async {
+                    self.isDownloading = false
+                    self.downloadStatus.removeValue(forKey: songId)
+                    onCompletion(BackendError.TaskIdEmpty)
+                }
             }
         }
     }
@@ -115,12 +128,16 @@ class BackendManager: ObservableObject {
                 if data.valid {
                     completion(data, nil)
                 } else {
-                    Logger.debug("try num: \(tryNum)")
+                    Logger.trace("try num: \(tryNum)")
                     if tryNum >= 50 {
                         Logger.critical("Region fetch failed with region id \(regionId)")
                         completion(nil, BackendError.RegionDownloadError(regionId))
                     } else {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            if self.isDownloading {
+                                self.generationStatus?.description = "Downloading Song"
+                                self.generationStatus?.progress = 10
+                            }
                             let num = self.isDownloading ? tryNum : tryNum + 1
                             self.fetchRegion(regionId: regionId, tryNum: num, completion: completion) // Recursive call
                         }
