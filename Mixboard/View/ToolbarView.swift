@@ -57,7 +57,7 @@ struct ToolbarView: View {
                     .opacity(userLibVM.songs.count > 0 ? 1 : 0)
                     .opacity(audioManager.isPlaying ? 0.5 : 1)
                     
-                }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0)
+                }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0 || backend.isDownloading)
 
                 Spacer()
 
@@ -128,8 +128,6 @@ struct ToolbarView: View {
                     } label: {
                         Text("Share Logs")
                     }
-
-                    
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 4).frame(width: 120)

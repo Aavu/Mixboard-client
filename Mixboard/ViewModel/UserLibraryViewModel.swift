@@ -74,12 +74,16 @@ class UserLibraryViewModel: ObservableObject {
     
     func addSongs(songIds: [String: SongSource]) {
         for (id, src) in songIds {
-            addSong(songId: id, songSource: src)
+            addSong(songId: id, songSource: src) { err in
+                if let err = err {
+                    self.appError = AppError(description: err.localizedDescription)
+                    self.removePlaceholderSongs()
+                }
+            }
         }
     }
     
-    // TODO: Add songsource so that it doesnt call spotify api even if the song is in local library
-    func addSong(songId: String, songSource: SongSource = .Library) {
+    func addSong(songId: String, songSource: SongSource = .Library, completion: ((Error?) -> ())? = nil) {
         if isSongInUserLibrary(songId: songId) {
             Logger.info("Song already in library")
             return
@@ -91,37 +95,37 @@ class UserLibraryViewModel: ObservableObject {
         BackendManager.shared.addSong(songId: songId) { err in
             if let err = err {
                 Logger.error(err)
-                self.appError = AppError(description: err.localizedDescription)
+                if let completion = completion {
+                    completion(err)
+                }
                 return
             }
             
-            if songSource == .Library {
-                if self.addSongFromLib(songId: songId) {
+            if let lib = self.lib {
+                lib.update() {err in
                     self.canRemoveSong[songId] = true
                     self.isSelected[songId] = nil
-                } else {
-                    self.removeSong(songId: songId) { err in
+                    
+                    if let err = err {
                         Logger.error(err)
-                    }
-                }
-            } else {
-                self.spotifyVM?.getSpotifySong(songId: songId, completion: {spotifyTrack in
-                    guard let spotifyTrack = spotifyTrack else {
-                        Logger.error("spotify track empty for id : \(songId)")
+                        if let completion = completion {
+                            completion(err)
+                        }
                         return
                     }
                     
-                    if let lib = self.lib {
-                        if lib.addSong(spotifySong: spotifyTrack) {
-                            self.addSongFromLib(songId: songId)
-                        } else {
-                            self.appError = AppError(description: "Error adding \(spotifyTrack.name) to library")
-                            self.removePlaceholderSongs()
+                    if !self.addSongFromLib(songId: songId) {
+                        if let completion = completion {
+                            completion(BackendError.SongDownloadError)
                         }
-                        self.canRemoveSong[songId] = true
-                        self.isSelected[songId] = nil
+                        return
                     }
-                })
+                    
+                }
+            }
+            
+            if let completion = completion {
+                completion(nil)
             }
         }
     }
@@ -153,6 +157,7 @@ class UserLibraryViewModel: ObservableObject {
     func replaceDummy(song:Song) -> Bool {
         for i in (0..<songs.count) {
             if songs[i].id == song.id {
+                Logger.trace("Replacing dummy for song id: \(song.id)")
                 songs[i] = song
                 return true
             }

@@ -44,8 +44,14 @@ class LuckyMeManager {
     
     func surpriseMe(songs: [Song]) -> Layout? {
         var layout = Layout()
-        guard let templates = self.templates[totalBeats] else { return nil }
-        guard let tracks = templates.tracks[songs.count] else { return nil }
+        guard let templates = self.templates[totalBeats] else {
+            Logger.error("No template for \(totalBeats) bars found")
+            return nil
+        }
+        guard let tracks = templates.tracks[songs.count] else {
+            Logger.error("No tracks for \(songs.count) songs found")
+            return nil
+        }
         
         let chosenTemplate = tracks[Int.random(in: 0..<tracks.count)]
         
@@ -73,6 +79,7 @@ class LuckyMeManager {
                         bounds = nsb.other
                     }
                     
+                    print(bounds)
                     for (_, b) in bounds {
                         if b.count > 0 {
                             return true

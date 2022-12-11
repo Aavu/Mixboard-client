@@ -497,7 +497,9 @@ class MashupViewModel: ObservableObject {
     }
     
     func surpriseMe(songs: [Song]) {
+        Logger.trace(songs)
         if let layout = LuckyMeManager.shared.surpriseMe(songs: songs) {
+            Logger.trace(layout)
             self.layoutInfo = layout
             isEmpty = isCanvasEmpty()
             readyToPlay = false
