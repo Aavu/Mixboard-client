@@ -26,7 +26,7 @@ class FirebaseManager {
                 
                 if nsErr.code == 17007 {
                     linking = true
-                    Log.warn("User already has an account.")
+                    Logger.warn("User already has an account.")
                     completion(dataResult?.user, err)
                 }
             }
@@ -47,14 +47,14 @@ class FirebaseManager {
         Auth.auth().signIn(with: credential) { dataResult, err in
             var retErr = err
             if let err = err {
-                Log.error(err)
+                Logger.error(err)
             }
             
             if shouldLink {
                 let cred = EmailAuthProvider.credential(withEmail: email, password: passwd)
                 linkAccount(credential: cred) { user, err in
                     if let _ = user {
-                        Log.info("Successfully linked accounts")
+                        Logger.info("Successfully linked accounts")
                     }
                     
                     retErr = err
@@ -79,18 +79,18 @@ class FirebaseManager {
         do {
             try Auth.auth().signOut()
         } catch (let e) {
-            Log.error(e)
+            Logger.error(e)
         }
     }
     
     static func linkAccount(credential: AuthCredential, completion:@escaping (User?, Error?) -> ()) {
         Auth.auth().currentUser?.link(with: credential) { result, err in
             if result?.user != nil {
-                Log.info("Successfully linked user")
+                Logger.info("Successfully linked user")
             }
             
-            if let err = err as? NSError {
-                Log.error(err)
+            if let err = err {
+                Logger.error(err)
             }
             
             

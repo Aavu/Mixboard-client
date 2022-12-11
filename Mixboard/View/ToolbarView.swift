@@ -117,6 +117,28 @@ struct ToolbarView: View {
                 
                 Spacer()
                 
+                Menu {
+                    Button {
+                    } label: {
+                        Text("Share Audio")
+                    }
+                    
+                    Button {
+                        DatabaseManager.shared.saveLogsToDatabase(shouldClear: true)
+                    } label: {
+                        Text("Share Logs")
+                    }
+
+                    
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4).frame(width: 120)
+                            .foregroundColor(.BgColor)
+                            .shadow(radius:  4)
+                        Image(systemName: "square.and.arrow.up").renderingMode(.template).foregroundColor(.AccentColor)
+                    }
+                    .padding(.all, 6)
+                }
                 
 //                if let music = audioManager.currentMusic {
 //                    ShareLink(item: audio, preview: SharePreview("Share"))
@@ -152,7 +174,7 @@ struct ToolbarView: View {
             let uuid = UUID().uuidString
             mashupVM.generateMashup(uuid: uuid, lastSessionId: historyVM.getLastSessionId()) {
                 guard let music = audioManager.currentMusic else {
-                    Log.error("No Music available")
+                    Logger.error("No Music available")
                     return
                 }
                 audioManager.prepareForPlay(music: music, lengthInBars: mashupVM.getLastBeat())

@@ -76,7 +76,7 @@ class SpotifyManager: ObservableObject {
         if let spotifyOAuth = spotifyOAuth {
             spotifyOAuth.getAccessToken(completion: { accessToken in
                 guard let accessToken = accessToken else {
-                    Log.error("accessToken is nil")
+                    Logger.error("accessToken is nil")
                     completion(nil)
                     return
                 }
@@ -91,7 +91,7 @@ class SpotifyManager: ObservableObject {
                 
             })
         } else {
-            Log.error("spotifyOAuth is nil")
+            Logger.error("spotifyOAuth is nil")
             completion(nil)
         }
     }
@@ -100,7 +100,7 @@ class SpotifyManager: ObservableObject {
         if let spotifyClientAuth = spotifyClientAuth {
             spotifyClientAuth.getAccessToken { accessToken in
                 guard let accessToken = accessToken else {
-                    Log.error("accessToken is nil")
+                    Logger.error("accessToken is nil")
                     completion(nil)
                     return
                 }
@@ -120,11 +120,11 @@ class SpotifyManager: ObservableObject {
         let auth = forUser ? spotifyOAuth : spotifyClientAuth
         
         if let auth = auth {
-            Log.debug("Getting recommendations. For user? : \(forUser)")
+            Logger.debug("Getting recommendations. For user? : \(forUser)")
             
             auth.getAccessToken { accessToken in
                 guard let accessToken = accessToken else {
-                    Log.error("accessToken is nil")
+                    Logger.error("accessToken is nil")
                     completion(nil)
                     return
                 }
@@ -156,7 +156,7 @@ class SpotifyManager: ObservableObject {
         if let spotifyClientAuth = spotifyClientAuth {
             spotifyClientAuth.getAccessToken { accessToken in
                 guard let accessToken = accessToken else {
-                    Log.error("accessToken is nil")
+                    Logger.error("accessToken is nil")
                     completion(nil)
                     return
                 }

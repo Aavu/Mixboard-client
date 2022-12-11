@@ -49,6 +49,8 @@
 		7ADD6B4D29196271001F59B1 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B4C29196271001F59B1 /* LoginViewModel.swift */; };
 		7ADD6B4F291963B9001F59B1 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADD6B4E291963B9001F59B1 /* FirebaseManager.swift */; };
 		7AEB67CB2940EC3200694F0C /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEB67CA2940EC3200694F0C /* Logger.swift */; };
+		7AEB67CD2942424A00694F0C /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEB67CC2942424A00694F0C /* LinkedList.swift */; };
+		7AEB67D029426FBC00694F0C /* MBError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEB67CF29426FBC00694F0C /* MBError.swift */; };
 		7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED711E28F99D1300336B56 /* LibraryViewModel.swift */; };
 		7AED712128F9CF4A00336B56 /* songExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED712028F9CF4A00336B56 /* songExample.json */; };
 		7AED712528F9D3D100336B56 /* libraryExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED712428F9D3D100336B56 /* libraryExample.json */; };
@@ -110,6 +112,8 @@
 		7ADD6B4C29196271001F59B1 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		7ADD6B4E291963B9001F59B1 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		7AEB67CA2940EC3200694F0C /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		7AEB67CC2942424A00694F0C /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
+		7AEB67CF29426FBC00694F0C /* MBError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBError.swift; sourceTree = "<group>"; };
 		7AED711E28F99D1300336B56 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		7AED712028F9CF4A00336B56 /* songExample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = songExample.json; sourceTree = "<group>"; };
 		7AED712428F9D3D100336B56 /* libraryExample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = libraryExample.json; sourceTree = "<group>"; };
@@ -170,6 +174,7 @@
 		7A25ECDE28F83F6700B2396A /* Mixboard */ = {
 			isa = PBXGroup;
 			children = (
+				7AEB67CE29426FA100694F0C /* Modules */,
 				7ADD6B4729174971001F59B1 /* Mixboard.entitlements */,
 				7ADD6B33291734B2001F59B1 /* GoogleService-Info.plist */,
 				7A5658E8291034600065000C /* Info.plist */,
@@ -185,8 +190,7 @@
 				7AED712F28FA21CC00336B56 /* Config.swift */,
 				7A910DCE2927F48800832130 /* LuckyMeTemplates16.json */,
 				7A3291782901B946007AF70F /* LuckyMeTemplates32.json */,
-				7AF88331292896DD001B7FB7 /* MBMusic.swift */,
-				7AEB67CA2940EC3200694F0C /* Logger.swift */,
+				7AEB67CF29426FBC00694F0C /* MBError.swift */,
 			);
 			path = Mixboard;
 			sourceTree = "<group>";
@@ -284,6 +288,16 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7AEB67CE29426FA100694F0C /* Modules */ = {
+			isa = PBXGroup;
+			children = (
+				7AEB67CC2942424A00694F0C /* LinkedList.swift */,
+				7AF88331292896DD001B7FB7 /* MBMusic.swift */,
+				7AEB67CA2940EC3200694F0C /* Logger.swift */,
+			);
+			path = Modules;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -404,6 +418,7 @@
 				7AED713028FA21CD00336B56 /* Config.swift in Sources */,
 				7A25ECEE28F83F9C00B2396A /* UserLibraryView.swift in Sources */,
 				7AED713428FB43FA00336B56 /* Lanes.swift in Sources */,
+				7AEB67CD2942424A00694F0C /* LinkedList.swift in Sources */,
 				7AED714028FD04E300336B56 /* MashupFileManager.swift in Sources */,
 				7A25ED0728F8A41F00B2396A /* Extensions.swift in Sources */,
 				7A25ED0528F8A27700B2396A /* SpotifyViewModel.swift in Sources */,
@@ -413,6 +428,7 @@
 				7A03BFE3291D6F4600B19874 /* BackendManager.swift in Sources */,
 				7A25ECF428F83FD800B2396A /* TracksView.swift in Sources */,
 				7A5FCE382920166F0037618D /* SpotifyAuth.swift in Sources */,
+				7AEB67D029426FBC00694F0C /* MBError.swift in Sources */,
 				7AED714E28FF4A6C00336B56 /* History.swift in Sources */,
 				7AED711F28F99D1300336B56 /* LibraryViewModel.swift in Sources */,
 				7ADD6B46291737B1001F59B1 /* LoginView.swift in Sources */,

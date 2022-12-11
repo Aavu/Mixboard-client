@@ -163,7 +163,7 @@ struct LibraryView: View {
                 }
             }
             .onChange(of: spotifyManager.isLinked) { newValue in
-                Log.info("spotify linked: \(spotifyManager.isLinked)")
+                Logger.info("spotify linked: \(spotifyManager.isLinked)")
                 spotifyManager.getRecommendations(numTracks: 50, forUser: spotifyManager.isLinked) { spotifyTracks in
                     if let tracks = spotifyTracks {
                         spotifyVM.songs = tracks
@@ -191,7 +191,7 @@ struct LibraryView: View {
             if userLibVM.contains(songId: id) {
                 userLibVM.removeSong(songId: id) { err in
                     if let err = err {
-                        Log.error(err)
+                        Logger.error(err)
                         selectedSongId[id] = ss
                         return
                     }
@@ -244,18 +244,20 @@ struct SelectionView: View {
                         .cornerRadius(4)
                         .frame(maxHeight: 150)
                         .onTapGesture {
-                            showOverlay = [:]
-                            showOverlay[song.id] = true
+                            withAnimation {
+                                showOverlay = [:]
+                                showOverlay[song.id] = true
+                            }
                         }
                         .overlay(alignment: .top) {
-                            if showOverlay[song.id] != nil {
+                            if let show = showOverlay[song.id], show {
                                 Button {
                                     selectedSongs.removeValue(forKey: song.id)
                                     
                                     if userLibVM.contains(songId: song.id) {
                                         userLibVM.removeSong(songId: song.id) { err in
                                             if let err = err {
-                                                Log.error(err)
+                                                Logger.error(err)
                                                 return
                                             }
                                             mashupVM.deleteRegionsFor(songId: song.id)
@@ -278,20 +280,24 @@ struct SelectionView: View {
                         .cornerRadius(4)
                         .frame(maxHeight: 150)
                         .onTapGesture {
-                            showOverlay = [:]
-                            showOverlay[song.id] = true
+                            withAnimation {
+                                showOverlay = [:]
+                                showOverlay[song.id] = true
+                            }
                         }
                         .overlay(alignment: .top) {
-                            Button {
-                                selectedSongs.removeValue(forKey: song.id)
-                            } label: {
-                                ZStack {
-                                    Color.BgColor.shadow(radius: 4).cornerRadius(4)
-                                    Text("Remove").foregroundColor(.AccentColor)
+                            if let show = showOverlay[song.id], show {
+                                Button {
+                                    selectedSongs.removeValue(forKey: song.id)
+                                } label: {
+                                    ZStack {
+                                        Color.BgColor.shadow(radius: 4).cornerRadius(4)
+                                        Text("Remove").foregroundColor(.AccentColor)
+                                    }
                                 }
+                                .frame(height: 32)
+                                .transition(.opacity)
                             }
-                            .frame(height: 32)
-                            .transition(.opacity)
                         }
                 }
                 

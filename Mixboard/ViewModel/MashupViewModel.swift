@@ -49,8 +49,6 @@ class MashupViewModel: ObservableObject {
     @Published var appError: AppError?
     @Published var showError = false
     
-    @Published var userInfoViewVisibility: NavigationSplitViewVisibility = .detailOnly
-    
     private var userInfoVM: UserInfoViewModel?
     private var userLibVM: UserLibraryViewModel?
     
@@ -87,7 +85,7 @@ class MashupViewModel: ObservableObject {
         if !loggedIn { return }
         
         guard let email = currentEmail else {
-            Log.warn("Please signin before creating session")
+            Logger.warn("Please signin before creating session")
             return
         }
         
@@ -99,11 +97,11 @@ class MashupViewModel: ObservableObject {
             case .finished:
                 break
             case .failure(let e):
-                Log.error(e)
+                Logger.error(e)
                 self.appError = AppError(description: "Server not responding. Please try again later...")
             }
         } completion: { (data:[String:Int]?) in
-            Log.info("Fetched Library")
+            Logger.info("Fetched Library")
         }
     }
     
@@ -127,7 +125,7 @@ class MashupViewModel: ObservableObject {
                     } else if region.x + region.w > totalBeats {
                         let success = updateRegion(id: region.id, x: region.x, length: totalBeats - region.x, resetLastLayout: false)
                         if !success {
-                            Log.error("Error updating region \(region.id)")
+                            Logger.error("Error updating region \(region.id)")
                         }
                     }
                 }
@@ -283,6 +281,8 @@ class MashupViewModel: ObservableObject {
     }
     
     func removeRegion(lane: Lane, id: UUID, resetLastLayout: Bool = true) {
+        Logger.trace("Remove Region: \(id), resetLastLayout: \(resetLastLayout)")
+        
         if let lanes = layoutInfo.lane[lane.rawValue] {
             for (idx, region) in lanes.layout.enumerated() {
                 if region.id == id {
@@ -303,50 +303,52 @@ class MashupViewModel: ObservableObject {
     }
     
     func updateRegion(id: UUID, x: Int, length: Int, resetLastLayout: Bool = true) -> Bool {
+        Logger.trace("x: \(x), length: \(length)")
+        
         for lane in Lane.allCases {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for (idx, region) in lanes.layout.enumerated() {
                     if region.id == id {
-                        let posChanged = region.x != x
-                        let lengthChanged = region.w != length
-
+//                        let posChange = region.x - x
+                        let lengthChange = length - region.w
                         
                         let prevPosition = self.layoutInfo.lane[lane.rawValue]!.layout[idx].x
                         self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = x
                         self.layoutInfo.lane[lane.rawValue]!.layout[idx].w = length
                         
                         let prevState = self.layoutInfo.lane[lane.rawValue]!.layout[idx].state
-                        if lengthChanged {
+                        self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = (prevState == .New) ? .New : .Moved
+                        
+                        if lengthChange > 0 {
+                            Logger.trace("New length for \(id) > prev length")
                             self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = .New
                             readyToPlay = false
-//                            let uuid = UUID().uuidString
-//                            generateMashup(uuid: uuid, lastSessionId: userInfoVM?.getLastSessionId())
                         } else {
-                            if posChanged {
-                                self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = (prevState == .New) ? .New : .Moved
-                                if self.layoutInfo.lane[lane.rawValue]!.layout[idx].state != .New {
-                                    if let music = self.audioManager.currentMusic {
-                                        let _pos = self.layoutInfo.lane[lane.rawValue]!.layout[idx].x
-                                        let err = music.update(for: region.id, position: _pos)
-                                        if err != .Success {
-                                            self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = prevState
-                                            self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = prevPosition
-                                            appError = AppError(description: "Cannot update position for this region")
-                                            Log.error(err)
-                                            return false
-                                        }
-                                        
-                                        audioManager.setCurrentPosition(position: 0)
-                                        audioManager.scheduleMusic()
-                                        muteAudios()
-                                        soloAudios()
+                            if self.layoutInfo.lane[lane.rawValue]!.layout[idx].state != .New {
+                                if let music = self.audioManager.currentMusic {
+                                    let _pos = self.layoutInfo.lane[lane.rawValue]!.layout[idx].x
+                                    let _len = self.layoutInfo.lane[lane.rawValue]!.layout[idx].w
+                                    let err = music.update(for: region.id, position: _pos, length: _len)
+                                    if let err = err {
+                                        self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = prevState
+                                        self.layoutInfo.lane[lane.rawValue]!.layout[idx].x = prevPosition
+                                        appError = AppError(description: "Cannot update position for this region")
+                                        Logger.error(err)
+                                        return false
                                     }
+                                    
+                                    audioManager.setCurrentPosition(position: 0)
+                                    audioManager.scheduleMusic()
+                                    muteAudios()
+                                    soloAudios()
                                 }
                             }
                         }
+                        
                         if resetLastLayout {
                             lastLayout = nil
                         }
+                        
                         return true
                     }
                 }
@@ -366,7 +368,7 @@ class MashupViewModel: ObservableObject {
                 for (idx, region) in lanes.layout.enumerated() {
                     if region.id == regionId {
                         self.layoutInfo.lane[lane.rawValue]!.layout[idx].state = state
-                        Log.debug("region \(regionId) reset")
+                        Logger.debug("region \(regionId) reset")
                     }
                 }
             }
@@ -475,7 +477,7 @@ class MashupViewModel: ObservableObject {
         
         generateMashup(uuid: uuid, lastSessionId: nil, addToHistory: false) {
             guard let music = self.audioManager.currentMusic else {
-                Log.error("No Music available")
+                Logger.error("No Music available")
                 return
             }
             
@@ -518,7 +520,7 @@ class MashupViewModel: ObservableObject {
             self.layoutInfo = try JSONDecoder().decode(Layout.self, from: data)
         } catch let e {
             self.appError = AppError(description: e.localizedDescription)
-            Log.error(e)
+            Logger.error(e)
             return false
         }
         
@@ -600,7 +602,7 @@ class MashupViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.appError = AppError(description: err.localizedDescription)
                 }
-                Log.error(err)
+                Logger.error(err)
             }
             
             if let layout = layout {
@@ -609,7 +611,7 @@ class MashupViewModel: ObservableObject {
                     self.updateRegionState(.Ready)
                 }
             } else {
-                Log.warn("Layout is nil")
+                Logger.warn("Layout is nil")
             }
             
             DispatchQueue.main.async {
@@ -624,7 +626,7 @@ class MashupViewModel: ObservableObject {
                     }
                     
 
-                    Log.debug("adding to history")
+                    Logger.debug("adding to history")
                     userInfoVM.add(history: history)
                 }
             }

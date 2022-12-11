@@ -34,13 +34,18 @@ class BackendManager: ObservableObject {
         NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId, "email": email])) { completion in
             switch completion {
             case .failure(let e):
-                Log.error(e)
+                Logger.error(e)
                 onCompletion(e)
             case .finished:
                 break
             }
         } completion: { (response:Dictionary<String, String>?) in
-            if let taskId = response?["task_id"] {
+            guard let response = response else {
+                onCompletion(BackendError.ResponseEmpty)
+                return
+            }
+            
+            if let taskId = response["task_id"] {
                 self.isDownloading = true
                 if self.downloadStatus[songId] == nil {
                     self.downloadStatus[songId] = TaskStatus.Status(progress: 5, description: "Waiting in queue")
@@ -56,7 +61,7 @@ class BackendManager: ObservableObject {
                     }
                 }
             } else {
-                onCompletion(NSError(domain: "taskid or response is nil", code: 120))
+                onCompletion(BackendError.TaskIdEmpty)
             }
         }
     }
@@ -67,7 +72,7 @@ class BackendManager: ObservableObject {
         NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["url" : songId, "email": email])) { completion in
             switch completion {
             case .failure(let e):
-                Log.error(e)
+                Logger.error(e)
                 onCompletion(e)
             case .finished:
                 break
@@ -87,17 +92,17 @@ class BackendManager: ObservableObject {
         URLSession.shared.dataTask(with: request) {data, response, err in
             guard let data = data, err == nil else {
                 if let err = err {
-                    Log.error(err)
+                    Logger.error(err)
                     if err._code == -1001 {
                         if tryNum < 100 {
-                            Log.warn("Request timeout: trying again...")
+                            Logger.warn("Request timeout: trying again...")
                             self.fetchRegion(regionId: regionId, tryNum: tryNum + 1, completion: completion)
                             return
                         }
                     }
                     
                     DispatchQueue.main.async {
-                        Log.error(err)
+                        Logger.error(err)
                         completion(nil, err)
                         return
                     }
@@ -110,10 +115,10 @@ class BackendManager: ObservableObject {
                 if data.valid {
                     completion(data, nil)
                 } else {
-                    Log.debug("try num: \(tryNum)")
+                    Logger.debug("try num: \(tryNum)")
                     if tryNum >= 50 {
-                        Log.critical("Region fetch failed with region id \(regionId)")
-                        completion(nil, NSError(domain: "RegionFetchFailed", code: 543))
+                        Logger.critical("Region fetch failed with region id \(regionId)")
+                        completion(nil, BackendError.RegionDownloadError(regionId))
                     } else {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                             let num = self.isDownloading ? tryNum : tryNum + 1
@@ -126,8 +131,8 @@ class BackendManager: ObservableObject {
                     if tryNum < 3 {
                         self.fetchRegion(regionId: regionId, tryNum: tryNum + 1, completion: completion)  //  Recursive call
                     } else {
-                        Log.error(e)
-                        completion(nil, NSError(domain: "The region cannot be downloaded.", code: 152))
+                        Logger.error(e)
+                        completion(nil, BackendError.RegionDownloadError(regionId))
                     }
                 }
             }
@@ -139,7 +144,7 @@ class BackendManager: ObservableObject {
         for regionId in regionIds {
             fetchRegion(regionId: regionId) { data, err in
                 if let err = err {
-                    Log.error(err)
+                    Logger.error(err)
                     completion(err)
                     return
                 }
@@ -155,7 +160,7 @@ class BackendManager: ObservableObject {
                     statusCallback(data)
                 }
                 
-                Log.info("Num regions fetched: \(self.numRegionsFetched), out of \(regionIds.count)")
+                Logger.info("Num regions fetched: \(self.numRegionsFetched), out of \(regionIds.count)")
                 
                 var temp = 0
                 self.fetchRegionsQueue.sync {
@@ -185,17 +190,17 @@ class BackendManager: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
                 if let err = err {
-                    Log.error(err)
+                    Logger.error(err)
                     if err._code == -1001 {
                         if tryNum < 100 {
-                            Log.warn("Request timeout: trying again...")
+                            Logger.warn("Request timeout: trying again...")
                             self.updateStatus(taskId: taskId, status: status, tryNum: tryNum + 1, statusCallback: statusCallback, completion: completion)
                             return
                         }
                     }
                     
                     DispatchQueue.main.async {
-                        Log.error(err)
+                        Logger.error(err)
                         completion(nil, err)
                         return
                     }
@@ -228,7 +233,7 @@ class BackendManager: ObservableObject {
                         }
                     case .Failure:
                         DispatchQueue.main.async {
-                            completion(nil, NSError(domain: "This song cannot be downloaded. Please choose a different song or version", code: 151))
+                            completion(nil, BackendError.SongDownloadError)
                         }
                         return
                     }
@@ -238,8 +243,8 @@ class BackendManager: ObservableObject {
                     if tryNum < 3 {
                         self.updateStatus(taskId: taskId, status: status, tryNum: tryNum + 1, statusCallback: statusCallback, completion: completion)  //  Recursive call
                     } else {
-                        Log.error(e)
-                        completion(nil, NSError(domain: "This song cannot be downloaded. Please choose a different song or version", code: 151))
+                        Logger.error(e)
+                        completion(nil, BackendError.SongDownloadError)
                     }
                 }
             }
@@ -264,7 +269,7 @@ class BackendManager: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let _ = data, err == nil else {
-                Log.error(err)
+                Logger.error(err)
                 self.isGenerating = false
                 onCompletion(nil, err)
                 return
@@ -275,10 +280,10 @@ class BackendManager: ObservableObject {
             }
             
             self.updateRegionData(regionIds: regionIds) { mbData in
-                Log.debug("fetched: \(mbData.id)")
+                Logger.debug("fetched: \(mbData.id)")
                 
                 guard let audioData = Data(base64Encoded: mbData.snd) else {
-                    onCompletion(nil, NSError(domain: "Audio data cannot be decoded", code: 110))
+                    onCompletion(nil, BackendError.DecodingError)
                     return
                 }
                 
@@ -287,7 +292,7 @@ class BackendManager: ObservableObject {
                 if let tempFile = tempFile {
                     statusCallback(Audio(file: tempFile, position: mbData.position, tempo: mbData.tempo))
                 } else {
-                    onCompletion(nil, NSError(domain: "Unable to save audio", code: 111))
+                    onCompletion(nil, BackendError.WriteToFileError)
                 }
             } completion: { err in
                 DispatchQueue.main.async {
@@ -324,7 +329,7 @@ class BackendManager: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let data = data, err == nil else {
-                Log.error(err)
+                Logger.error(err)
                 onCompletion(nil, err)
                 return
             }
@@ -332,7 +337,7 @@ class BackendManager: ObservableObject {
             do {
                 let result = try JSONDecoder().decode(TaskResult.self, from: data)
                 guard let audioData = Data(base64Encoded: result.task_result.snd) else {
-                    onCompletion(nil, NSError(domain: "Audio data cannot be decoded", code: 110))
+                    onCompletion(nil, BackendError.DecodingError)
                     return
                 }
                 
@@ -345,14 +350,14 @@ class BackendManager: ObservableObject {
                         onCompletion(Audio(file: tempFile, position: 0, sampleRate: 44100), nil)
                     }
                 } else {
-                    onCompletion(nil, NSError(domain: "Unable to save audio", code: 111))
+                    onCompletion(nil, BackendError.WriteToFileError)
                 }
             } catch let e {
                 DispatchQueue.main.async {
                     if tryNum < 3 {
                         self.fetchMashup(uuid: uuid, tryNum: tryNum + 1, onCompletion: onCompletion)  //  Recursive call
                     } else {
-                        Log.error(e)
+                        Logger.error(e)
                         onCompletion(nil, e)
                     }
                 }

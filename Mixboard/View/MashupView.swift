@@ -132,11 +132,13 @@ struct HomeView: View {
                                     mashupVM.appFailed = true
                                 } else {
                                     mashupVM.appError = AppError(description: err.localizedDescription)
-                                    Log.error(err)
+                                    Logger.error(err)
                                 }
                                 
                             }
                         })
+                    } else {
+                        Logger.trace("Not logged in")
                     }
                     mashupVM.userLibCardWidth = 0.22 * geo.size.width
                 }

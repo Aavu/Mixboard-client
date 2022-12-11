@@ -40,7 +40,7 @@ class SpotifyViewModel: ObservableObject {
             }
         }
         
-        Log.info("\(songId) not in the fetched spotify track list. Fetching from API")
+        Logger.info("\(songId) not in the fetched spotify track list. Fetching from API")
         // If the chosen song is not part of the recommendation.
         // This happens when the user cancels search after selecting a song from the searched song list
         SpotifyManager.shared.getSong(songId: songId, completion: completion)

@@ -12,6 +12,7 @@ class DatabaseManager: ObservableObject {
     static var shared = DatabaseManager()
     
     private var historyRef: CollectionReference?
+    private var logsRef: CollectionReference?
     private var spotifyRef: DocumentReference = Firestore.firestore().collection("spotify").document("credentials")
     private var userRef: DocumentReference?
     private var userId: String?
@@ -29,13 +30,14 @@ class DatabaseManager: ObservableObject {
                 }
                 
                 self.historyRef = userRef.collection("history")
+                self.logsRef = userRef.collection("logs")
                 if let completion = completion {
                     completion(nil)
                 }
             }
         } else {
             if let completion = completion {
-                completion(NSError(domain: "userRef is nil", code: 350))
+                completion(DatabaseError.UserReferenceEmpty)
             }
         }
     }
@@ -71,7 +73,7 @@ class DatabaseManager: ObservableObject {
     func getSpotifyClient(completion: @escaping (Spotify.ClientIdSecret) -> ()) {
         spotifyRef.addSnapshotListener({ snapshot, err in
             if let err = err {
-                Log.error(err)
+                Logger.error(err)
                 return
             }
             
@@ -80,10 +82,10 @@ class DatabaseManager: ObservableObject {
                     let client = try snapshot.data(as: Spotify.ClientIdSecret.self)
                     completion(client)
                 } catch (let e) {
-                    Log.error(e)
+                    Logger.error(e)
                 }
             } else {
-                Log.error("snapshot is nil")
+                Logger.error("snapshot is nil")
             }
         })
 
@@ -100,8 +102,8 @@ class DatabaseManager: ObservableObject {
                 completion(err)
             }
         } else {
-            Log.error("userRef is nil for id: \(String(describing: userId))")
-            completion(NSError(domain: "userRef is nil", code: 350))
+            Logger.error("userRef is nil for id: \(String(describing: userId))")
+            completion(DatabaseError.UserReferenceEmpty)
         }
     }
     
@@ -128,15 +130,15 @@ class DatabaseManager: ObservableObject {
                     completion(cred, nil)
                     return
                 } catch (let e) {
-                    Log.error(e)
+                    Logger.error(e)
                     completion(nil, e)
                     return
                 }
                 
             }
         } else {
-            Log.error("userRef is nil for id: \(String(describing: userId))")
-            completion(nil, NSError(domain: "userRef is nil", code: 350))
+            Logger.error("userRef is nil for id: \(String(describing: userId))")
+            completion(nil, DatabaseError.UserReferenceEmpty)
         }
     }
     
@@ -144,8 +146,8 @@ class DatabaseManager: ObservableObject {
         if let userRef = userRef {
             userRef.updateData(["spotifyAuthCode": code], completion: completion)
         } else {
-            Log.error("userRef is nil for id: \(String(describing: userId))")
-            completion(NSError(domain: "userRef is nil", code: 350))
+            Logger.error("userRef is nil for id: \(String(describing: userId))")
+            completion(DatabaseError.UserReferenceEmpty)
         }
     }
     
@@ -167,7 +169,7 @@ class DatabaseManager: ObservableObject {
                 let _ = try historyRef?.document(uuid).setData(from: history)
             }
         } catch (let err) {
-            Log.error(err)
+            Logger.error(err)
         }
     }
     
@@ -181,7 +183,7 @@ class DatabaseManager: ObservableObject {
         if let historyRef = historyRef {
             historyRef.addSnapshotListener({ snapshot, err in
                 if let err = err {
-                    Log.error(err)
+                    Logger.error(err)
                     completion([])
                     return
                 }
@@ -199,7 +201,7 @@ class DatabaseManager: ObservableObject {
                             }
                             return history
                         } catch (let e) {
-                            Log.error(e)
+                            Logger.error(e)
                         }
                         
                         return nil
@@ -207,13 +209,17 @@ class DatabaseManager: ObservableObject {
                     
                     completion(histories)
                 } else {
-                    Log.error("snapshot is nil")
+                    Logger.error("snapshot is nil")
                     completion([])
                 }
             })
         } else {
-            Log.error("History ref is nil")
+            Logger.error("History ref is nil")
             completion([])
         }
+    }
+    
+    func saveLogsToDatabase(shouldClear: Bool = true) {
+        logsRef?.addDocument(data: [Date.now.formatted() : Logger.getLogs(shouldClear: shouldClear)])
     }
 }

@@ -34,7 +34,7 @@ class AudioManager: ObservableObject {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback)
         } catch {
-            Log.error("Unable to set audio category")
+            Logger.error("Unable to set audio category")
         }
     }
     
@@ -42,7 +42,7 @@ class AudioManager: ObservableObject {
     private var totalBeats:Int = 32 {
         didSet {
             timelineLengthSamples = MBMusic.getInSamples(value: totalBeats, sampleRate: sampleRate, tempo: tempo)
-            Log.debug("totalBeats: \(totalBeats)")
+            Logger.debug("totalBeats: \(totalBeats)")
         }
     }
     
@@ -50,8 +50,9 @@ class AudioManager: ObservableObject {
     
     @Published var tempo: Double = 120 {
         didSet {
+            currentMusic?.set(tempo: tempo)
             timelineLengthSamples = MBMusic.getInSamples(value: totalBeats, sampleRate: sampleRate, tempo: tempo)
-            Log.debug("tempo: \(tempo)")
+            Logger.debug("tempo: \(tempo)")
         }
     }
     
@@ -71,7 +72,7 @@ class AudioManager: ObservableObject {
     
     func playOrPause() {
         if needsFilesScheduled {
-            Log.debug("Not ready to play")
+            Logger.debug("Not ready to play")
             return
         }
         
@@ -89,7 +90,7 @@ class AudioManager: ObservableObject {
         
         let success = configEngine()
         if !success {
-            Log.critical("Unable to configure engine.")
+            Logger.critical("Unable to configure engine.")
             return
         }
         setCurrentPosition(position: 0) // Also schedules music
@@ -169,7 +170,7 @@ class AudioManager: ObservableObject {
         if isPlaying {
             DispatchQueue.main.async {
                 self.stop()
-                Log.debug("playback complete")
+                Logger.debug("playback complete")
                 self.setCurrentPosition(position: 0)
                 self.scheduleMusic() // prep for next playback
             }
@@ -179,23 +180,25 @@ class AudioManager: ObservableObject {
     
     func scheduleMusic(at position: AVAudioFramePosition? = nil) {
         guard let music = self.currentMusic else {
-            Log.debug("Current Music is nil. Not scheduling")
+            Logger.debug("Current Music is nil. Not scheduling")
             return
         }
         
-        let position = position ?? currentPosition
-        currentPosition = position
+        let _pos = position ?? currentPosition
+        currentPosition = _pos
         
         stop()
         
-        if audioLengthSamples > AVAudioFrameCount(position) {
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: .init(standardFormatWithSampleRate: sampleRate, channels: 1)!, frameCapacity: AVAudioFrameCount(audioLengthSamples - position)) else { return }
-            let _time = AVAudioTime(sampleTime: position, atRate: sampleRate)
-            currentSilentBufferPosition = position
+        Logger.trace("Current position: \(currentPosition), tempo: \(tempo)")
+        
+        if audioLengthSamples > AVAudioFrameCount(currentPosition) {
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: .init(standardFormatWithSampleRate: sampleRate, channels: 1)!, frameCapacity: AVAudioFrameCount(audioLengthSamples - currentPosition)) else { return }
+            let _time = AVAudioTime(sampleTime: currentPosition, atRate: sampleRate)
+            currentSilentBufferPosition = currentPosition
             silencePlayer.scheduleBuffer(buffer, at: _time)
             silencePlayer.prepare(withFrameCount: buffer.frameLength)
         } else {
-            Log.debug("illegal capacity: \(position), \(audioLengthSamples)")
+            Logger.debug("illegal capacity: \(currentPosition), \(audioLengthSamples)")
             return
         }
         
@@ -205,21 +208,22 @@ class AudioManager: ObservableObject {
                     let file = try AVAudioFile(forReading: audio.file)
                     let fmt = file.processingFormat
                     sampleRate = fmt.sampleRate
-                    let diffTime = audio.position - position
+                    let diffTime = audio.position - currentPosition
+                    Logger.trace("audio position for \(id): \(audio.position), diff time: \(diffTime), file length: \(file.length)")
                     if diffTime >= 0 {  // Region is in the future
                         let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
                         player.scheduleFile(file, at: _time)
                         player.prepare(withFrameCount: AVAudioFrameCount(file.length))
                     } else {
-                        if position < audio.position + file.length {  // Region under playhead
-                            let startingFrame = AVAudioFramePosition(position - audio.position)
+                        if currentPosition < audio.position + file.length {  // Region under playhead
+                            let startingFrame = AVAudioFramePosition(currentPosition - audio.position)
                             let frameCount = AVAudioFrameCount(file.length - startingFrame)
                             player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
                             player.prepare(withFrameCount: frameCount)
                         }
                     }
                 } catch (let e) {
-                    Log.error(e)
+                    Logger.error(e)
                     return
                 }
             }
@@ -263,7 +267,7 @@ class AudioManager: ObservableObject {
             try engine.start()
             return true
         } catch {
-            Log.critical("Error starting the player: \(error.localizedDescription)")
+            Logger.critical("Unable to start player: \(error)")
             return false
         }
     }

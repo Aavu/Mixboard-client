@@ -33,7 +33,7 @@ class LoginViewModel: ObservableObject {
     func handleSignInWithAppleCompletion(result: Result<ASAuthorization, Error>, email: String, passwd: String, shouldLink: Bool, completion: @escaping (User?, Error?) -> ()) {
         switch result {
         case .failure(let err):
-            Log.error("Auth failure: \(err)")
+            Logger.error("Auth failure: \(err)")
             
         case .success(let auth):
             switch auth.credential {
@@ -43,12 +43,12 @@ class LoginViewModel: ObservableObject {
                 }
                 
                 guard let token = cred.identityToken else {
-                    Log.error("Cannot get identity token")
+                    Logger.error("Cannot get identity token")
                     return
                 }
                 
                 guard let tokenString = String(data: token, encoding: .utf8) else {
-                    Log.error("Cannot Serialize identity token. \(token.debugDescription)")
+                    Logger.error("Cannot Serialize identity token. \(token.debugDescription)")
                     return
                 }
                 

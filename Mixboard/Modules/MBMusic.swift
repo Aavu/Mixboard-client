@@ -9,19 +9,16 @@ import Foundation
 import AVFoundation
 
 class MBMusic: Equatable {
-    enum SetValueError {
-        case Success
-        case AudioNotFound
-        case ValueNotUpdated
-        case IllegalArgument
-    }
-    
     var audios = [String: Audio]()
-    var tempo: Double
+    var tempo: Double = 120
     
     init(audios: [String: Audio]? = nil, tempo: Double? = nil) {
+        Logger.trace("init music")
         self.audios = audios ?? [String : Audio]()
-        self.tempo = tempo ?? 120.0
+        
+        if let tempo = tempo {
+            set(tempo: tempo)
+        }
     }
     
     func getNumAudio() -> Int {
@@ -29,15 +26,18 @@ class MBMusic: Equatable {
     }
     
     func add(audio: Audio) {
+        Logger.debug("Adding audio with id: \(audio.getId())")
         audios[audio.getId()] = audio
-        tempo = audio.tempo
+        set(tempo: audio.tempo)
     }
     
     func remove(audio: Audio) {
+        Logger.debug("Removing audio with id: \(audio.getId())")
         audios[audio.getId()] = nil
     }
     
     func remove(id: UUID) {
+        Logger.debug("Removing audio with id: \(id)")
         audios[id.uuidString] = nil
     }
     
@@ -59,42 +59,46 @@ class MBMusic: Equatable {
         return temp
     }
     
-    func setTempo(_ tempo: Double) {
+    func set(tempo: Double) {
         self.tempo = tempo
+        Logger.trace("tempo: \(self.tempo)")
     }
     
-    func update(for audioId: UUID, position: Int? = nil, length: Int? = nil) -> SetValueError {
-        if position == nil && length == nil { return .IllegalArgument }
+    func update(for audioId: UUID, position: Int? = nil, length: Int? = nil) -> Error? {
+        if position == nil && length == nil { return SetValueError.IllegalArgument }
         
-        var updated: SetValueError = .AudioNotFound
+        var err: Error? = SetValueError.AudioNotFound
         
         for (id, audio) in audios {
             if id == audioId.uuidString {
                 var tempPos = audio.position
-                let tempLen = audio.length
+                var tempLen = audio.length
                 
                 if let position = position {
-                    let pos = MBMusic.getInSamples(value: position, sampleRate: audio.sampleRate, tempo: audio.tempo)
+                    let pos = MBMusic.getInSamples(value: position, sampleRate: audio.sampleRate, tempo: tempo)
                     remove(audio: audio)
-                    add(audio: Audio(file: audio.file, position: pos, length: tempLen))
+                    add(audio: Audio(file: audio.file, position: pos, length: tempLen, tempo: tempo))
                     tempPos = pos
-                    updated = .Success
+                    err = nil
                 }
                 
                 if let length = length {
-                    let len = MBMusic.getInSamples(value: length, sampleRate: audio.sampleRate, tempo: audio.tempo)
+                    let len = MBMusic.getInSamples(value: length, sampleRate: audio.sampleRate, tempo: tempo)
                     remove(audio: audio)
-                    add(audio: Audio(file: audio.file, position: tempPos, length: len))
-                    updated = .Success
+                    add(audio: Audio(file: audio.file, position: tempPos, length: len, tempo: tempo))
+                    tempLen = len
+                    err = nil
                 }
                 
-                if updated == .Success {
-                    return updated
+                if err == nil {
+                    Logger.trace("x: \(tempPos), length: \(tempLen ?? 0), tempo: \(tempo)")
                 }
+                
+                return err
             }
         }
         
-        return updated
+        return err
     }
     
     

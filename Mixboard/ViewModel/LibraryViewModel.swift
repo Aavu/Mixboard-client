@@ -91,7 +91,7 @@ class LibraryViewModel: ObservableObject {
     func loadExampleData() -> Bool {
         guard let url = Bundle.main.url(forResource: "libraryExample", withExtension: "json")
         else {
-            Log.critical("Json file not found")
+            Logger.critical("Json file not found")
             return false
         }
         
@@ -99,7 +99,7 @@ class LibraryViewModel: ObservableObject {
             let data = try Data(contentsOf: url)
             self.library = try JSONDecoder().decode(Library.self, from: data)
         } catch let e {
-            Log.error(e)
+            Logger.error(e)
             return false
         }
         return true

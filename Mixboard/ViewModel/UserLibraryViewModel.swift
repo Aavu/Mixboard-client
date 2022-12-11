@@ -81,7 +81,7 @@ class UserLibraryViewModel: ObservableObject {
     // TODO: Add songsource so that it doesnt call spotify api even if the song is in local library
     func addSong(songId: String, songSource: SongSource = .Library) {
         if isSongInUserLibrary(songId: songId) {
-            Log.info("Song already in library")
+            Logger.info("Song already in library")
             return
         }
         
@@ -90,7 +90,7 @@ class UserLibraryViewModel: ObservableObject {
         
         BackendManager.shared.addSong(songId: songId) { err in
             if let err = err {
-                Log.error(err)
+                Logger.error(err)
                 self.appError = AppError(description: err.localizedDescription)
                 return
             }
@@ -101,13 +101,13 @@ class UserLibraryViewModel: ObservableObject {
                     self.isSelected[songId] = nil
                 } else {
                     self.removeSong(songId: songId) { err in
-                        Log.error(err)
+                        Logger.error(err)
                     }
                 }
             } else {
                 self.spotifyVM?.getSpotifySong(songId: songId, completion: {spotifyTrack in
                     guard let spotifyTrack = spotifyTrack else {
-                        Log.error("spotify track empty for id : \(songId)")
+                        Logger.error("spotify track empty for id : \(songId)")
                         return
                     }
                     
@@ -163,7 +163,7 @@ class UserLibraryViewModel: ObservableObject {
     @discardableResult func addSongFromLib(songId: String) -> Bool {
         if let song = lib?.getSong(songId: songId) {
             if !isSongInUserLibrary(songId: songId) {
-                Log.info("Adding \(song.name ?? "song") to library")
+                Logger.info("Adding \(song.name ?? "song") to library")
                 if self.replaceDummy(song: song) {
                     return true
                 }
@@ -220,7 +220,7 @@ class UserLibraryViewModel: ObservableObject {
         guard let lib = self.lib else { return }
         
         if let canRemove = canRemoveSong[songId], !canRemove {
-            completion(NSError(domain: "SongStillDownloadingError", code: 600))
+            completion(MBError.SongStillDownloading)
             return
         }
         
@@ -228,7 +228,7 @@ class UserLibraryViewModel: ObservableObject {
             lib.update(didUpdate: { err in
                 if let err = err {
                     self.appError = AppError(description: err.localizedDescription)
-                    Log.error(err)
+                    Logger.error(err)
                     return
                 }
                 
@@ -239,7 +239,7 @@ class UserLibraryViewModel: ObservableObject {
                     } else {
                         if song.placeholder {
                             if let complete = complete {
-                                complete(NSError(domain: "Place holder song cannot be removed.", code: 533))
+                                complete(MBError.RemoveError)
                                 temp.append(song)
                             }
                         }
@@ -256,7 +256,7 @@ class UserLibraryViewModel: ObservableObject {
         if notifyServer {
             BackendManager.shared.removeSong(songId: songId) { err in
                 if let err = err {
-                    Log.error(err)
+                    Logger.error(err)
                     self.appError = AppError(description: err.localizedDescription)
                     return
                 }

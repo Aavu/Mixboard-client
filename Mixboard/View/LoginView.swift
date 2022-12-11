@@ -129,7 +129,7 @@ struct LoginView: View {
                     } onCompletion: { result in
                         loginVM.handleSignInWithAppleCompletion(result: result, email: email, passwd: password, shouldLink: shouldLinkAccounts) { user, err in
                             if let err = err {
-                                Log.error(err)
+                                Logger.error(err)
                                 return
                             }
                             
@@ -139,7 +139,7 @@ struct LoginView: View {
                                 mashupVM.loggedIn = true
                                 mashupVM.createNewSession()
                             } else {
-                                Log.error("Unable to get email")
+                                Logger.error("Unable to get email")
                                 return
                             }
                         }
@@ -163,7 +163,7 @@ struct LoginView: View {
                     
                     FirebaseManager.createUser(email: email, passwd: password) {user, err in
                         if let err = err {
-                            Log.error(err)
+                            Logger.error(err)
                             
                             let nsErr = err as NSError
                             if nsErr.code == 17094 || nsErr.code == 17007 {
@@ -210,7 +210,7 @@ struct LoginView: View {
         } else {
             FirebaseManager.signInWithEmail(email: email, password: password) { user, err in
                 if let err = err {
-                    Log.error(err)
+                    Logger.error(err)
                     
                     let nsErr = err as NSError
                     if nsErr.code == 17009 {
@@ -222,7 +222,7 @@ struct LoginView: View {
                 }
                 
                 guard let _email = user?.email else {
-                    Log.error("Email is empty")
+                    Logger.error("Email is empty")
                     mashupVM.appError = AppError(description: "Email is empty")
                     return
                 }

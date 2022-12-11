@@ -59,17 +59,17 @@ class NetworkManager {
     
     static func handleURLResponse(output: URLSession.DataTaskPublisher.Output) throws -> Data {
         guard let response = output.response as? HTTPURLResponse else {
-            Log.debug(output.response)
+            Logger.debug(output.response)
             throw URLError(.badServerResponse)
         }
         
         if response.statusCode == 401 {
-            Log.debug(output.response)
+            Logger.debug(output.response)
             throw URLError(.userAuthenticationRequired)
         }
         
         if response.statusCode < 200 || response.statusCode >= 300 {
-            Log.debug(output.response)
+            Logger.debug(output.response)
             throw URLError(.badServerResponse)
         }
         
@@ -81,8 +81,8 @@ class NetworkManager {
         case .finished:
             break
         case .failure(let e):
-            Log.error(e)
-            Log.debug(Thread.callStackSymbols)
+            Logger.error(e)
+            Logger.debug(Thread.callStackSymbols)
         }
     }
     

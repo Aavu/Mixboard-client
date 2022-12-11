@@ -25,7 +25,7 @@ struct Audio: Equatable, Hashable, Transferable, Codable {
                 let f = try AVAudioFile(forReading: received.file)
                 return self.init(file: received.file, position: 0, length: f.length, sampleRate: f.processingFormat.sampleRate)
             } catch {
-                Log.error(error)
+                Logger.error(error)
             }
             return self.init(file: received.file)
         }
