@@ -64,6 +64,7 @@ class AudioManager: ObservableObject {
         let temp = MBMusic.getInSamples(value: lengthInBars, sampleRate: sampleRate, tempo: tempo)
         needsFilesScheduled = temp != audioLengthSamples
         audioLengthSamples = temp
+        Logger.trace("length in samples: \(audioLengthSamples), tempo: \(tempo)")
     }
     
     func getMashupLength() -> AVAudioFramePosition {
@@ -205,19 +206,24 @@ class AudioManager: ObservableObject {
         for (id, audio) in music.audios {
             if let player = players[id] {
                 do {
+                    guard let len = audio.length else {
+                        Logger.error("audio (\(id)) does not have length set")
+                        continue
+                    }
+                    
                     let file = try AVAudioFile(forReading: audio.file)
                     let fmt = file.processingFormat
                     sampleRate = fmt.sampleRate
                     let diffTime = audio.position - currentPosition
-                    Logger.trace("audio position for \(id): \(audio.position), diff time: \(diffTime), file length: \(file.length)")
+                    Logger.trace("audio position for \(id): \(audio.position), diff time: \(diffTime), file length: \(file.length), audio length: \(len)")
                     if diffTime >= 0 {  // Region is in the future
                         let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
-                        player.scheduleFile(file, at: _time)
-                        player.prepare(withFrameCount: AVAudioFrameCount(file.length))
+                        player.scheduleSegment(file, startingFrame: 0, frameCount: AVAudioFrameCount(len), at: _time)
+                        player.prepare(withFrameCount: AVAudioFrameCount(len))
                     } else {
-                        if currentPosition < audio.position + file.length {  // Region under playhead
+                        if currentPosition < audio.position + len {  // Region under playhead
                             let startingFrame = AVAudioFramePosition(currentPosition - audio.position)
-                            let frameCount = AVAudioFrameCount(file.length - startingFrame)
+                            let frameCount = AVAudioFrameCount(len - startingFrame)
                             player.scheduleSegment(file, startingFrame: startingFrame, frameCount: frameCount, at: nil)
                             player.prepare(withFrameCount: frameCount)
                         }

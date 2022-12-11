@@ -11,22 +11,32 @@ import AVFoundation
 
 struct Audio: Equatable, Hashable, Transferable, Codable {
     let file: URL
-    var position: AVAudioFramePosition = 0
+    var position: AVAudioFramePosition
     var length: AVAudioFramePosition?
-    var sampleRate: Double = 44100
+    var sampleRate: Double
     
-    var tempo: Double = 120
+    var tempo: Double
+    
+    init(file: URL, position: AVAudioFramePosition = 0, length: AVAudioFramePosition? = nil, sampleRate: Double = 44100, tempo: Double = 120) {
+        self.file = file
+        self.position = position
+        self.length = length
+        if length == nil {
+            do {
+                let f = try AVAudioFile(forReading: file)
+                self.length = f.length
+            } catch {
+                Logger.error(error)
+            }
+        }
+        self.sampleRate = sampleRate
+        self.tempo = tempo
+    }
     
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(contentType: .audio) {
             SentTransferredFile($0.file)
         } importing: { received in
-            do {
-                let f = try AVAudioFile(forReading: received.file)
-                return self.init(file: received.file, position: 0, length: f.length, sampleRate: f.processingFormat.sampleRate)
-            } catch {
-                Logger.error(error)
-            }
             return self.init(file: received.file)
         }
         

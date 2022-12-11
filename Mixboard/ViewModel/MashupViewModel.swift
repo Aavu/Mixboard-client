@@ -337,6 +337,7 @@ class MashupViewModel: ObservableObject {
                                         return false
                                     }
                                     
+                                    audioManager.setMashupLength(lengthInBars: getLastBeat())
                                     audioManager.setCurrentPosition(position: 0)
                                     audioManager.scheduleMusic()
                                     muteAudios()
