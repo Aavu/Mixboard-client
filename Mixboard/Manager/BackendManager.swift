@@ -227,6 +227,7 @@ class BackendManager: ObservableObject {
             
             do {
                 let resp = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! Dictionary<String, Any>
+                Logger.debug(resp)
                 if let stat = RequestStatus(rawValue: resp["requestStatus"] as! String) {
                     switch stat {
                     case .Progress:
@@ -246,7 +247,12 @@ class BackendManager: ObservableObject {
                         return
                     case .Success:
                         DispatchQueue.main.async {
-                            completion(TaskStatus.Status(progress: 100, description: "Completed!"), nil)
+                            let e_code = resp["task_result"] as! Int
+                            var err: Error? = nil
+                            if e_code == 1 {    // Song mismatch with spotify
+                                err = BackendError.SongDownloadError
+                            }
+                            completion(TaskStatus.Status(progress: 100, description: "Completed!"), err)
                         }
                     case .Failure:
                         DispatchQueue.main.async {

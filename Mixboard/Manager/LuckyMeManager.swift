@@ -78,8 +78,7 @@ class LuckyMeManager {
                     case .Drums:
                         bounds = nsb.other
                     }
-                    
-                    print(bounds)
+
                     for (_, b) in bounds {
                         if b.count > 0 {
                             return true

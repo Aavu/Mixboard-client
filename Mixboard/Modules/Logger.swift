@@ -59,7 +59,9 @@ class Logger {
     private static func handle(level: Level, str: Any?, context: Context) {
         let msg = Log(level: level, context: context, message: str)
         buffer.append(data: msg)
+#if DEBUG
         print(msg)
+#endif
     }
     
     static func clearBuffer() {
@@ -73,50 +75,38 @@ class Logger {
     }
     
     static func trace(_ msg: Any?, file: String = #fileID, fn: String = #function, line: Int = #line, date: Date = .now) {
-#if DEBUG
         if logLevel.rawValue <= Level.trace.rawValue {
             handle(level: .trace, str: msg, context: Context(file: file, function: fn, line: line, date: date))
         }
-#endif
     }
     
     static func debug(_ msg: Any?, file: String = #fileID, fn: String = #function, line: Int = #line, date: Date = .now) {
-#if DEBUG
         if logLevel.rawValue <= Level.debug.rawValue {
             handle(level: .debug, str: msg, context: Context(file: file, function: fn, line: line, date: date))
         }
-#endif
     }
     
     static func info(_ msg: Any?, file: String = #fileID, fn: String = #function, line: Int = #line, date: Date = .now) {
-#if DEBUG
         if logLevel.rawValue <= Level.info.rawValue {
             handle(level: .info, str: msg, context: Context(file: file, function: fn, line: line, date: date))
         }
-#endif
     }
     
     static func warn(_ msg: Any?, file: String = #fileID, fn: String = #function, line: Int = #line, date: Date = .now) {
-#if DEBUG
         if logLevel.rawValue <= Level.warning.rawValue {
             handle(level: .warning, str: msg, context: Context(file: file, function: fn, line: line, date: date))
         }
-#endif
     }
     
     static func error(_ msg: Any?, file: String = #fileID, fn: String = #function, line: Int = #line, date: Date = .now) {
-#if DEBUG
         if logLevel.rawValue <= Level.error.rawValue {
             handle(level: .error, str: msg, context: Context(file: file, function: fn, line: line, date: date))
         }
-#endif
     }
     
     static func critical(_ msg: Any?, file: String = #fileID, fn: String = #function, line: Int = #line, date: Date = .now) {
-#if DEBUG
         if logLevel.rawValue <= Level.critical.rawValue {
             handle(level: .critical, str: msg, context: Context(file: file, function: fn, line: line, date: date))
         }
-#endif
     }
 }

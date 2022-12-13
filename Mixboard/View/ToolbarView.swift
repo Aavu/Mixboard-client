@@ -64,6 +64,7 @@ struct ToolbarView: View {
                 HStack {
                     // MARK: Backward 10 Button
                     Button {
+                        // TODO: Replace hardcoded sample rate
                         audioManager.setCurrentPosition(position: audioManager.currentPosition - (44100 * 10))
                     } label: {
                         Image(systemName: "gobackward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
@@ -86,11 +87,12 @@ struct ToolbarView: View {
                                 .padding(.all, 6)
                         }
                     }
-                    .disabled(mashupVM.isEmpty || backend.isGenerating)
+                    .disabled(mashupVM.isEmpty || backend.isGenerating || backend.isDownloading)
                     .padding(.horizontal, 12)
                     
                     // MARK: Forward 10 Button
                     Button {
+                        // TODO: Replace hardcoded sample rate
                         audioManager.setCurrentPosition(position: audioManager.currentPosition + (44100 * 10))
                     } label: {
                         Image(systemName: "goforward.10").font(.title2).foregroundColor(.AccentColor).opacity(mashupVM.readyToPlay ? 1 : 0.5)
@@ -118,10 +120,10 @@ struct ToolbarView: View {
                 Spacer()
                 
                 Menu {
-                    Button {
-                    } label: {
-                        Text("Share Audio")
-                    }
+//                    Button {
+//                    } label: {
+//                        Text("Share Audio")
+//                    }
                     
                     Button {
                         DatabaseManager.shared.saveLogsToDatabase(shouldClear: true)
@@ -129,13 +131,9 @@ struct ToolbarView: View {
                         Text("Share Logs")
                     }
                 } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 4).frame(width: 120)
-                            .foregroundColor(.BgColor)
-                            .shadow(radius:  4)
-                        Image(systemName: "square.and.arrow.up").renderingMode(.template).foregroundColor(.AccentColor)
-                    }
-                    .padding(.all, 6)
+                    Image(systemName: "square.and.arrow.up").renderingMode(.template).foregroundColor(.AccentColor)
+                        .padding(.trailing, 16)
+                    .padding(.all, 4)
                 }
                 
 //                if let music = audioManager.currentMusic {
