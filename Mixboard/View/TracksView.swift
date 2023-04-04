@@ -94,7 +94,7 @@ struct TracksView: View {
                                                     .onAppear {
                                                         yPos[region.id] = 0
                                                     }
-                                                    .zIndex(mashup.isSelected[region.id] ?? false ? 10 : 0)
+                                                    .zIndex(mashup.isSelected[region.id] ?? false ? 10 : region.zIndex)
                                                     .simultaneousGesture(DragGesture(coordinateSpace: .global)
                                                         .onChanged({ value in
                                                             userLib.unselectAllSongs()

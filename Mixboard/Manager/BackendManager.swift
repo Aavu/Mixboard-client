@@ -362,14 +362,30 @@ class BackendManager: ObservableObject {
                     statusCallback(nil, .WriteToFileError)
                 }
                 
-                
-                if let lanes = newLayout.lane[mbData.lane] {
-                    for (idx, region) in lanes.layout.enumerated() {
-                        if region.id.uuidString == mbData.id {
-                            newLayout.lane[mbData.lane]!.layout[idx].item.bound = Region.Item.Bound(start: mbData.start, end: mbData.end)
-                            break
+                func getId(forLane laneString: String) -> String? {
+                    if laneString == "vocals" {
+                        return "0"
+                    } else if laneString == "other" {
+                        return "1"
+                    } else if laneString == "bass" {
+                        return "2"
+                    } else if laneString == "drums" {
+                        return "3"
+                    }
+                    return nil
+                }
+
+                if let id = getId(forLane: mbData.lane) {
+                    if let lanes = newLayout.lane[id] {
+                        for (idx, region) in lanes.layout.enumerated() {
+                            if region.id.uuidString == mbData.id {
+                                newLayout.lane[id]!.layout[idx].item.bound = Region.Item.Bound(start: mbData.start, end: mbData.end)
+                                break
+                            }
                         }
                     }
+                } else {
+                    Logger.error("unknown string name \(mbData.lane) of lane")
                 }
 
             } completion: {

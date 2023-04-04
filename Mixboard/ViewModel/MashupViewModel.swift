@@ -263,6 +263,7 @@ class MashupViewModel: ObservableObject {
             layoutInfo.lane[lane.rawValue]!.layout.append(region)
             isEmpty = false
             setSelected(uuid: region.id, isSelected: false)
+            setZIndex()
             readyToPlay = false
             lastLayout = nil
             return true
@@ -329,8 +330,6 @@ class MashupViewModel: ObservableObject {
     }
     
     func updateRegion(id: UUID, x: Int, length: Int, resetLastLayout: Bool = true) -> Bool {
-        Logger.trace("x: \(x), length: \(length)")
-        
         for lane in Lane.allCases {
             if let lanes = layoutInfo.lane[lane.rawValue] {
                 for (idx, region) in lanes.layout.enumerated() {
@@ -370,6 +369,8 @@ class MashupViewModel: ObservableObject {
                                 }
                             }
                         }
+                        
+                        setZIndex()
                         
                         if resetLastLayout {
                             lastLayout = nil
@@ -426,9 +427,28 @@ class MashupViewModel: ObservableObject {
                     
                     isEmpty = false
                     setSelected(uuid: region.id, isSelected: false)
+                    setZIndex()
                     readyToPlay = false
                     lastLayout = nil
                     return
+                }
+            }
+        }
+    }
+    
+    func setZIndex() {
+        for lane in Lane.allCases {
+            if let lanes = layoutInfo.lane[lane.rawValue] {
+                var idxOrder = Dictionary<Int, Int>()
+                for (idx, region) in lanes.layout.enumerated() {
+                    idxOrder[region.w] = idx
+                }
+                
+                let sortedW = Array(idxOrder.keys).sorted(by: >)
+                for (zIndex, w) in sortedW.enumerated() {
+                    if let id = idxOrder[w] {
+                        layoutInfo.lane[lane.rawValue]!.layout[id].zIndex = Double(zIndex)
+                    }
                 }
             }
         }

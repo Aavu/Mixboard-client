@@ -59,6 +59,7 @@ struct Region: Hashable, Codable, Identifiable {
     var w: Int
     var h: Float? = nil
     var i: String? = nil
+    var zIndex: Double = 0
     var del: Bool? = nil
     var Class: [String]? = nil
     var item: Item
@@ -72,6 +73,7 @@ struct Region: Hashable, Codable, Identifiable {
         case w              = "w"
         case h              = "h"
         case i              = "i"
+        case zIndex         = "zIndex"
         case del            = "del"
         case Class          = "class"
         case item           = "item"
