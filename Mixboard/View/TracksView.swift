@@ -87,7 +87,7 @@ struct TracksView: View {
                                         LaneView(lane: lane).cornerRadius(2)
                                         if let lanes = mashup.layoutInfo.lane[lane.rawValue] {
                                             ForEach(lanes.layout) { region in
-                                                let song = library.getSong(songId: region.item.id) ?? spotify.getSong(songId: region.item.id)
+                                                let song = userLib.get(songId: region.item.id)
                                                 RegionView(lane: lane, uuid: region.id, song: song, dragType: $dragType, startX: $startX, endX: $endX)
                                                     .frame(width: geo.size.width - mashup.trackLabelWidth)
                                                     .offset(x: mashup.trackLabelWidth / 2, y: yPos[region.id] ?? 0)
@@ -107,15 +107,34 @@ struct TracksView: View {
                                                                 withAnimation(.easeInOut(duration: 0.1)) {
                                                                     yPos[region.id] = value.translation.height
                                                                 }
-
+                                                                
+                                                                if let l = mashup.getLaneForLocation(location: value.location) {
+                                                                    if let song = song {
+                                                                        let hasNSB = userLib.hasNonSilentBoundsFor(song: song, lane: l)
+                                                                        withAnimation {
+                                                                            userLib.silenceOverlayText[song.id] = hasNSB ? nil : "No \(l.getName()) in song"
+                                                                        }
+                                                                    }
+                                                                }
                                                             }
                                                         })
 
                                                         .onEnded({ value in
                                                             dummyRegionView = nil
+                                                            
+                                                            if let song = song {
+                                                                withAnimation {
+                                                                    userLib.silenceOverlayText[song.id] = nil
+                                                                }
+                                                            }
+                                                            
                                                             if let l = mashup.getLaneForLocation(location: value.location) {
                                                                 if l != lane {
-                                                                    mashup.changeLane(regionId: region.id, currentLane: lane, newLane: l)
+                                                                    if let song = song {
+                                                                        if userLib.hasNonSilentBoundsFor(song: song, lane: l) {
+                                                                            mashup.changeLane(regionId: region.id, currentLane: lane, newLane: l)
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                             yPos[region.id] = 0
@@ -257,6 +276,7 @@ struct RegionView: View {
     
     @State var lastStartX: CGFloat = 0
     @State var lastEndX: CGFloat = 0
+    @State var lastWidth: CGFloat = 0
 
     let pad:CGFloat = 1
     
@@ -299,13 +319,12 @@ struct RegionView: View {
                         .onChanged({ value in
                             userLib.unselectAllSongs()
                             dragType = .horizontal
-                            let tempStartX = lastStartX + value.translation.width
-                            let tempEndX = lastEndX + value.translation.width
-                            if tempStartX >= 0 && tempEndX < geometry.size.width {
-                                withAnimation(.easeInOut(duration: 0.1)) {
-                                    startX[uuid] = round(tempStartX / conversion) * conversion
-                                    endX[uuid] = round(tempEndX / conversion) * conversion
-                                }
+                            let tempStartX = min(max(0, lastStartX + value.translation.width), geometry.size.width - lastWidth)
+                            let tempEndX = min(geometry.size.width, tempStartX + lastWidth)
+                            
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                startX[uuid] = round(tempStartX / conversion) * conversion
+                                endX[uuid] = round(tempEndX / conversion) * conversion
                             }
                             
                         })
@@ -399,7 +418,7 @@ struct RegionView: View {
                         
                         Button {
                             withAnimation(.easeInOut(duration: 0.1)) {
-                                mashup.removeRegion(lane: lane, id: uuid)
+                                let _ = mashup.removeRegion(lane: lane, id: uuid)
                             }
                         } label: {
                             ZStack {
@@ -432,6 +451,7 @@ struct RegionView: View {
             
             lastStartX = startX[uuid]!
             lastEndX = endX[uuid]!
+            lastWidth = lastEndX - lastStartX
         }
     }
     
@@ -445,6 +465,7 @@ struct RegionView: View {
             endX[uuid] = CGFloat(length + tempx) * conversion
             lastStartX = startX[uuid]!
             lastEndX = endX[uuid]!
+            lastWidth = lastEndX - lastStartX
         } else {
             startX[uuid] = lastStartX
             endX[uuid] = lastEndX

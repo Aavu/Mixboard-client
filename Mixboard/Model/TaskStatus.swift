@@ -33,7 +33,10 @@ struct TaskData: Codable {
         let snd: String
         let tempo: Double
         let position: Int64
+        var lane: String
         let valid: Bool
+        let start: Int64
+        let end: Int64
     }
     
     let requestStatus: String

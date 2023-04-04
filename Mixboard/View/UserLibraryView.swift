@@ -18,6 +18,7 @@ struct UserLibraryView: View {
     @EnvironmentObject var userLib: UserLibraryViewModel
     
     @ObservedObject var audioManager = AudioManager.shared
+    @ObservedObject var backend = BackendManager.shared
     
     let cardWidth: CGFloat
     
@@ -115,12 +116,14 @@ struct UserLibraryView: View {
             .padding([.vertical], 16)
         }.sheet(isPresented: $isPresented) {
             LibraryView(isPresented: $isPresented) { results in
-                userLib.addSongs(songIds: results)
-                mashup.updateRegionState(.New)
+                if results.count > 0 {
+                    userLib.addSongs(songIds: results)
+                    mashup.updateRegionState(.New)
+                }
             }
         }
         .onAppear {
-            userLib.attachViewModels(library: library, spotifyViewModel: spotifyVM)
+            userLib.attachViewModels(mashupVM: mashup, library: library, spotifyViewModel: spotifyVM)
         }
         .onTapGesture {
             withAnimation {
@@ -188,7 +191,7 @@ struct UserLibraryView: View {
         if value.predictedEndLocation.x < 0 {
             var shouldRemove = true
             withAnimation(.linear(duration: 0.25)) {
-                if !(userLib.canRemoveSong[song.id] ?? true) {
+                if backend.isDownloading {
                     userLib.dragOffset[song.id] = .zero
                     shouldRemove = false
                 } else {

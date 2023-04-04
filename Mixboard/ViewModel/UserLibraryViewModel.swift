@@ -24,10 +24,15 @@ class UserLibraryViewModel: ObservableObject {
     
     @Published var isFocuingSongs = false
     
-    @Published var canRemoveSong = [String:Bool]()
+    @Published var canRemoveSong = [String:Bool]() {
+        didSet {
+            disableRemoveBtn = shouldDisableRemove()
+        }
+    }
     
     static let TOTAL_PROGRESS = 100
     
+    private var mashupVM: MashupViewModel?
     private var lib: LibraryViewModel?
     private var spotifyVM: SpotifyViewModel?
     
@@ -49,7 +54,8 @@ class UserLibraryViewModel: ObservableObject {
         isSelected.removeAll()
     }
     
-    func attachViewModels(library: LibraryViewModel, spotifyViewModel: SpotifyViewModel) {
+    func attachViewModels(mashupVM: MashupViewModel, library: LibraryViewModel, spotifyViewModel: SpotifyViewModel) {
+        self.mashupVM = mashupVM
         self.lib = library
         self.spotifyVM = spotifyViewModel
     }
@@ -63,13 +69,16 @@ class UserLibraryViewModel: ObservableObject {
     }
     
     func contains(songId: String) -> Bool {
+        return get(songId: songId) != nil
+    }
+    
+    func get(songId: String) -> Song? {
         for song in songs {
             if song.id == songId {
-                return true
+                return song
             }
         }
-        
-        return false
+        return nil
     }
     
     func addSongs(songIds: [String: SongSource]) {
@@ -78,82 +87,105 @@ class UserLibraryViewModel: ObservableObject {
                 if let err = err {
                     self.appError = AppError(description: err.localizedDescription)
                     self.removePlaceholderSongs()
+                    self.mashupVM?.deleteRegionsFor(songId: id)
                 }
             }
         }
     }
     
     func addSong(songId: String, completion: ((Error?) -> ())? = nil) {
-        if isSongInUserLibrary(songId: songId) {
+        if isSongInUserLibrary(songId: songId, includePlaceholderTag: false) {
             Logger.info("Song already in library")
             return
         }
         
         canRemoveSong[songId] = false
-        addPlaceholderSong(songId: songId)
-        
-        BackendManager.shared.addSong(songId: songId) { err in
-            if let err = err {
-                Logger.error(err)
+        addPlaceholderSong(songId: songId) { succeeded in
+            if !succeeded {
+                self.canRemoveSong[songId] = nil
+                Logger.error("Cannot add placeholder for song id: \(songId) ....")
                 if let completion = completion {
-                    completion(err)
-                }
-                return
-            }
-            
-            if let lib = self.lib {
-                lib.update() {err in
-                    self.canRemoveSong[songId] = true
-                    self.isSelected[songId] = nil
-                    
-                    if let err = err {
-                        Logger.error(err)
-                        if let completion = completion {
-                            completion(err)
-                        }
-                        return
-                    }
-                    
-                    if !self.addSongFromLib(songId: songId) {
-                        if let completion = completion {
-                            completion(BackendError.SongDownloadError)
-                        }
-                        return
-                    }
-                    
+                    completion(MBError.PlaceholderError)
+                    return
                 }
             }
             
-            if let completion = completion {
-                completion(nil)
+            BackendManager.shared.addSong(songId: songId) { err in
+                self.canRemoveSong[songId] = true
+                
+                if let err = err {
+                    Logger.error(err)
+                    self.canRemoveSong[songId] = nil
+                    if let completion = completion {
+                        completion(err)
+                    }
+                    return
+                }
+                
+                if let lib = self.lib {
+                    lib.update() {err in
+                        self.canRemoveSong[songId] = true
+                        self.isSelected[songId] = nil
+                        
+                        if let err = err {
+                            Logger.error(err)
+                            self.canRemoveSong[songId] = nil
+                            if let completion = completion {
+                                completion(err)
+                            }
+                            return
+                        }
+                        
+                        if let err = self.addSongFromLib(songId: songId), err == MBError.SongNotInLibError(songId) {
+                            self.canRemoveSong[songId] = nil
+                            if let completion = completion {
+                                completion(BackendError.SongDownloadError)
+                            }
+                            return
+                        }
+                        
+                    }
+                }
+                
+                if let completion = completion {
+                    completion(nil)
+                }
             }
         }
     }
     
-    func addPlaceholderSong(songId: String) {
+    func addPlaceholderSong(songId: String,_ completion: @escaping (Bool) -> ()) {
         if let song = lib?.getSong(songId: songId) {
             var placeHolderSong = song
             placeHolderSong.placeholder = true
             self.songs.append(placeHolderSong)
-            return
-        }
-        
-        if let song = spotifyVM?.getSong(songId: songId) {
-            var placeHolderSong = song
-            placeHolderSong.placeholder = true
-            self.songs.append(placeHolderSong)
-        }
-    }
-    
-    func removePlaceholderSongs() {
-        for i in (0..<songs.count) {
-            if songs[i].placeholder {
-                self.songs.remove(at: i)
+            completion(true)
+        } else {
+            if let spotifyVM = spotifyVM {
+                spotifyVM.getSpotifySong(songId: songId, completion: { song in
+                    guard let song = song else {
+                        completion(false)
+                        return
+                    }
+                    
+                    var placeHolderSong = Song(album: song.album.name, artist: song.artists[0].name, id: songId, img_url: song.album.images[0].url, name: song.name, release_date: song.album.release_date)
+                    placeHolderSong.placeholder = true
+                    self.songs.append(placeHolderSong)
+                    completion(true)
+                })
+            } else {
+                completion(false)
             }
         }
     }
     
-    func replaceDummy(song:Song) -> Bool {
+    func removePlaceholderSongs() {
+        self.songs = songs.filter { song in
+            return !song.placeholder
+        }
+    }
+    
+    @discardableResult func replaceDummy(song:Song) -> Bool {
         for i in (0..<songs.count) {
             if songs[i].id == song.id {
                 Logger.trace("Replacing dummy for song id: \(song.id)")
@@ -164,22 +196,23 @@ class UserLibraryViewModel: ObservableObject {
         return false
     }
     
-    @discardableResult func addSongFromLib(songId: String) -> Bool {
+    @discardableResult func addSongFromLib(songId: String) -> MBError? {
         if let song = lib?.getSong(songId: songId) {
-            if !isSongInUserLibrary(songId: songId) {
-                Logger.info("Adding \(song.name ?? "song") to library")
-                if self.replaceDummy(song: song) {
-                    return true
-                }
-            }
+            Logger.info("Adding \(song.name ?? "song") to library")
+            self.replaceDummy(song: song)
+            return nil
         }
         
-        return false
+        return MBError.SongNotInLibError(songId)
     }
     
-    func isSongInUserLibrary(songId: String) -> Bool {
+    func isSongInUserLibrary(songId: String, includePlaceholderTag: Bool = true) -> Bool {
         for s in self.songs {
-            if s.id == songId && !s.placeholder {
+            if s.id == songId {
+                if includePlaceholderTag && !s.placeholder {
+                    return true
+                }
+                
                 return true
             }
         }
@@ -221,40 +254,32 @@ class UserLibraryViewModel: ObservableObject {
     }
     
     func removeSong(songId: String, notifyServer: Bool = true, completion: @escaping (Error?) -> ()) {
-        guard let lib = self.lib else { return }
+//        guard let lib = self.lib else { return }
         
         if let canRemove = canRemoveSong[songId], !canRemove {
             completion(MBError.SongStillDownloading)
             return
         }
         
-        func removeSongfromLib(sId: String, complete: ((Error?) -> ())? = nil) {
-            lib.update(didUpdate: { err in
-                if let err = err {
-                    self.appError = AppError(description: err.localizedDescription)
-                    Logger.error(err)
-                    return
-                }
-                
-                var temp = [Song]()
-                for song in self.songs {
-                    if song.id != sId {
-                        temp.append(song)
-                    } else {
-                        if song.placeholder {
-                            if let complete = complete {
-                                complete(MBError.RemoveError)
-                                temp.append(song)
-                            }
+        func removeSongfromUserLib(sId: String, complete: ((Error?) -> ())? = nil) {
+            var temp = [Song]()
+            for song in self.songs {
+                if song.id != sId {
+                    temp.append(song)
+                } else {
+                    if song.placeholder {
+                        if let complete = complete {
+                            complete(MBError.RemoveError)
+                            temp.append(song)
                         }
                     }
                 }
-                
-                self.songs = temp
-                if let complete = complete {
-                    complete(nil)
-                }
-            })
+            }
+            
+            self.songs = temp
+            if let complete = complete {
+                complete(nil)
+            }
         }
         
         if notifyServer {
@@ -265,10 +290,10 @@ class UserLibraryViewModel: ObservableObject {
                     return
                 }
                 
-                removeSongfromLib(sId: songId, complete: completion)
+                removeSongfromUserLib(sId: songId, complete: completion)
             }
         } else {
-            removeSongfromLib(sId: songId, complete: completion)
+            removeSongfromUserLib(sId: songId, complete: completion)
         }
     }
     

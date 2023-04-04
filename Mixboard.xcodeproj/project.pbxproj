@@ -29,6 +29,7 @@
 		7A32917D2901CBB7007AF70F /* LuckyMeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A32917C2901CBB7007AF70F /* LuckyMeManager.swift */; };
 		7A4D7F992910DA3D00651CCF /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4D7F982910DA3D00651CCF /* NetworkManager.swift */; };
 		7A5FCE382920166F0037618D /* SpotifyAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5FCE372920166F0037618D /* SpotifyAuth.swift */; };
+		7A6D1C1C29B4F98900621E5F /* MashupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6D1C1B29B4F98900621E5F /* MashupManager.swift */; };
 		7A75C323290D87A000AB2134 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A75C322290D87A000AB2134 /* Audio.swift */; };
 		7A8AD5442906F059001AE70F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8AD5432906F059001AE70F /* HapticManager.swift */; };
 		7A910DCF2927F48800832130 /* LuckyMeTemplates16.json in Resources */ = {isa = PBXBuildFile; fileRef = 7A910DCE2927F48800832130 /* LuckyMeTemplates16.json */; };
@@ -58,7 +59,7 @@
 		7AED712E28FA201F00336B56 /* UserLibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED712D28FA201F00336B56 /* UserLibraryViewModel.swift */; };
 		7AED713028FA21CD00336B56 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED712F28FA21CC00336B56 /* Config.swift */; };
 		7AED713428FB43FA00336B56 /* Lanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713328FB43FA00336B56 /* Lanes.swift */; };
-		7AED713628FC6A0A00336B56 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713528FC6A0A00336B56 /* Region.swift */; };
+		7AED713628FC6A0A00336B56 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713528FC6A0A00336B56 /* Layout.swift */; };
 		7AED713828FC6F9000336B56 /* generateRequestExample.json in Resources */ = {isa = PBXBuildFile; fileRef = 7AED713728FC6F9000336B56 /* generateRequestExample.json */; };
 		7AED713A28FC6FD900336B56 /* MashupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713928FC6FD900336B56 /* MashupViewModel.swift */; };
 		7AED713C28FCC93C00336B56 /* BarAxisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AED713B28FCC93C00336B56 /* BarAxisView.swift */; };
@@ -98,6 +99,7 @@
 		7A4D7F982910DA3D00651CCF /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		7A5658E8291034600065000C /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mixboard/Info.plist; sourceTree = SOURCE_ROOT; };
 		7A5FCE372920166F0037618D /* SpotifyAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAuth.swift; sourceTree = "<group>"; };
+		7A6D1C1B29B4F98900621E5F /* MashupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MashupManager.swift; sourceTree = "<group>"; };
 		7A75C322290D87A000AB2134 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
 		7A8AD5432906F059001AE70F /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		7A910DCE2927F48800832130 /* LuckyMeTemplates16.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = LuckyMeTemplates16.json; sourceTree = "<group>"; };
@@ -121,7 +123,7 @@
 		7AED712D28FA201F00336B56 /* UserLibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLibraryViewModel.swift; sourceTree = "<group>"; };
 		7AED712F28FA21CC00336B56 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		7AED713328FB43FA00336B56 /* Lanes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lanes.swift; sourceTree = "<group>"; };
-		7AED713528FC6A0A00336B56 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
+		7AED713528FC6A0A00336B56 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
 		7AED713728FC6F9000336B56 /* generateRequestExample.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = generateRequestExample.json; sourceTree = "<group>"; };
 		7AED713928FC6FD900336B56 /* MashupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MashupViewModel.swift; sourceTree = "<group>"; };
 		7AED713B28FCC93C00336B56 /* BarAxisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarAxisView.swift; sourceTree = "<group>"; };
@@ -234,7 +236,7 @@
 				7A25ECF928F84EC500B2396A /* Library.swift */,
 				7AED712B28F9FF8F00336B56 /* SongSource.swift */,
 				7AED713328FB43FA00336B56 /* Lanes.swift */,
-				7AED713528FC6A0A00336B56 /* Region.swift */,
+				7AED713528FC6A0A00336B56 /* Layout.swift */,
 				7AED714D28FF4A6C00336B56 /* History.swift */,
 				7A221D0D2900726200DC949F /* AppError.swift */,
 				7AED714128FD0DF300336B56 /* TaskStatus.swift */,
@@ -279,6 +281,7 @@
 				7ADD6B4E291963B9001F59B1 /* FirebaseManager.swift */,
 				7ACBADBE291B6D4D002B3A38 /* DatabaseManager.swift */,
 				7A03BFE2291D6F4600B19874 /* BackendManager.swift */,
+				7A6D1C1B29B4F98900621E5F /* MashupManager.swift */,
 			);
 			path = Manager;
 			sourceTree = "<group>";
@@ -391,12 +394,13 @@
 				7A4D7F992910DA3D00651CCF /* NetworkManager.swift in Sources */,
 				7A25ED0B28F8E65600B2396A /* ImageViewModel.swift in Sources */,
 				7A25ECF028F83FA800B2396A /* LibraryView.swift in Sources */,
+				7A6D1C1C29B4F98900621E5F /* MashupManager.swift in Sources */,
 				7A32917B2901C769007AF70F /* LuckyMeTemplates.swift in Sources */,
 				7AEB67CB2940EC3200694F0C /* Logger.swift in Sources */,
 				7AED714428FD2F7E00336B56 /* PlayHeadView.swift in Sources */,
 				7AED714C28FF419700336B56 /* UserInfoView.swift in Sources */,
 				7A25ECF228F83FB500B2396A /* ToolbarView.swift in Sources */,
-				7AED713628FC6A0A00336B56 /* Region.swift in Sources */,
+				7AED713628FC6A0A00336B56 /* Layout.swift in Sources */,
 				7ACBADBF291B6D4D002B3A38 /* DatabaseManager.swift in Sources */,
 				7ADD6B4D29196271001F59B1 /* LoginViewModel.swift in Sources */,
 				7AED712C28F9FF8F00336B56 /* SongSource.swift in Sources */,
@@ -564,7 +568,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Mixboard/Mixboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 35A3E26LB3;
 				ENABLE_PREVIEWS = YES;
@@ -600,7 +604,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Mixboard/Mixboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "\"Mixboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 35A3E26LB3;
 				ENABLE_PREVIEWS = YES;

@@ -13,8 +13,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
         
-//        var appearance = UINavigationBarAppearance()
-//        appearance.configureWithTransparentBackground()
         return true
     }
 }
@@ -22,6 +20,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct MixboardApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
+    @ObservedObject var backend = BackendManager.shared
     
     @StateObject var mashupVM = MashupViewModel()
 
@@ -39,6 +39,9 @@ struct MixboardApp: App {
                 }
             }
             .environmentObject(mashupVM)
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { output in
+                backend.endSession(currentUserEmail: mashupVM.currentEmail)
+            }
         }
     }
 }

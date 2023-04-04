@@ -105,29 +105,28 @@ class AudioManager: ObservableObject {
     
     private func play() {
         displayLink?.isPaused = false
-        self.silencePlayer.play()
         for (_, p) in self.players {
             p.play()
         }
+        self.silencePlayer.play()
         self.isPlaying = true
     }
     
     private func pause() {
         displayLink?.isPaused = true
-
-        self.silencePlayer.pause()
         for (_, p) in self.players {
             p.pause()
         }
+        self.silencePlayer.pause()
         self.isPlaying = false
     }
     
     func stop() {
         displayLink?.isPaused = true
-        self.silencePlayer.stop()
         for (_, p) in self.players {
             p.stop()
         }
+        self.silencePlayer.stop()
         self.isPlaying = false
     }
     
@@ -190,7 +189,7 @@ class AudioManager: ObservableObject {
         
         stop()
         
-        Logger.trace("Current position: \(currentPosition), tempo: \(tempo)")
+//        Logger.trace("Current position: \(currentPosition), tempo: \(tempo)")
         
         if audioLengthSamples > AVAudioFrameCount(currentPosition) {
             guard let buffer = AVAudioPCMBuffer(pcmFormat: .init(standardFormatWithSampleRate: sampleRate, channels: 1)!, frameCapacity: AVAudioFrameCount(audioLengthSamples - currentPosition)) else { return }
@@ -215,7 +214,7 @@ class AudioManager: ObservableObject {
                     let fmt = file.processingFormat
                     sampleRate = fmt.sampleRate
                     let diffTime = audio.position - currentPosition
-                    Logger.trace("audio position for \(id): \(audio.position), diff time: \(diffTime), file length: \(file.length), audio length: \(len)")
+//                    Logger.trace("audio position for \(id): \(audio.position), diff time: \(diffTime), file length: \(file.length), audio length: \(len)")
                     if diffTime >= 0 {  // Region is in the future
                         let _time = AVAudioTime(sampleTime: diffTime, atRate: sampleRate)
                         player.scheduleSegment(file, startingFrame: 0, frameCount: AVAudioFrameCount(len), at: _time)

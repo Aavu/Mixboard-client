@@ -148,25 +148,36 @@ class SpotifyManager: ObservableObject {
         }
     }
     
-    func searchSpotify(txt: String, completion: @escaping (_ spotifyTracks: [Spotify.Track]?) -> ()) {
-        if txt.isEmpty { return }
-        
-        let truncatedText = txt.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).replacingOccurrences(of: " ", with: "+")
+    func searchSpotify(txt: String, completion: @escaping (_ spotifyTracks: [Spotify.Track], _ error: Error?) -> ()) {
+        if txt.isEmpty {
+            completion([], SpotifyError.EmptyTextError)
+            return
+        }
         
         if let spotifyClientAuth = spotifyClientAuth {
             spotifyClientAuth.getAccessToken { accessToken in
                 guard let accessToken = accessToken else {
                     Logger.error("accessToken is nil")
-                    completion(nil)
+                    completion([], SpotifyError.AuthError)
                     return
                 }
                 
-                let url = URL(string: "https://api.spotify.com/v1/search?q=\(truncatedText)&type=album,artist,track&limit=50")!
+                let truncatedText = txt.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).replacingOccurrences(of: " ", with: "+")
+                let encodedUrlString = "https://api.spotify.com/v1/search?q=\(truncatedText)&type=album,artist,track&limit=50".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+                guard let url = URL(string: encodedUrlString ?? "") else {
+                    completion([], MBError.URLError(encodedUrlString))
+                    return
+                }
                 
                 let authHeader = spotifyClientAuth.getAuthHeader(accessToken: accessToken)
                 
                 NetworkManager.request(url: url, type: .GET, contentType: .JSON, headers: [authHeader]) {(result: Spotify.SearchResult?) in
-                    completion(result?.tracks.items)
+                    if let items = result?.tracks.items {
+                        completion(items, nil)
+                        return
+                    }
+                    
+                    completion([], SpotifyError.ServerError)
                     return
                 }
             }

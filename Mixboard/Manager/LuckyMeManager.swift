@@ -94,7 +94,7 @@ class LuckyMeManager {
                 let trackId = max(min(determineTrack(trackId: laneVars.tracks[j]), filteredSongs.count - 1), 0)
                 let shuffledSongs = filteredSongs.shuffled()
                 let song = shuffledSongs[trackId]
-                let region = Region(x: startPos, w: width, item: Region.Item(id: song.id), state: .New)
+                let region = Region(x: startPos, w: width, item: .init(id: song.id), state: .New)
                 layout.lane[lane.rawValue]!.layout.append(region)
             }
         }

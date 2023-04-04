@@ -11,6 +11,12 @@ import Combine
 class SpotifyViewModel: ObservableObject {
     
     @Published var songs = [Spotify.Track]()
+    @Published var recommendations = [Spotify.Track]() {
+        didSet {
+            songs = recommendations
+        }
+    }
+    
     @Published var searchText = ""
     
     private var cancellables = Set<AnyCancellable>()
@@ -23,9 +29,15 @@ class SpotifyViewModel: ObservableObject {
         $searchText
             .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
             .sink { [weak self] txt in
-                SpotifyManager.shared.searchSpotify(txt: txt) { tracks in
-                    if let tracks = tracks {
+                SpotifyManager.shared.searchSpotify(txt: txt) { tracks, err in
+                    if let e = err as? SpotifyError, e == .EmptyTextError {
+                        if let reco = self?.recommendations {
+                            self?.songs = reco
+                        }
+                    }else if err == nil {
                         self?.songs = tracks
+                    } else {
+                        Logger.error(err.debugDescription)
                     }
                 }
                 
@@ -52,6 +64,7 @@ class SpotifyViewModel: ObservableObject {
                 return Song(album: song.album.name, artist: song.artists[0].name, id: songId, img_url: song.album.images[0].url, name: song.name, release_date: song.album.release_date)
             }
         }
+        
         return nil
     }
 }

@@ -20,18 +20,39 @@ class BackendManager: ObservableObject {
 
     @Published var generationStatus: TaskStatus.Status?
     @Published var regionData: TaskData.MBData?
-    @Published var downloadStatus = [String: TaskStatus.Status]()
-    @Published var isDownloading = false
+    @Published var downloadStatus = [String: TaskStatus.Status]() {
+        didSet {
+            isDownloading = downloadStatus.count > 0
+        }
+    }
+    
+    @Published private(set) var isDownloading = false
     
     
     private var numRegionsFetched = 0
     private let fetchRegionsQueue = DispatchQueue(label:"fetchRegionsQueue")
     var timer: AnyCancellable?
     
+    /// Handle all redis clean up stuffs here
+    func endSession(currentUserEmail: String?) {
+        let url = URL(string: Config.SERVER + HttpRequests.SESSION_ENDED)!
+        
+        NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["email": currentUserEmail])) { completion in
+            switch completion {
+            case .failure(let e):
+                Logger.error(e)
+            case .finished:
+                break
+            }
+        } completion: { (response:Dictionary<String, String>?) in
+            Logger.info("Session ended because the app was terminated.")
+        }
+    }
+    
+    
     func addSong(songId: String, onCompletion:@escaping (Error?) -> ()) {
         let url = URL(string: Config.SERVER + HttpRequests.ADD_SONG)!
         
-        self.isDownloading = true
         if self.downloadStatus[songId] == nil {
             self.downloadStatus[songId] = TaskStatus.Status(progress: 5, description: "Waiting in queue")
         }
@@ -41,7 +62,6 @@ class BackendManager: ObservableObject {
             case .failure(let e):
                 Logger.error(e)
                 DispatchQueue.main.async {
-                    self.isDownloading = false
                     self.downloadStatus.removeValue(forKey: songId)
                     onCompletion(e)
                 }
@@ -51,7 +71,6 @@ class BackendManager: ObservableObject {
         } completion: { (response:Dictionary<String, String>?) in
             guard let response = response else {
                 DispatchQueue.main.async {
-                    self.isDownloading = false
                     self.downloadStatus.removeValue(forKey: songId)
                     onCompletion(BackendError.ResponseEmpty)
                 }
@@ -64,14 +83,12 @@ class BackendManager: ObservableObject {
                     self.downloadStatus[songId] = status
                 } completion: { status, err in
                     DispatchQueue.main.async {
-                        self.isDownloading = false
                         self.downloadStatus.removeValue(forKey: songId)
                         onCompletion(err)
                     }
                 }
             } else {
                 DispatchQueue.main.async {
-                    self.isDownloading = false
                     self.downloadStatus.removeValue(forKey: songId)
                     onCompletion(BackendError.TaskIdEmpty)
                 }
@@ -157,16 +174,25 @@ class BackendManager: ObservableObject {
         }.resume()
     }
     
-    func updateRegionData(regionIds: [String], tryNum: Int = 0, statusCallback: @escaping (TaskData.MBData) -> (), completion: @escaping (Error?)->()) {
+    func updateRegionData(regionIds: [String], tryNum: Int = 0, statusCallback: @escaping (TaskData.MBData) -> (), completion: @escaping ()->()) {
+        self.numRegionsFetched = 0
+        var numRegionsToFetch = regionIds.count
+        
         for regionId in regionIds {
             fetchRegion(regionId: regionId) { data, err in
+                var complete = false
+                
                 if let err = err {
                     Logger.error(err)
-                    completion(err)
-                    return
+                    self.fetchRegionsQueue.sync {
+                        numRegionsToFetch -= 1
+                        complete = numRegionsToFetch == 0
+                    }
+                    
+                    statusCallback(TaskData.MBData(id: regionId, snd: "", tempo: 0, position: 0, lane: "", valid: false, start: 0, end: 0))
                 }
                 
-                if let data = data {
+                if let data = data, err == nil {
                     self.fetchRegionsQueue.sync {
                         self.numRegionsFetched += 1
                         DispatchQueue.main.async {
@@ -177,21 +203,32 @@ class BackendManager: ObservableObject {
                     statusCallback(data)
                 }
                 
-                Logger.info("Num regions fetched: \(self.numRegionsFetched), out of \(regionIds.count)")
+                Logger.info("Num regions fetched: \(self.numRegionsFetched), out of \(numRegionsToFetch)")
                 
-                var temp = 0
                 self.fetchRegionsQueue.sync {
-                    temp = self.numRegionsFetched
+                    complete = self.numRegionsFetched >= numRegionsToFetch || complete
                 }
                 
-                if temp >= regionIds.count {
-                    self.fetchRegionsQueue.sync {
-                        self.numRegionsFetched = 0
-                    }
-                    completion(nil)
+                if complete {
+                    self.updateRegionCompletion(regionIds: regionIds, completion)
                     return
                 }
             }
+        }
+    }
+
+    func updateRegionCompletion(regionIds: [String],_ completion: @escaping () -> ()) {
+        let url = URL(string: Config.SERVER + HttpRequests.REGION_UPDATE_COMPLETION)!
+        
+        NetworkManager.request(url: url, type: .POST, httpbody: try? JSONSerialization.data(withJSONObject: ["regions": regionIds])) { completion in
+            switch completion {
+            case .failure(let e):
+                Logger.error(e)
+            case .finished:
+                break
+            }
+        } completion: { (response:Dictionary<String, Int>?) in
+            completion()
         }
     }
     
@@ -276,7 +313,7 @@ class BackendManager: ObservableObject {
     }
     
     
-    func sendGenerateRequest(uuid: String, lastSessionId: String?, layout: Layout, regionIds: [String], statusCallback: @escaping (Audio?) -> (), onCompletion:@escaping (Layout?, Error?) -> ()) {
+    func sendGenerateRequest(uuid: String, lastSessionId: String?, layout: Layout, regionIds: [String], statusCallback: @escaping (Audio?, BackendError?) -> (), onCompletion:@escaping (Layout?, Error?) -> ()) {
         let url = URL(string: Config.SERVER + HttpRequests.GENERATE)!
         
         var request = URLRequest(url: url)
@@ -284,11 +321,13 @@ class BackendManager: ObservableObject {
         request.setValue("Application/json", forHTTPHeaderField: "Content-Type")
         
         if let email = email {
-            let generateRequest = GenerateRequest(data: layout.lane, email: email, sessionId: uuid, lastSessionId: lastSessionId)
+            let generateRequest = GenerateRequestPayload(data: layout.lane, email: email, sessionId: uuid, lastSessionId: lastSessionId)
             request.httpBody = try? JSONEncoder().encode(generateRequest)
         }
         
         isGenerating = true
+        
+        var newLayout = layout
         
         URLSession.shared.dataTask(with: request) { data, response, err in
             guard let _ = data, err == nil else {
@@ -303,28 +342,40 @@ class BackendManager: ObservableObject {
             }
             
             self.updateRegionData(regionIds: regionIds) { mbData in
-                Logger.debug("fetched: \(mbData.id)")
-                
-                guard let audioData = Data(base64Encoded: mbData.snd) else {
-                    onCompletion(nil, BackendError.DecodingError)
+                if !mbData.valid {
+                    statusCallback(nil, .RegionDownloadError(mbData.id))
                     return
                 }
-                
-                let tempFile = MashupFileManager.saveAudio(data: audioData, name: mbData.id, ext: "aac")
-                
-                if let tempFile = tempFile {
-                    statusCallback(Audio(file: tempFile, position: mbData.position, tempo: mbData.tempo))
-                } else {
-                    onCompletion(nil, BackendError.WriteToFileError)
+
+                Logger.debug("fetched: \(mbData.id)")
+
+                guard let audioData = Data(base64Encoded: mbData.snd) else {
+                    statusCallback(nil, .DecodingError)
+                    return
                 }
-            } completion: { err in
+
+                let tempFile = MashupFileManager.saveAudio(data: audioData, name: mbData.id, ext: "aac")
+
+                if let tempFile = tempFile {
+                    statusCallback(Audio(file: tempFile, position: mbData.position, tempo: mbData.tempo), nil)
+                } else {
+                    statusCallback(nil, .WriteToFileError)
+                }
+                
+                
+                if let lanes = newLayout.lane[mbData.lane] {
+                    for (idx, region) in lanes.layout.enumerated() {
+                        if region.id.uuidString == mbData.id {
+                            newLayout.lane[mbData.lane]!.layout[idx].item.bound = Region.Item.Bound(start: mbData.start, end: mbData.end)
+                            break
+                        }
+                    }
+                }
+
+            } completion: {
                 DispatchQueue.main.async {
                     self.isGenerating = false
-                    if let err = err {
-                        onCompletion(layout, err)
-                    }
-                    
-                    onCompletion(layout, nil)
+                    onCompletion(newLayout, nil)
                 }
             }
             

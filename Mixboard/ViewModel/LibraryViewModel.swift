@@ -24,28 +24,13 @@ class LibraryViewModel: ObservableObject {
     
     func addSubscribers() {
         $searchText
-            .debounce(for: .seconds(0.25), scheduler: DispatchQueue.main)
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)
             .map { (txt) -> [Song] in
                 guard !txt.isEmpty else {
                     return self.unfilteredSongs
                 }
                 
                 let lowerTxt = txt.lowercased().trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-                
-//                let sortedSongs = self.unfilteredSongs.sorted { a, b in
-//                    var isAleB = LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.name?.lowercased()) < LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.name?.lowercased())
-//
-//                    isAleB = isAleB || LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.album?.lowercased()) < LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.album?.lowercased())
-//
-//                    isAleB = isAleB || LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.artist?.lowercased()) < LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.artist?.lowercased())
-//
-//                    print(a.name!, b.name!, LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.name?.lowercased()), LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.name?.lowercased()), a.album!, b.album!, LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.album?.lowercased()), LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.album?.lowercased()), a.artist!, b.artist!, LibraryViewModel.levenshteinDist(query: lowerTxt, txt: a.artist?.lowercased()), LibraryViewModel.levenshteinDist(query: lowerTxt, txt: b.artist?.lowercased()))
-//
-//                    return isAleB
-//                }
-//
-//                return sortedSongs
-                
                 return self.unfilteredSongs.filter { song in
                     return song.name?.lowercased().contains(lowerTxt) ?? false ||
                     song.album?.lowercased().contains(lowerTxt) ?? false ||
@@ -86,23 +71,6 @@ class LibraryViewModel: ObservableObject {
             }
         }
         return false
-    }
-    
-    func loadExampleData() -> Bool {
-        guard let url = Bundle.main.url(forResource: "libraryExample", withExtension: "json")
-        else {
-            Logger.critical("Json file not found")
-            return false
-        }
-        
-        do {
-            let data = try Data(contentsOf: url)
-            self.library = try JSONDecoder().decode(Library.self, from: data)
-        } catch let e {
-            Logger.error(e)
-            return false
-        }
-        return true
     }
     
     func filterUserLibSongs(songs: [Song]) {

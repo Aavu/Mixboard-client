@@ -164,16 +164,16 @@ struct LibraryView: View {
             }
             .onChange(of: spotifyManager.isLinked) { newValue in
                 Logger.info("spotify linked: \(spotifyManager.isLinked)")
-                spotifyManager.getRecommendations(numTracks: 50, forUser: spotifyManager.isLinked) { spotifyTracks in
+                spotifyManager.getRecommendations(numTracks: 100, forUser: spotifyManager.isLinked) { spotifyTracks in
                     if let tracks = spotifyTracks {
-                        spotifyVM.songs = tracks
+                        spotifyVM.recommendations = tracks
                     }
                 }
             }
             .onAppear {
-                spotifyManager.getRecommendations(numTracks: 50, forUser: spotifyManager.isLinked) { spotifyTracks in
+                spotifyManager.getRecommendations(numTracks: 100, forUser: spotifyManager.isLinked) { spotifyTracks in
                     if let tracks = spotifyTracks {
-                        spotifyVM.songs = tracks
+                        spotifyVM.recommendations = tracks
                     }
                 }
                 
@@ -374,6 +374,13 @@ struct SelectionView: View {
             case .Library:
                 if let song = libraryVM.getSong(songId: songId) {
                     libSongs.append(song)
+                } else {
+                    /// If for some reason, it is not able to get the song from library. This is the fallback
+                    spotifyVM.getSpotifySong(songId: songId) { spotifyTrack in
+                        if let song = spotifyTrack {
+                            spotifySongs.append(song)
+                        }
+                    }
                 }
             }
         }

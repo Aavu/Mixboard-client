@@ -15,6 +15,16 @@ struct Region: Hashable, Codable, Identifiable {
     }
     
     struct Item: Hashable, Codable {
+        struct Bound: Hashable, Codable {
+            var start: Int64? = nil
+            var end: Int64? = nil
+            
+            private enum CodingKeys: String, CodingKey {
+                case start  = "start"
+                case end    = "end"
+            }
+        }
+        
         let id: String
         var name: String? = nil
         var tempo: Float? = nil
@@ -26,6 +36,7 @@ struct Region: Hashable, Codable, Identifiable {
         var isPlaying: Bool? = nil
         var color: String? = nil
         var Class: String? = nil
+        var bound: Bound = Bound()
         
         private enum CodingKeys: String, CodingKey {
             case id             = "songId"
@@ -39,6 +50,7 @@ struct Region: Hashable, Codable, Identifiable {
             case isPlaying      = "isPlaying"
             case color          = "color"
             case Class          = "class"
+            case bound          = "bound"
         }
     }
     
@@ -55,17 +67,17 @@ struct Region: Hashable, Codable, Identifiable {
     var audioPosition: Int64?
     
     private enum CodingKeys: String, CodingKey {
-        case x       = "x"
-        case y       = "y"
-        case w       = "w"
-        case h       = "h"
-        case i       = "i"
-        case del     = "del"
-        case Class   = "class"
-        case item    = "item"
-        case id      = "id"
-        case state   = "state"
-        case audioPosition   = "audioPosition"
+        case x              = "x"
+        case y              = "y"
+        case w              = "w"
+        case h              = "h"
+        case i              = "i"
+        case del            = "del"
+        case Class          = "class"
+        case item           = "item"
+        case id             = "id"
+        case state          = "state"
+        case audioPosition  = "audioPosition"
     }
 }
 
@@ -88,7 +100,7 @@ struct Layout: Hashable, Codable {
     var lane = Dictionary<String, Track>()
 }
 
-struct GenerateRequest: Hashable, Codable {
+struct GenerateRequestPayload: Hashable, Codable {
     let data: Dictionary<String, Layout.Track>
     let email: String
     let sessionId: String

@@ -57,7 +57,7 @@ struct ToolbarView: View {
                     .opacity(userLibVM.songs.count > 0 ? 1 : 0)
                     .opacity(audioManager.isPlaying ? 0.5 : 1)
                     
-                }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0 || backend.isDownloading)
+                }.disabled(backend.isGenerating || audioManager.isPlaying || userLibVM.songs.count == 0)
 
                 Spacer()
 
@@ -82,12 +82,14 @@ struct ToolbarView: View {
                                 .padding(.all, 6)
                         } else {
                             Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                                .renderingMode(.template)
                                 .frame(width: 32)
-                                .font(.title).foregroundColor(.AccentColor).opacity(!mashupVM.isEmpty ? 1 : 0.5)
+                                .font(.title).foregroundColor(.AccentColor).opacity(mashupVM.isEmpty || backend.isGenerating || backend.isDownloading ? 0.5: 1)
                                 .padding(.all, 6)
                         }
                     }
                     .disabled(mashupVM.isEmpty || backend.isGenerating || backend.isDownloading)
+                    .allowsHitTesting(!backend.isDownloading)
                     .padding(.horizontal, 12)
                     
                     // MARK: Forward 10 Button

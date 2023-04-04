@@ -25,7 +25,13 @@ class UserInfoViewModel: ObservableObject {
         formatter.dateStyle = .medium
     }
     
-    func add(history: History) {
+    func add(history: History, updateCurrent: Bool = true) {
+        if updateCurrent {
+            DispatchQueue.main.async {
+                self.current = history
+            }
+        }
+        
         if histories.contains(history) {
             return
         }

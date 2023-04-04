@@ -113,9 +113,13 @@ struct UserLibSongCardView: View {
                     
                     if let status = backend.downloadStatus[songId] {
                         if status.progress < UserLibraryViewModel.TOTAL_PROGRESS {
-                            ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS)) {
+                            VStack(alignment: .center, spacing: 2) {
                                 if geo.size.height > 100 {
                                     StrokeText(text: status.description ?? "Downloading", width: 0.25, color: .black).font(.caption)
+                                }
+                                ZStack {
+                                    Rectangle().frame(height: 8).foregroundColor(.BgColor)
+                                    ProgressView(value: CGFloat(status.progress), total: CGFloat(UserLibraryViewModel.TOTAL_PROGRESS))
                                 }
                             }
                         }
@@ -161,7 +165,9 @@ struct UserLibSongCardView: View {
                 if audioManager.isPlaying { return }
                 withAnimation {
                     if userLibVM.isSelected[songId] == nil {
-                        userLibVM.isSelected[songId] = true
+                        if !userLibVM.disableRemoveBtn {
+                            userLibVM.isSelected[songId] = true
+                        }
                     } else {
                         userLibVM.isSelected[songId] = nil
                     }
